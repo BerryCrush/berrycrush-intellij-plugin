@@ -1,0 +1,49 @@
+@api @smoke
+feature: User API Tests
+
+background:
+    given API server is running
+        call GET /health
+        assert status 200
+
+scenario: Get all users
+    when client requests user list
+        call GET /api/users
+    then response contains users
+        assert status 200
+        assert header Content-Type contains application/json
+
+scenario: Get user by ID
+    given user ID is known
+        extract userId from "1"
+    when client requests specific user
+        call GET /api/users/${userId}
+    then response contains user data
+        assert status 200
+        extract userName from $.name
+        assert $.email exists
+
+outline: Create user with different roles
+    when client creates new user
+        call POST /api/users
+            body:
+                {
+                    "name": "${name}",
+                    "role": "${role}"
+                }
+    then user is created
+        assert status 201
+    
+    examples:
+        | name    | role    |
+        | Alice   | admin   |
+        | Bob     | user    |
+        | Charlie | guest   |
+
+# This scenario tests error handling
+scenario: Handle not found
+    when client requests non-existent user
+        call GET /api/users/99999
+    then response indicates not found
+        assert status 404
+        assert $.error contains "not found"

@@ -20,11 +20,13 @@ dependencies {
         create(providers.gradleProperty("platformType"), providers.gradleProperty("platformVersion"))
         bundledPlugins("com.intellij.java")
         instrumentationTools()
-        testFramework(TestFrameworkType.Platform)
+        // Note: Platform test framework requires special IDE environment setup
+        // testFramework(TestFrameworkType.Platform)
     }
 
     testImplementation(kotlin("test"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.0")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.11.0")
 }
 
 kotlin {
@@ -63,5 +65,7 @@ tasks {
 
     test {
         useJUnitPlatform()
+        // Exclude IntelliJ Platform test classes from regular tests
+        jvmArgs("-Djunit.jupiter.extensions.autodetection.enabled=false")
     }
 }
