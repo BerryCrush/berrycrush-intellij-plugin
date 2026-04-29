@@ -1,0 +1,83 @@
+<idea-plugin>
+    <id>com.berrycrush.intellij</id>
+    <name>BerryCrush</name>
+    <vendor email="support@berrycrush.org" url="https://github.com/berrycrush/berrycrush">BerryCrush</vendor>
+
+    <description><![CDATA[
+    <h2>BerryCrush - OpenAPI-Driven BDD Testing</h2>
+    <p>Language support for BerryCrush <code>.scenario</code> and <code>.fragment</code> files.</p>
+
+    <h3>Features</h3>
+    <ul>
+        <li>Syntax highlighting for BerryCrush DSL</li>
+        <li>Code completion for keywords and directives</li>
+        <li>Code folding for features, scenarios, and steps</li>
+        <li>Structure view navigation</li>
+        <li>Custom file icons</li>
+    </ul>
+
+    <h3>File Types</h3>
+    <ul>
+        <li><strong>.scenario</strong> - Test scenario files</li>
+        <li><strong>.fragment</strong> - Reusable step fragments</li>
+    </ul>
+    ]]></description>
+
+    <change-notes><![CDATA[
+    <h3>1.0.0</h3>
+    <ul>
+        <li>Initial release</li>
+        <li>Syntax highlighting</li>
+        <li>Basic code completion</li>
+        <li>Code folding</li>
+        <li>Structure view</li>
+    </ul>
+    ]]></change-notes>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- File Types -->
+        <fileType name="BerryCrush Scenario"
+                  implementationClass="com.berrycrush.intellij.language.ScenarioFileType"
+                  fieldName="INSTANCE"
+                  language="BerryCrush"
+                  extensions="scenario"/>
+
+        <fileType name="BerryCrush Fragment"
+                  implementationClass="com.berrycrush.intellij.language.FragmentFileType"
+                  fieldName="INSTANCE"
+                  language="BerryCrush"
+                  extensions="fragment"/>
+
+        <!-- Language -->
+        <lang.parserDefinition language="BerryCrush"
+                               implementationClass="com.berrycrush.intellij.parser.BerryCrushParserDefinition"/>
+
+        <!-- Syntax Highlighting -->
+        <lang.syntaxHighlighterFactory language="BerryCrush"
+                                       implementationClass="com.berrycrush.intellij.highlighting.BerryCrushSyntaxHighlighterFactory"/>
+
+        <colorSettingsPage implementation="com.berrycrush.intellij.highlighting.BerryCrushColorSettingsPage"/>
+
+        <!-- Code Folding -->
+        <lang.foldingBuilder language="BerryCrush"
+                             implementationClass="com.berrycrush.intellij.folding.BerryCrushFoldingBuilder"/>
+
+        <!-- Structure View -->
+        <lang.psiStructureViewFactory language="BerryCrush"
+                                      implementationClass="com.berrycrush.intellij.structure.BerryCrushStructureViewFactory"/>
+
+        <!-- Completion -->
+        <completion.contributor language="BerryCrush"
+                                implementationClass="com.berrycrush.intellij.completion.BerryCrushCompletionContributor"/>
+
+        <!-- Commenter -->
+        <lang.commenter language="BerryCrush"
+                        implementationClass="com.berrycrush.intellij.commenter.BerryCrushCommenter"/>
+
+        <!-- Brace Matcher -->
+        <lang.braceMatcher language="BerryCrush"
+                           implementationClass="com.berrycrush.intellij.highlighting.BerryCrushBraceMatcher"/>
+    </extensions>
+</idea-plugin>
