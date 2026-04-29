@@ -1,8 +1,8 @@
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "2.0.21"
-    id("org.jetbrains.intellij.platform") version "2.2.1"
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.intellij.platform)
 }
 
 group = providers.gradleProperty("pluginGroup").get()
@@ -18,15 +18,14 @@ repositories {
 dependencies {
     intellijPlatform {
         create(providers.gradleProperty("platformType"), providers.gradleProperty("platformVersion"))
-        bundledPlugins("com.intellij.java")
-        instrumentationTools()
+        bundledPlugin("com.intellij.java")
         // Note: Platform test framework requires special IDE environment setup
         // testFramework(TestFrameworkType.Platform)
     }
 
-    testImplementation(kotlin("test"))
-    testImplementation("org.junit.jupiter:junit-jupiter:5.11.0")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.11.0")
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.junit4) // Required by IntelliJ Platform test classpath
 }
 
 kotlin {
@@ -43,7 +42,7 @@ intellijPlatform {
         }
         vendor {
             name = "BerryCrush"
-            url = "https://github.com/berrycrush/berrycrush"
+            url = "https://berrycrush.org"
         }
     }
 
