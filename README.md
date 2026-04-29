@@ -69,4 +69,4 @@ intellij/
 
 ## License
 
-See [LICENSE](../LICENSE) in the workspace root.
+See [LICENSE](LICENSE).
