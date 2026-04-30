@@ -44,6 +44,7 @@ class BerryCrushParserDefinition : ParserDefinition {
             BerryCrushElementTypes.STEP -> BerryCrushStepElement(node)
             BerryCrushElementTypes.CALL_DIRECTIVE -> BerryCrushCallElement(node)
             BerryCrushElementTypes.INCLUDE_DIRECTIVE -> BerryCrushIncludeElement(node)
+            BerryCrushElementTypes.ASSERT_DIRECTIVE -> BerryCrushAssertElement(node)
             BerryCrushElementTypes.OPERATION_REF -> BerryCrushOperationRefElement(node)
             BerryCrushElementTypes.FRAGMENT_REF -> BerryCrushFragmentRefElement(node)
             else -> BerryCrushGenericElement(node)

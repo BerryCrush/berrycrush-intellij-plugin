@@ -37,8 +37,30 @@ class BerryCrushParser : PsiParser {
             BerryCrushTokenTypes.CALL -> parseCallDirective(builder)
             BerryCrushTokenTypes.INCLUDE -> parseIncludeDirective(builder)
             BerryCrushTokenTypes.OPERATION_REF -> parseOperationRef(builder)
+            // Step keywords
+            BerryCrushTokenTypes.GIVEN,
+            BerryCrushTokenTypes.WHEN,
+            BerryCrushTokenTypes.THEN,
+            BerryCrushTokenTypes.AND,
+            BerryCrushTokenTypes.BUT -> parseStep(builder)
+            // Assert directive
+            BerryCrushTokenTypes.ASSERT -> parseAssertDirective(builder)
             else -> builder.advanceLexer()
         }
+    }
+
+    private fun parseStep(builder: PsiBuilder) {
+        val marker = builder.mark()
+        builder.advanceLexer() // consume step keyword (Given/When/Then/And/But)
+        skipToEndOfLine(builder)
+        marker.done(BerryCrushElementTypes.STEP)
+    }
+
+    private fun parseAssertDirective(builder: PsiBuilder) {
+        val marker = builder.mark()
+        builder.advanceLexer() // consume "assert"
+        skipToEndOfLine(builder)
+        marker.done(BerryCrushElementTypes.ASSERT_DIRECTIVE)
     }
 
     private fun parseFeature(builder: PsiBuilder) {

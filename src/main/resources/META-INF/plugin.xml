@@ -39,8 +39,15 @@
     ]]></change-notes>
 
     <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
+        <!-- File-based Indices for fast lookup -->
+        <fileBasedIndex implementation="com.berrycrush.intellij.index.FragmentIndex"/>
+        <fileBasedIndex implementation="com.berrycrush.intellij.index.OperationUsageIndex"/>
+        <fileBasedIndex implementation="com.berrycrush.intellij.index.IncludeUsageIndex"/>
+        <fileBasedIndex implementation="com.berrycrush.intellij.index.StepUsageIndex"/>
+
         <!-- File Types -->
         <fileType name="BerryCrush Scenario"
                   implementationClass="com.berrycrush.intellij.language.ScenarioFileType"
@@ -91,6 +98,12 @@
         <!-- Navigation -->
         <codeInsight.lineMarkerProvider language="BerryCrush"
                                         implementationClass="com.berrycrush.intellij.navigation.BerryCrushLineMarkerProvider"/>
+
+        <!-- Line Marker for @Step/@Assertion usages (Java and Kotlin via light PSI) -->
+        <codeInsight.lineMarkerProvider language="JAVA"
+                                        implementationClass="com.berrycrush.intellij.navigation.StepAnnotationLineMarkerProvider"/>
+        <codeInsight.lineMarkerProvider language="kotlin"
+                                        implementationClass="com.berrycrush.intellij.navigation.StepAnnotationLineMarkerProvider"/>
 
         <!-- Go to Declaration -->
         <gotoDeclarationHandler

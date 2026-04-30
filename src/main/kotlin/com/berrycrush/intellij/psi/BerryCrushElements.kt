@@ -174,6 +174,18 @@ class BerryCrushStepElement(node: ASTNode) : BerryCrushPsiElement(node) {
 }
 
 /**
+ * Assert directive element.
+ */
+class BerryCrushAssertElement(node: ASTNode) : BerryCrushPsiElement(node) {
+    val assertionText: String?
+        get() {
+            val text = node.text.trim()
+            val match = Regex("""^assert\s+(.+)$""", RegexOption.IGNORE_CASE).find(text)
+            return match?.groupValues?.get(1)?.trim()
+        }
+}
+
+/**
  * Generic element for unspecified element types.
  */
 class BerryCrushGenericElement(node: ASTNode) : BerryCrushPsiElement(node)
