@@ -119,34 +119,7 @@ class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
             project: com.intellij.openapi.project.Project,
             assertionPattern: String
         ): List<PsiElement> {
-            val usages = mutableListOf<PsiElement>()
-            val psiManager = PsiManager.getInstance(project)
-            val scope = GlobalSearchScope.projectScope(project)
-
-            // Convert pattern to regex for matching
-            val regex = patternToRegex(assertionPattern)
-
-            FileBasedIndex.getInstance().processAllKeys(NAME, { key ->
-                if (key.startsWith("ASSERT:") && matchesPattern(key.removePrefix("ASSERT:"), regex)) {
-                    FileBasedIndex.getInstance().processValues(
-                        NAME, key, null,
-                        { file, data ->
-                            val psiFile = psiManager.findFile(file)
-                            if (psiFile != null) {
-                                val element = psiFile.findElementAt(data.offset)
-                                if (element != null) {
-                                    usages.add(element)
-                                }
-                            }
-                            true
-                        },
-                        scope
-                    )
-                }
-                true
-            }, scope, null)
-
-            return usages
+            return findAssertionUsagesWithScope(project, assertionPattern, GlobalSearchScope.projectScope(project))
         }
 
         /**
@@ -156,9 +129,16 @@ class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
             project: com.intellij.openapi.project.Project,
             assertionPattern: String
         ): List<PsiElement> {
+            return findAssertionUsagesWithScope(project, assertionPattern, GlobalSearchScope.allScope(project))
+        }
+
+        private fun findAssertionUsagesWithScope(
+            project: com.intellij.openapi.project.Project,
+            assertionPattern: String,
+            scope: GlobalSearchScope
+        ): List<PsiElement> {
             val usages = mutableListOf<PsiElement>()
             val psiManager = PsiManager.getInstance(project)
-            val scope = GlobalSearchScope.allScope(project)
 
             // Convert pattern to regex for matching
             val regex = patternToRegex(assertionPattern)
@@ -231,6 +211,32 @@ class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
          */
         private fun matchesPattern(text: String, regex: Regex): Boolean {
             return regex.matches(text)
+        }
+
+        /**
+         * Get all indexed keys for debugging purposes (project scope)
+         */
+        fun getAllIndexedKeys(project: com.intellij.openapi.project.Project): List<String> {
+            val keys = mutableListOf<String>()
+            val scope = GlobalSearchScope.projectScope(project)
+            FileBasedIndex.getInstance().processAllKeys(NAME, { key ->
+                keys.add(key)
+                true
+            }, scope, null)
+            return keys
+        }
+
+        /**
+         * Get all indexed keys using allScope for debugging
+         */
+        fun getAllIndexedKeysAllScope(project: com.intellij.openapi.project.Project): List<String> {
+            val keys = mutableListOf<String>()
+            val scope = GlobalSearchScope.allScope(project)
+            FileBasedIndex.getInstance().processAllKeys(NAME, { key ->
+                keys.add(key)
+                true
+            }, scope, null)
+            return keys
         }
     }
 

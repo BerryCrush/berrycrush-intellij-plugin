@@ -2,10 +2,16 @@
 kotlin = "2.1.0"
 intellij-platform = "2.15.0"
 junit = "5.10.0"
+detekt = "1.23.8"
+spotbugs-gradle = "6.0.26"
+cpd = "3.5"
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 intellij-platform = { id = "org.jetbrains.intellij.platform", version.ref = "intellij-platform" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+spotbugs = { id = "com.github.spotbugs", version.ref = "spotbugs-gradle" }
+cpd = { id = "de.aaschmid.cpd", version.ref = "cpd" }
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }

@@ -385,18 +385,6 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
         }
     }
 
-    private fun getNextSiblingText(element: PsiElement): String? {
-        var sibling = element.nextSibling
-        while (sibling != null) {
-            val text = sibling.text.trim()
-            if (text.isNotEmpty() && !text.isBlank()) {
-                return text
-            }
-            sibling = sibling.nextSibling
-        }
-        return null
-    }
-
     private fun extractFragmentName(text: String): String? {
         val match = Regex("""fragment:\s*(\S+)""", RegexOption.IGNORE_CASE).find(text)
         return match?.groupValues?.get(1)

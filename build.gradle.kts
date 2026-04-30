@@ -3,6 +3,9 @@ import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.intellij.platform)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.spotbugs)
+    alias(libs.plugins.cpd)
 }
 
 group = providers.gradleProperty("pluginGroup").get()
@@ -63,4 +66,61 @@ tasks {
         // Exclude IntelliJ Platform test classes from regular tests
         jvmArgs("-Djunit.jupiter.extensions.autodetection.enabled=false")
     }
+}
+
+// =============================================================================
+// SAST Configuration
+// =============================================================================
+
+detekt {
+    config.setFrom(files("config/detekt/detekt.yml"))
+    buildUponDefaultConfig = true
+    ignoreFailures = false
+}
+
+spotbugs {
+    ignoreFailures.set(false)
+    excludeFilter.set(file("config/spotbugs/exclusions.xml"))
+}
+
+tasks.withType<com.github.spotbugs.snom.SpotBugsTask>().configureEach {
+    reports {
+        create("html") {
+            required.set(true)
+        }
+        create("xml") {
+            required.set(false)
+        }
+    }
+}
+
+// CPD configuration
+configure<de.aaschmid.gradle.plugins.cpd.CpdExtension> {
+    language = "kotlin"
+    minimumTokenCount = 120  // Higher threshold to allow similar boilerplate patterns
+    isIgnoreAnnotations = true
+    isIgnoreLiterals = true
+    isIgnoreIdentifiers = true
+    toolVersion = "7.24.0"
+}
+
+tasks.withType<de.aaschmid.gradle.plugins.cpd.Cpd>().configureEach {
+    ignoreFailures = false
+}
+
+tasks.register("sast") {
+    group = "verification"
+    description = "Run all SAST checks (detekt + spotbugs)"
+    dependsOn("detekt", "spotbugsMain")
+}
+
+tasks.register("sastFull") {
+    group = "verification"
+    description = "Run all SAST checks including CPD"
+    dependsOn("sast", "cpdCheck")
+}
+
+// Make check task depend on sastFull
+tasks.named("check") {
+    dependsOn("sastFull")
 }

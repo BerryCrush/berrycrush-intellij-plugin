@@ -4,7 +4,11 @@ import com.berrycrush.intellij.language.BerryCrushLanguage
 import com.berrycrush.intellij.psi.BerryCrushElementTypes
 import com.intellij.openapi.util.TextRange
 import com.intellij.patterns.PlatformPatterns
-import com.intellij.psi.*
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiReference
+import com.intellij.psi.PsiReferenceContributor
+import com.intellij.psi.PsiReferenceProvider
+import com.intellij.psi.PsiReferenceRegistrar
 import com.intellij.util.ProcessingContext
 
 /**

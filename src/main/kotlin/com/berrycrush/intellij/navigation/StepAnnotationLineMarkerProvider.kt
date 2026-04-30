@@ -52,7 +52,12 @@ class StepAnnotationLineMarkerProvider : LineMarkerProvider {
                             val hasAssertion = ktAnnotations.any { it.contains("Assertion") }
                             
                             // Get pattern if @Step or @Assertion
-                            val pattern = getKotlinAnnotationPattern(current, if (hasStep) "Step" else if (hasAssertion) "Assertion" else null)
+                            val annotationName = when {
+                                hasStep -> "Step"
+                                hasAssertion -> "Assertion"
+                                else -> null
+                            }
+                            val pattern = getKotlinAnnotationPattern(current, annotationName)
                             
                             // @Step methods use step keywords (Given/When/Then/And/But)
                             if (hasStep && pattern != null) {
@@ -118,7 +123,7 @@ class StepAnnotationLineMarkerProvider : LineMarkerProvider {
         if (stepAnnotation != null) {
             val pattern = getPatternFromAnnotation(stepAnnotation)
             if (pattern != null) {
-                val usages = StepUsageIndex.findStepUsagesAllScope(element.project, pattern)
+                val usages = StepUsageIndex.findStepUsages(element.project, pattern)
                 if (usages.isNotEmpty()) {
                     return LineMarkerInfo(
                         element,
@@ -144,7 +149,7 @@ class StepAnnotationLineMarkerProvider : LineMarkerProvider {
         if (assertionAnnotation != null) {
             val pattern = getPatternFromAnnotation(assertionAnnotation)
             if (pattern != null) {
-                val usages = StepUsageIndex.findAssertionUsagesAllScope(element.project, pattern)
+                val usages = StepUsageIndex.findAssertionUsages(element.project, pattern)
                 if (usages.isNotEmpty()) {
                     return LineMarkerInfo(
                         element,
