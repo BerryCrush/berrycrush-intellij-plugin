@@ -13,6 +13,10 @@
         <li>Code completion for keywords and directives</li>
         <li>Code folding for features, scenarios, and steps</li>
         <li>Structure view navigation</li>
+        <li>Navigate from include directives to fragment files</li>
+        <li>Navigate from operation references to OpenAPI specs</li>
+        <li>Gutter icons for quick navigation</li>
+        <li>Find Usages support</li>
         <li>Custom file icons</li>
     </ul>
 
@@ -79,5 +83,21 @@
         <!-- Brace Matcher -->
         <lang.braceMatcher language="BerryCrush"
                            implementationClass="com.berrycrush.intellij.highlighting.BerryCrushBraceMatcher"/>
+
+        <!-- References -->
+        <psi.referenceContributor
+                                  implementation="com.berrycrush.intellij.reference.BerryCrushReferenceContributor"/>
+
+        <!-- Navigation -->
+        <codeInsight.lineMarkerProvider language="BerryCrush"
+                                        implementationClass="com.berrycrush.intellij.navigation.BerryCrushLineMarkerProvider"/>
+
+        <!-- Go to Declaration -->
+        <gotoDeclarationHandler
+                                implementation="com.berrycrush.intellij.navigation.BerryCrushGotoDeclarationHandler"/>
+
+        <!-- Find Usages -->
+        <lang.findUsagesProvider language="BerryCrush"
+                                 implementationClass="com.berrycrush.intellij.navigation.BerryCrushFindUsagesProvider"/>
     </extensions>
 </idea-plugin>

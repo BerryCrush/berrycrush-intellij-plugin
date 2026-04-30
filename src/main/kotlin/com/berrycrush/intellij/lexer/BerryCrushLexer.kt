@@ -30,10 +30,15 @@ class BerryCrushLexer : LexerBase() {
 
         private val STEP_KEYWORDS = mapOf(
             "given " to BerryCrushTokenTypes.GIVEN,
+            "given:" to BerryCrushTokenTypes.GIVEN,
             "when " to BerryCrushTokenTypes.WHEN,
+            "when:" to BerryCrushTokenTypes.WHEN,
             "then " to BerryCrushTokenTypes.THEN,
+            "then:" to BerryCrushTokenTypes.THEN,
             "and " to BerryCrushTokenTypes.AND,
+            "and:" to BerryCrushTokenTypes.AND,
             "but " to BerryCrushTokenTypes.BUT,
+            "but:" to BerryCrushTokenTypes.BUT,
         )
 
         private val DIRECTIVES = mapOf(

@@ -17,7 +17,7 @@ repositories {
 
 dependencies {
     intellijPlatform {
-        create(providers.gradleProperty("platformType"), providers.gradleProperty("platformVersion"))
+        intellijIdea(providers.gradleProperty("platformVersion"))
         bundledPlugin("com.intellij.java")
         // Note: Platform test framework requires special IDE environment setup
         // testFramework(TestFrameworkType.Platform)
@@ -58,10 +58,6 @@ intellijPlatform {
 }
 
 tasks {
-    wrapper {
-        gradleVersion = "8.11"
-    }
-
     test {
         useJUnitPlatform()
         // Exclude IntelliJ Platform test classes from regular tests

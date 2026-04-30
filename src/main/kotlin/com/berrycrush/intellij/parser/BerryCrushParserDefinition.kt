@@ -3,7 +3,7 @@ package com.berrycrush.intellij.parser
 import com.berrycrush.intellij.language.BerryCrushLanguage
 import com.berrycrush.intellij.lexer.BerryCrushLexer
 import com.berrycrush.intellij.lexer.BerryCrushTokenTypes
-import com.berrycrush.intellij.psi.BerryCrushFile
+import com.berrycrush.intellij.psi.*
 import com.intellij.lang.ASTNode
 import com.intellij.lang.ParserDefinition
 import com.intellij.lang.PsiParser
@@ -34,9 +34,21 @@ class BerryCrushParserDefinition : ParserDefinition {
 
     override fun getCommentTokens(): TokenSet = BerryCrushTokenTypes.COMMENTS
 
-    override fun getStringLiteralElements(): TokenSet = TokenSet.create(BerryCrushTokenTypes.STRING)
+    override fun getStringLiteralElements(): TokenSet = BerryCrushTokenTypes.STRINGS
 
-    override fun createElement(node: ASTNode): PsiElement = BerryCrushPsiElement(node)
+    override fun createElement(node: ASTNode): PsiElement {
+        return when (node.elementType) {
+            BerryCrushElementTypes.FEATURE -> BerryCrushFeatureElement(node)
+            BerryCrushElementTypes.SCENARIO -> BerryCrushScenarioElement(node)
+            BerryCrushElementTypes.FRAGMENT -> BerryCrushFragmentElement(node)
+            BerryCrushElementTypes.STEP -> BerryCrushStepElement(node)
+            BerryCrushElementTypes.CALL_DIRECTIVE -> BerryCrushCallElement(node)
+            BerryCrushElementTypes.INCLUDE_DIRECTIVE -> BerryCrushIncludeElement(node)
+            BerryCrushElementTypes.OPERATION_REF -> BerryCrushOperationRefElement(node)
+            BerryCrushElementTypes.FRAGMENT_REF -> BerryCrushFragmentRefElement(node)
+            else -> BerryCrushGenericElement(node)
+        }
+    }
 
     override fun createFile(viewProvider: FileViewProvider): PsiFile = BerryCrushFile(viewProvider)
 }

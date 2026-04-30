@@ -96,6 +96,27 @@ class BerryCrushLexerTest {
     }
 
     @Test
+    fun `test lexer tokenizes call with operation reference`() {
+        val tokens = tokenize("call ^listPets")
+        assertContains(tokens, BerryCrushTokenTypes.CALL)
+        assertContains(tokens, BerryCrushTokenTypes.OPERATION_REF)
+    }
+
+    @Test
+    fun `test lexer tokenizes step keywords with colon syntax`() {
+        val input = """
+            given: user is on login page
+            when: user enters credentials
+            then: user is logged in
+        """.trimIndent()
+        val tokens = tokenize(input)
+
+        assertContains(tokens, BerryCrushTokenTypes.GIVEN)
+        assertContains(tokens, BerryCrushTokenTypes.WHEN)
+        assertContains(tokens, BerryCrushTokenTypes.THEN)
+    }
+
+    @Test
     fun `test lexer tokenizes fragment keyword`() {
         val tokens = tokenize("fragment: common_auth")
         assertContains(tokens, BerryCrushTokenTypes.FRAGMENT)

@@ -125,6 +125,12 @@ object BerryCrushTokenTypes {
 
     @JvmField
     val WHITESPACES = TokenSet.create(WHITE_SPACE, NEWLINE)
+
+    @JvmField
+    val IDENTIFIERS = TokenSet.create(IDENTIFIER, OPERATION_REF, TAG, VARIABLE, TEXT)
+
+    @JvmField
+    val STRINGS = TokenSet.create(STRING)
 }
 
 /**
