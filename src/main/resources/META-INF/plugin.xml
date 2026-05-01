@@ -91,9 +91,17 @@
         <lang.braceMatcher language="BerryCrush"
                            implementationClass="com.berrycrush.intellij.highlighting.BerryCrushBraceMatcher"/>
 
-        <!-- References -->
+        <!-- References for BerryCrush files -->
         <psi.referenceContributor
                                   implementation="com.berrycrush.intellij.reference.BerryCrushReferenceContributor"/>
+
+        <!-- References for @Step/@Assertion annotation strings (Java) -->
+        <psi.referenceContributor language="JAVA"
+                                  implementation="com.berrycrush.intellij.reference.JavaAnnotationStringReferenceContributor"/>
+
+        <!-- References for @Step/@Assertion annotation strings (Kotlin) -->
+        <psi.referenceContributor language="kotlin"
+                                  implementation="com.berrycrush.intellij.reference.KotlinAnnotationStringReferenceContributor"/>
 
         <!-- Navigation -->
         <codeInsight.lineMarkerProvider language="BerryCrush"

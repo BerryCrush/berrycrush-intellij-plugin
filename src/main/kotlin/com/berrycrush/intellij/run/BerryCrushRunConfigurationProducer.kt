@@ -125,15 +125,19 @@ class BerryCrushRunConfigurationProducer : LazyRunConfigurationProducer<BerryCru
         // Search backwards from current line to find the nearest block definition
         for (i in lines.lastIndex downTo 0) {
             val line = lines[i].trim()
-            if (line.lowercase().startsWith(prefix)) {
+            val lineLower = line.lowercase()
+            
+            if (lineLower.startsWith(prefix)) {
                 val name = extractBlockNameFromLine(line, prefix)
                 if (name != null) {
                     return BlockInfo(name)
                 }
             }
+            
             // Stop if we hit another block type (we're inside a different block)
-            if (line.lowercase().startsWith("scenario:") && prefix != "scenario:") break
-            if (line.lowercase().startsWith("feature:") && prefix != "feature:") break
+            val isOtherBlockType = (lineLower.startsWith("scenario:") && prefix != "scenario:") ||
+                                   (lineLower.startsWith("feature:") && prefix != "feature:")
+            if (isOtherBlockType) return null
         }
         return null
     }
@@ -149,18 +153,6 @@ class BerryCrushRunConfigurationProducer : LazyRunConfigurationProducer<BerryCru
             .removeSurrounding("\"")
             .removeSurrounding("'")
         return name.takeIf { it.isNotEmpty() }
-    }
-
-    /**
-     * Extract the name from a block definition.
-     */
-    private fun extractBlockName(blockText: String, prefix: String): String? {
-        val lines = blockText.lines()
-        for (line in lines) {
-            val name = extractBlockNameFromLine(line, prefix)
-            if (name != null) return name
-        }
-        return null
     }
 
     /**
