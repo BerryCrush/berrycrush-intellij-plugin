@@ -23,4 +23,7 @@ object BerryCrushIcons {
 
     @JvmField
     val STEP: Icon = load("/icons/step.svg")
+
+    @JvmField
+    val RUN_CONFIGURATION: Icon = load("/icons/run-configuration.svg")
 }

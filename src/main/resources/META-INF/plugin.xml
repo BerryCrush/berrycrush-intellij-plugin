@@ -112,5 +112,15 @@
         <!-- Find Usages -->
         <lang.findUsagesProvider language="BerryCrush"
                                  implementationClass="com.berrycrush.intellij.navigation.BerryCrushFindUsagesProvider"/>
+
+        <!-- Run Configuration -->
+        <configurationType implementation="com.berrycrush.intellij.run.BerryCrushConfigurationType"/>
+
+        <!-- Run Configuration Producer (creates configs from context) -->
+        <runConfigurationProducer implementation="com.berrycrush.intellij.run.BerryCrushRunConfigurationProducer"/>
+
+        <!-- Run Line Markers (gutter run icons) -->
+        <runLineMarkerContributor language="BerryCrush"
+                                  implementationClass="com.berrycrush.intellij.run.BerryCrushRunLineMarkerProvider"/>
     </extensions>
 </idea-plugin>

@@ -54,7 +54,7 @@ class IncludeUsageIndex : ScalarIndexExtension<String>() {
         @JvmField
         val KEY: ID<String, Void> = ID.create("berrycrush.include.usage.index")
 
-        private const val VERSION = 1
+        private const val VERSION = 2
 
         // Match "include fragmentName" at the start of a line (strict lowercase)
         private val INCLUDE_PATTERN = Regex(
