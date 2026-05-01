@@ -4,9 +4,7 @@ import com.intellij.execution.ExecutionException
 import com.intellij.execution.configurations.CommandLineState
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.KillableColoredProcessHandler
-import com.intellij.execution.process.ProcessEvent
 import com.intellij.execution.process.ProcessHandler
-import com.intellij.execution.process.ProcessListener
 import com.intellij.execution.process.ProcessTerminatedListener
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.openapi.project.guessProjectDir
@@ -15,21 +13,26 @@ import java.io.File
 /**
  * Execution state for BerryCrush run configurations.
  *
- * This state generates a temporary test wrapper class that references the
- * selected scenario file, then runs Gradle to execute that test.
+ * This state runs Gradle with BerryCrush filter system properties to
+ * execute specific scenarios, features, or scenario files.
+ *
+ * ## Filtering Mechanism
+ *
+ * Uses system properties recognized by BerryCrush JUnit engine:
+ * - `berryCrush.scenarioFile` - Filter by scenario file path
+ * - `berryCrush.scenarioName` - Filter by scenario name
+ * - `berryCrush.featureName` - Filter by feature name
  *
  * ## Execution Flow
  *
- * 1. Generate temporary test class in `build/generated-berrycrush-tests/`
- * 2. Run `./gradlew test --tests "berrycrush.generated.BerryCrushWrapper_*"`
- * 3. Clean up generated files after test completes
+ * 1. Build Gradle command with appropriate system properties
+ * 2. Run `./gradlew test -DberryCrush.scenarioFile=...`
+ * 3. BerryCrush engine filters tests based on properties
  */
 class BerryCrushRunState(
     private val configuration: BerryCrushRunConfiguration,
     environment: ExecutionEnvironment,
 ) : CommandLineState(environment) {
-
-    private var generatedTestInfo: GeneratedTestInfo? = null
 
     override fun startProcess(): ProcessHandler {
         val project = environment.project
@@ -37,31 +40,14 @@ class BerryCrushRunState(
             ?: throw ExecutionException("Cannot determine project directory")
 
         val workingDir = findModuleOrProjectDir(projectDir.path)
-
-        // Generate temporary test wrapper
-        generatedTestInfo = TemporaryTestGenerator.generateWrapper(
-            project = project,
-            scenarioFilePath = configuration.scenarioFilePath,
-            moduleDir = workingDir,
-        ) ?: throw ExecutionException("Failed to generate test wrapper for: ${configuration.scenarioFilePath}")
-
-        val commandLine = createCommandLine(workingDir, generatedTestInfo!!)
+        val commandLine = createCommandLine(workingDir)
         val processHandler = KillableColoredProcessHandler(commandLine)
-
-        // Add cleanup listener
-        processHandler.addProcessListener(object : ProcessListener {
-            override fun processTerminated(event: ProcessEvent) {
-                generatedTestInfo?.let { info ->
-                    TemporaryTestGenerator.cleanup(info)
-                }
-            }
-        })
 
         ProcessTerminatedListener.attach(processHandler)
         return processHandler
     }
 
-    private fun createCommandLine(workingDir: File, testInfo: GeneratedTestInfo): GeneralCommandLine {
+    private fun createCommandLine(workingDir: File): GeneralCommandLine {
         val gradleWrapper = findGradleWrapper(workingDir)
             ?: throw ExecutionException("Gradle wrapper not found. Please ensure gradlew exists in: $workingDir")
 
@@ -72,9 +58,20 @@ class BerryCrushRunState(
             // Add test task
             addParameter("test")
 
-            // Run only the generated test class
-            addParameter("--tests")
-            addParameter(testInfo.className)
+            // Add BerryCrush filter properties
+            configuration.scenarioFilePath.takeIf { it.isNotBlank() }?.let { path ->
+                // Extract just the filename for filtering
+                val filename = File(path).name
+                addParameter("-DberryCrush.scenarioFile=$filename")
+            }
+
+            configuration.scenarioName?.takeIf { it.isNotBlank() }?.let { name ->
+                addParameter("-DberryCrush.scenarioName=$name")
+            }
+
+            configuration.featureName?.takeIf { it.isNotBlank() }?.let { name ->
+                addParameter("-DberryCrush.featureName=$name")
+            }
 
             // Enable console output
             addParameter("--console=plain")

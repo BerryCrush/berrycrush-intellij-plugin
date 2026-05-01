@@ -104,21 +104,51 @@ class BerryCrushRunConfigurationProducer : LazyRunConfigurationProducer<BerryCru
 
     /**
      * Find a block of the given type containing the element.
+     *
+     * For plain text files (.scenario), we search by line position since
+     * there's no semantic PSI structure.
      */
     private fun findBlockAtElement(element: PsiElement, prefix: String): BlockInfo? {
-        // Walk up from the element to find a block definition
-        var current: PsiElement? = element
-        while (current != null && current !is PsiFile) {
-            val text = current.text?.trim()?.lowercase()
-            if (text != null && text.startsWith(prefix)) {
-                val name = extractBlockName(current.text, prefix)
+        val file = element.containingFile ?: return null
+        val fileText = file.text
+        val elementOffset = element.textOffset
+
+        // Find the end of the current line to include it in our search
+        val endOfLine = fileText.indexOf('\n', elementOffset).let {
+            if (it == -1) fileText.length else it
+        }
+
+        // Get all lines up to and including the current line
+        val textUpToCurrentLine = fileText.substring(0, endOfLine)
+        val lines = textUpToCurrentLine.lines()
+
+        // Search backwards from current line to find the nearest block definition
+        for (i in lines.lastIndex downTo 0) {
+            val line = lines[i].trim()
+            if (line.lowercase().startsWith(prefix)) {
+                val name = extractBlockNameFromLine(line, prefix)
                 if (name != null) {
                     return BlockInfo(name)
                 }
             }
-            current = current.parent
+            // Stop if we hit another block type (we're inside a different block)
+            if (line.lowercase().startsWith("scenario:") && prefix != "scenario:") break
+            if (line.lowercase().startsWith("feature:") && prefix != "feature:") break
         }
         return null
+    }
+
+    /**
+     * Extract the name from a block definition line.
+     */
+    private fun extractBlockNameFromLine(line: String, prefix: String): String? {
+        val trimmed = line.trim()
+        if (!trimmed.lowercase().startsWith(prefix)) return null
+
+        val name = trimmed.substring(prefix.length).trim()
+            .removeSurrounding("\"")
+            .removeSurrounding("'")
+        return name.takeIf { it.isNotEmpty() }
     }
 
     /**
@@ -127,15 +157,8 @@ class BerryCrushRunConfigurationProducer : LazyRunConfigurationProducer<BerryCru
     private fun extractBlockName(blockText: String, prefix: String): String? {
         val lines = blockText.lines()
         for (line in lines) {
-            val trimmed = line.trim()
-            if (trimmed.lowercase().startsWith(prefix)) {
-                val name = trimmed.substring(prefix.length).trim()
-                    .removeSurrounding("\"")
-                    .removeSurrounding("'")
-                if (name.isNotEmpty()) {
-                    return name
-                }
-            }
+            val name = extractBlockNameFromLine(line, prefix)
+            if (name != null) return name
         }
         return null
     }
