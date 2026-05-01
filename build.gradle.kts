@@ -22,12 +22,12 @@ dependencies {
     intellijPlatform {
         intellijIdea(providers.gradleProperty("platformVersion"))
         bundledPlugin("com.intellij.java")
-        // Note: Platform test framework requires special IDE environment setup
-        // testFramework(TestFrameworkType.Platform)
+        testFramework(TestFrameworkType.Platform)
     }
 
     testImplementation(libs.kotlin.test)
     testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.vintage) // For JUnit 3/4 style tests (BasePlatformTestCase)
     testImplementation(libs.junit4) // Required by IntelliJ Platform test classpath
 }
 

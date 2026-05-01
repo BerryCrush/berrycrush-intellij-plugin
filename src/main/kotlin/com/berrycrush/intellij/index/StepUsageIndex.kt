@@ -168,30 +168,21 @@ class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
 
         /**
          * Convert a @Step/@Assertion pattern to a regex.
-         * Patterns support placeholders like (string), (number), (int), {string}, etc.
+         * Patterns support curly-brace placeholders: {string}, {int}, {float}, {word}, {number}, {any}.
          */
-        private fun patternToRegex(pattern: String): Regex {
+        internal fun patternToRegex(pattern: String): Regex {
             // Convert pattern placeholders to regex
+            // Use Regex.escapeReplacement to prevent backslash interpretation
             val regexPattern = pattern
-                // Handle parentheses-style placeholders
-                .replace(Regex("""\(int\)""", RegexOption.IGNORE_CASE), """(-?\d+)""")
-                .replace(Regex("""\(number\)""", RegexOption.IGNORE_CASE), """(-?\d+\.?\d*)""")
-                .replace(Regex("""\(string\)""", RegexOption.IGNORE_CASE), """("[^"]*"|'[^']*'|[^\s]+)""")
-                .replace(Regex("""\(word\)""", RegexOption.IGNORE_CASE), """(\w+)""")
-                .replace(Regex("""\(float\)""", RegexOption.IGNORE_CASE), """(-?\d+\.?\d*)""")
-                .replace(Regex("""\(any\)""", RegexOption.IGNORE_CASE), """(.+?)""")
                 // Handle curly-brace placeholders
-                .replace(Regex("""\{int\}"""), """(-?\d+)""")
-                .replace(Regex("""\{string\}"""), """("[^"]*"|'[^']*'|[^\s]+)""")
-                .replace(Regex("""\{word\}"""), """(\w+)""")
-                .replace(Regex("""\{float\}"""), """(-?\d+\.?\d*)""")
-                .replace(Regex("""\{number\}"""), """(-?\d+\.?\d*)""")
-                .replace(Regex("""\{any\}"""), """(.+?)""")
-                // Escape regex special characters that are not placeholders
-                .let { escapedPattern ->
-                    // Anchor the pattern
-                    "^$escapedPattern$"
-                }
+                .replace(Regex("""\{int\}"""), Regex.escapeReplacement("""(-?\d+)"""))
+                .replace(Regex("""\{string\}"""), Regex.escapeReplacement("""("[^"]*"|'[^']*'|[^\s]+)"""))
+                .replace(Regex("""\{word\}"""), Regex.escapeReplacement("""(\w+)"""))
+                .replace(Regex("""\{float\}"""), Regex.escapeReplacement("""(-?\d+\.?\d*)"""))
+                .replace(Regex("""\{number\}"""), Regex.escapeReplacement("""(-?\d+\.?\d*)"""))
+                .replace(Regex("""\{any\}"""), Regex.escapeReplacement("""(.+?)"""))
+                // Anchor the pattern
+                .let { "^$it$" }
             
             return try {
                 Regex(regexPattern, RegexOption.IGNORE_CASE)
@@ -209,7 +200,7 @@ class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
         /**
          * Check if text matches a pattern regex
          */
-        private fun matchesPattern(text: String, regex: Regex): Boolean {
+        internal fun matchesPattern(text: String, regex: Regex): Boolean {
             return regex.matches(text)
         }
 

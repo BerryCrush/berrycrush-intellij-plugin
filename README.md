@@ -47,6 +47,36 @@ This launches a sandboxed IntelliJ IDEA with the plugin installed.
 ./gradlew test
 ```
 
+### Code Quality (SAST)
+
+Static Application Security Testing (SAST) is integrated into the build:
+
+| Tool | Purpose | Config |
+|------|---------|--------|
+| [Detekt](https://detekt.dev/) | Kotlin static analysis | `config/detekt/detekt.yml` |
+| [SpotBugs](https://spotbugs.github.io/) | Bytecode bug detection | `config/spotbugs/exclusions.xml` |
+| [CPD](https://pmd.github.io/latest/pmd_userdocs_cpd.html) | Duplicate code detection | — |
+
+**Commands:**
+
+```bash
+# Run SAST checks only (Detekt + SpotBugs)
+./gradlew sast
+
+# Run all SAST checks including CPD
+./gradlew sastFull
+
+# Run tests + all SAST checks
+./gradlew check
+
+# Full build (includes SAST via check)
+./gradlew build
+```
+
+**Configuration:**
+- `ignoreFailures = false` — Build fails on any SAST issue
+- No suppress annotations allowed — All issues must be fixed
+
 ## Project Structure
 
 ```

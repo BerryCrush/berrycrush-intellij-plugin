@@ -328,19 +328,9 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
         return builder.toString()
     }
 
-    private fun extractStepText(text: String): String? {
-        val trimmedText = text.trim()
-        val prefixPattern = Regex("""^(Given|When|Then|And|But)\s+""", RegexOption.IGNORE_CASE)
-        val match = prefixPattern.find(trimmedText) ?: return null
-        return trimmedText.substring(match.range.last + 1).trim()
-    }
+    private fun extractStepText(text: String): String? = Companion.extractStepText(text)
 
-    private fun extractAssertionText(text: String): String? {
-        val trimmedText = text.trim()
-        val prefixPattern = Regex("""^assert\s+""", RegexOption.IGNORE_CASE)
-        val match = prefixPattern.find(trimmedText) ?: return null
-        return trimmedText.substring(match.range.last + 1).trim()
-    }
+    private fun extractAssertionText(text: String): String? = Companion.extractAssertionText(text)
 
     private fun createStepDefinitionMarker(
         element: PsiElement,
@@ -448,6 +438,47 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
                 .setTooltipText("Go to OpenAPI operation: $operationId")
 
             result.add(builder.createLineMarkerInfo(element))
+        }
+    }
+
+    companion object {
+        /**
+         * Extract step text by removing the Given/When/Then/And/But prefix.
+         */
+        internal fun extractStepText(text: String): String? {
+            val trimmedText = text.trim()
+            val prefixPattern = Regex("""^(Given|When|Then|And|But)\s+""", RegexOption.IGNORE_CASE)
+            val match = prefixPattern.find(trimmedText) ?: return null
+            return trimmedText.substring(match.range.last + 1).trim()
+        }
+
+        /**
+         * Extract assertion text by removing the Assert prefix.
+         */
+        internal fun extractAssertionText(text: String): String? {
+            val trimmedText = text.trim()
+            val prefixPattern = Regex("""^assert\s+""", RegexOption.IGNORE_CASE)
+            val match = prefixPattern.find(trimmedText) ?: return null
+            return trimmedText.substring(match.range.last + 1).trim()
+        }
+
+        /**
+         * Extract fragment name from a Fragment: declaration line.
+         */
+        internal fun extractFragmentName(text: String): String? {
+            val match = Regex("""fragment:\s*(\S+)""", RegexOption.IGNORE_CASE).find(text)
+            return match?.groupValues?.get(1)
+        }
+
+        /**
+         * Check if the given text is a step keyword.
+         */
+        internal fun isStepKeyword(text: String): Boolean {
+            return text.equals("Given", ignoreCase = true) ||
+                   text.equals("When", ignoreCase = true) ||
+                   text.equals("Then", ignoreCase = true) ||
+                   text.equals("And", ignoreCase = true) ||
+                   text.equals("But", ignoreCase = true)
         }
     }
 }
