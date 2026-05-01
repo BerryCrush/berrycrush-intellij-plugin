@@ -10,31 +10,6 @@ import kotlin.test.assertFalse
  */
 class BerryCrushOperationReferenceTest {
 
-    // Replicate the OpenAPI detection logic for testing
-    private fun isOpenAPISpec(text: String): Boolean {
-        if (text.length < 100) return false
-
-        // Check for OpenAPI 3.x marker
-        if (text.contains(Regex("""openapi:\s*['"]?3\."""))) {
-            return true
-        }
-
-        // Check for Swagger/OpenAPI 2.x marker
-        if (text.contains(Regex("""swagger:\s*['"]?2\."""))) {
-            return true
-        }
-
-        // JSON format check
-        if (text.contains(Regex(""""openapi"\s*:\s*"3\."""))) {
-            return true
-        }
-        if (text.contains(Regex(""""swagger"\s*:\s*"2\."""))) {
-            return true
-        }
-
-        return false
-    }
-
     // Replicate the operation ID extraction logic for testing
     private fun extractOperationIds(text: String): List<String> {
         val result = mutableListOf<String>()
@@ -64,7 +39,7 @@ class BerryCrushOperationReferenceTest {
                 get:
                   operationId: listUsers
         """.trimIndent()
-        assertTrue(isOpenAPISpec(spec))
+        assertTrue(BerryCrushOperationReference.isOpenAPISpec(spec))
     }
 
     @Test
@@ -77,7 +52,7 @@ class BerryCrushOperationReferenceTest {
             paths: {}
             extra: content to make it longer than 100 chars
         """.trimIndent()
-        assertTrue(isOpenAPISpec(spec))
+        assertTrue(BerryCrushOperationReference.isOpenAPISpec(spec))
     }
 
     @Test
@@ -92,7 +67,7 @@ class BerryCrushOperationReferenceTest {
                 get:
                   operationId: listUsers
         """.trimIndent()
-        assertTrue(isOpenAPISpec(spec))
+        assertTrue(BerryCrushOperationReference.isOpenAPISpec(spec))
     }
 
     @Test
@@ -107,7 +82,7 @@ class BerryCrushOperationReferenceTest {
               }
             }
         """.trimIndent()
-        assertTrue(isOpenAPISpec(spec))
+        assertTrue(BerryCrushOperationReference.isOpenAPISpec(spec))
     }
 
     @Test
@@ -122,7 +97,7 @@ class BerryCrushOperationReferenceTest {
               }
             }
         """.trimIndent()
-        assertTrue(isOpenAPISpec(spec))
+        assertTrue(BerryCrushOperationReference.isOpenAPISpec(spec))
     }
 
     @Test
@@ -133,13 +108,13 @@ class BerryCrushOperationReferenceTest {
             settings:
               - key: value
         """.trimIndent()
-        assertFalse(isOpenAPISpec(content))
+        assertFalse(BerryCrushOperationReference.isOpenAPISpec(content))
     }
 
     @Test
     fun `rejects short content`() {
         val content = "openapi: 3.0.0"
-        assertFalse(isOpenAPISpec(content))
+        assertFalse(BerryCrushOperationReference.isOpenAPISpec(content))
     }
 
     @Test

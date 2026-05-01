@@ -37,8 +37,14 @@ class FragmentIndex : ScalarIndexExtension<String>() {
         val result = mutableMapOf<String, Void?>()
         val text = fileContent.contentAsText.toString()
 
-        // Find all fragment definitions (Fragment: name)
-        FRAGMENT_PATTERN.findAll(text).forEach { match ->
+        // Process line by line to skip commented lines
+        text.lineSequence().forEach { line ->
+            val trimmedLine = line.trimStart()
+            // Skip comment lines
+            if (trimmedLine.startsWith("#")) return@forEach
+
+            // Find fragment definition in this line
+            val match = FRAGMENT_PATTERN.find(line) ?: return@forEach
             val fragmentName = match.groupValues[1].trim()
             if (fragmentName.isNotEmpty()) {
                 result[fragmentName] = null
@@ -57,22 +63,30 @@ class FragmentIndex : ScalarIndexExtension<String>() {
         @JvmField
         val KEY: ID<String, Void> = ID.create("berrycrush.fragment.index")
 
-        private const val VERSION = 1
+        private const val VERSION = 2
 
         private val FRAGMENT_PATTERN = Regex("""[Ff]ragment:\s*(\S+)""")
 
         /**
          * Gets all fragment names in the project.
+         * Ensures index is up to date before querying.
          */
         fun getAllFragmentNames(project: Project): Collection<String> {
-            return FileBasedIndex.getInstance().getAllKeys(KEY, project)
+            val index = FileBasedIndex.getInstance()
+            // Ensure index is up to date for accurate results
+            index.ensureUpToDate(KEY, project, GlobalSearchScope.projectScope(project))
+            return index.getAllKeys(KEY, project)
         }
 
         /**
          * Gets all files containing a fragment with the given name.
+         * Ensures index is up to date before querying.
          */
         fun getFragmentFiles(project: Project, fragmentName: String): Collection<VirtualFile> {
-            return FileBasedIndex.getInstance().getContainingFiles(
+            val index = FileBasedIndex.getInstance()
+            // Ensure index is up to date for accurate results
+            index.ensureUpToDate(KEY, project, GlobalSearchScope.projectScope(project))
+            return index.getContainingFiles(
                 KEY,
                 fragmentName,
                 GlobalSearchScope.projectScope(project)
@@ -98,10 +112,22 @@ class FragmentIndex : ScalarIndexExtension<String>() {
         private fun findFragmentDefinitionInFile(file: PsiFile, fragmentName: String): PsiElement? {
             val text = file.text
             val pattern = Regex("""[Ff]ragment:\s*${Regex.escape(fragmentName)}""")
-            val match = pattern.find(text) ?: return null
 
-            // Find the element at this position
-            return file.findElementAt(match.range.first)
+            // Process line by line to skip commented lines
+            var offset = 0
+            text.lineSequence().forEach { line ->
+                val trimmedLine = line.trimStart()
+                // Skip comment lines
+                if (!trimmedLine.startsWith("#")) {
+                    val match = pattern.find(line)
+                    if (match != null) {
+                        // Find the element at this position
+                        return file.findElementAt(offset + match.range.first)
+                    }
+                }
+                offset += line.length + 1 // +1 for newline
+            }
+            return null
         }
     }
 }

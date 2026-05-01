@@ -1,6 +1,7 @@
 package com.berrycrush.intellij.reference
 
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
@@ -32,7 +33,7 @@ class BerryCrushOperationReference(
     companion object {
         /**
          * Find an operation in OpenAPI spec files.
-         * If exact operation not found, returns first OpenAPI file as fallback.
+         * Returns null if operation is not found (no fallback).
          */
         fun findOperationInOpenAPI(project: Project, operationId: String): PsiElement? {
             val psiManager = PsiManager.getInstance(project)
@@ -40,21 +41,16 @@ class BerryCrushOperationReference(
             // Find all OpenAPI spec files
             val specFiles = findOpenAPIFiles(project)
 
-            var firstOpenAPIFile: PsiFile? = null
-
             for (file in specFiles) {
                 val psiFile = psiManager.findFile(file) ?: continue
-                if (firstOpenAPIFile == null) {
-                    firstOpenAPIFile = psiFile
-                }
                 val operation = findOperationInFile(psiFile, operationId)
                 if (operation != null) {
                     return operation
                 }
             }
 
-            // Fallback: return first OpenAPI file if operation not found
-            return firstOpenAPIFile
+            // Return null if operation not found - do NOT return fallback
+            return null
         }
 
         /**
@@ -92,10 +88,14 @@ class BerryCrushOperationReference(
         /**
          * Check if a file is an OpenAPI specification.
          */
-        private fun isOpenAPISpec(psiFile: PsiFile?): Boolean {
+        fun isOpenAPISpec(psiFile: PsiFile?): Boolean {
             if (psiFile == null) return false
 
             val text = psiFile.text
+            return isOpenAPISpec(text)
+        }
+
+        fun isOpenAPISpec(text: String): Boolean {
             if (text.length < 100) return false // Too short to be OpenAPI
 
             // Check for OpenAPI 3.x marker

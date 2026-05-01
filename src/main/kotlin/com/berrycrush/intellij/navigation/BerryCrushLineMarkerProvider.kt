@@ -18,6 +18,7 @@ import com.intellij.codeInsight.daemon.RelatedItemLineMarkerInfo
 import com.intellij.codeInsight.navigation.NavigationGutterIconBuilder
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.editor.markup.GutterIconRenderer
+import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 
@@ -34,60 +35,23 @@ import com.intellij.psi.util.PsiTreeUtil
 class BerryCrushLineMarkerProvider : LineMarkerProvider {
 
     override fun getLineMarkerInfo(element: PsiElement): LineMarkerInfo<*>? {
-        // Check for step keywords (case-insensitive)
+        // Only create markers for elements that are the FIRST significant element on their line
+        // This prevents duplicate markers when multiple elements on the same line match patterns
+        if (!isFirstElementOnLine(element)) {
+            return null
+        }
+        
         val text = element.text
         val lowerText = text.lowercase()
         val trimmedLower = lowerText.trim()
         
-        // Match step keywords - handle "given " (with space) or just "given"
-        val isStepKeyword = trimmedLower.startsWith("given") || 
-                            trimmedLower.startsWith("when") || 
-                            trimmedLower.startsWith("then") ||
-                            trimmedLower.startsWith("and") || 
-                            trimmedLower.startsWith("but")
-        
-        if (isStepKeyword) {
-            // The element might be just the keyword token (e.g., "given ")
-            // We need to get the full line text from parent or by combining siblings
+        // Check for fragment definition FIRST (before step keywords, since "fragment" could match)
+        if (trimmedLower.startsWith("fragment:") || trimmedLower == "fragment") {
             val fullLineText = getFullLineText(element)
-            val stepText = extractStepText(fullLineText)
-            
-            if (stepText != null) {
-                val methods = BerryCrushStepReference.findMatchingStepMethods(element.project, stepText)
-                if (methods.isNotEmpty()) {
-                    // Navigate to @Step methods
-                    return NavigationGutterIconBuilder
-                        .create(AllIcons.Gutter.ImplementedMethod)
-                        .setTargets(methods)
-                        .setTooltipText("Go to @Step definition")
-                        .setPopupTitle("Step definitions")
-                        .createLineMarkerInfo(element)
-                }
+            if (!fullLineText.trim().lowercase().startsWith("fragment:")) {
+                return null
             }
-            // Don't show placeholder icons for unmatched steps (cleaner UI)
-        }
-        
-        // Check for assert keyword
-        if (lowerText.startsWith("assert")) {
-            val fullLineText = getFullLineText(element)
-            val assertionText = extractAssertionText(fullLineText)
-            if (assertionText != null) {
-                val methods = BerryCrushAssertionReference.findMatchingAssertionMethods(element.project, assertionText)
-                if (methods.isNotEmpty()) {
-                    return NavigationGutterIconBuilder
-                        .create(AllIcons.Gutter.ImplementedMethod)
-                        .setTargets(methods)
-                        .setTooltipText("Go to @Assertion definition")
-                        .setPopupTitle("Assertion definitions")
-                        .createLineMarkerInfo(element)
-                }
-            }
-        }
-        
-        // Check for fragment definition
-        if (lowerText.startsWith("fragment:")) {
-            val fullLineText = getFullLineText(element)
-            val fragmentName = BerryCrushLineMarkerProvider.extractFragmentName(fullLineText)
+            val fragmentName = extractFragmentName(fullLineText)
             if (fragmentName != null) {
                 val usages = IncludeUsageIndex.findIncludeUsages(element.project, fragmentName)
                 return if (usages.isNotEmpty()) {
@@ -112,12 +76,9 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
         }
         
         // Check for include directive
-        if (lowerText.startsWith("include")) {
-            // The element might be just the "include" keyword token
-            // Get full line text to extract fragment name
+        if (trimmedLower.startsWith("include")) {
             val fullLineText = getFullLineText(element)
             val fragmentName = extractIncludeFragmentName(fullLineText)
-            
             if (fragmentName != null) {
                 val target = BerryCrushFragmentReference.findFragmentByName(element.project, fragmentName)
                 return if (target != null) {
@@ -127,7 +88,6 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
                         .setTooltipText("Go to fragment: $fragmentName")
                         .createLineMarkerInfo(element)
                 } else {
-                    // Show placeholder icon even if fragment is not found
                     LineMarkerInfo(
                         element,
                         element.textRange,
@@ -137,6 +97,47 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
                         GutterIconRenderer.Alignment.CENTER,
                         { "Include directive" }
                     )
+                }
+            }
+        }
+        
+        // Match step keywords - handle "given " (with space) or just "given"
+        val isStepKeyword = trimmedLower.startsWith("given") || 
+                            trimmedLower.startsWith("when") || 
+                            trimmedLower.startsWith("then") ||
+                            trimmedLower.startsWith("and") || 
+                            trimmedLower.startsWith("but")
+        
+        if (isStepKeyword) {
+            val fullLineText = getFullLineText(element)
+            val stepText = extractStepText(fullLineText)
+            
+            if (stepText != null) {
+                val methods = BerryCrushStepReference.findMatchingStepMethods(element.project, stepText)
+                if (methods.isNotEmpty()) {
+                    return NavigationGutterIconBuilder
+                        .create(AllIcons.Gutter.ImplementedMethod)
+                        .setTargets(methods)
+                        .setTooltipText("Go to @Step definition")
+                        .setPopupTitle("Step definitions")
+                        .createLineMarkerInfo(element)
+                }
+            }
+        }
+        
+        // Check for assert keyword
+        if (lowerText.startsWith("assert")) {
+            val fullLineText = getFullLineText(element)
+            val assertionText = extractAssertionText(fullLineText)
+            if (assertionText != null) {
+                val methods = BerryCrushAssertionReference.findMatchingAssertionMethods(element.project, assertionText)
+                if (methods.isNotEmpty()) {
+                    return NavigationGutterIconBuilder
+                        .create(AllIcons.Gutter.ImplementedMethod)
+                        .setTargets(methods)
+                        .setTooltipText("Go to @Assertion definition")
+                        .setPopupTitle("Assertion definitions")
+                        .createLineMarkerInfo(element)
                 }
             }
         }
@@ -163,148 +164,33 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
         elements: MutableList<out PsiElement>,
         result: MutableCollection<in LineMarkerInfo<*>>
     ) {
-        // Use slow markers for more complex lookups
-        for (element in elements) {
-            collectNavigationMarkers(element, result)
-        }
+        // All markers are handled in getLineMarkerInfo() for consistency
+        // PSI-based markers (BerryCrushFragmentElement, etc.) are disabled
+        // because the parser doesn't reliably create these types and
+        // text-based detection in getLineMarkerInfo() handles all cases
     }
 
+    @Suppress("UnusedPrivateMember")
     private fun collectNavigationMarkers(
         element: PsiElement,
         result: MutableCollection<in LineMarkerInfo<*>>
     ) {
-        // Line markers must be placed on leaf elements (no children)
-        if (element.firstChild != null) return
-
-        val parent = element.parent ?: return
-
-        when (parent) {
-            // Fragment definition - reverse navigation to usages
-            is BerryCrushFragmentElement -> {
-                // Only add marker on the first leaf element of the fragment
-                if (PsiTreeUtil.firstChild(parent) == element) {
-                    val fragmentName = parent.fragmentName
-                    if (fragmentName != null) {
-                        createFragmentDefinitionMarker(element, fragmentName, result)
-                    }
-                }
-            }
-
-            // Include directive - navigate to fragment file
-            is BerryCrushIncludeElement -> {
-                if (PsiTreeUtil.firstChild(parent) == element) {
-                    val fragmentName = parent.fragmentName
-                        ?: extractIncludeFragmentName(parent.text)
-                    if (fragmentName != null) {
-                        createIncludeDirectiveMarker(element, fragmentName, result)
-                    }
-                }
-            }
-
-            // Fragment reference in include - navigate to fragment file
-            is BerryCrushFragmentRefElement -> {
-                if (PsiTreeUtil.firstChild(parent) == element) {
-                    createIncludeDirectiveMarker(element, parent.name, result)
-                }
-            }
-
-            // Operation reference - navigate to OpenAPI spec
-            is BerryCrushOperationRefElement -> {
-                if (PsiTreeUtil.firstChild(parent) == element) {
-                    createOperationReferenceMarkerDirect(element, parent.operationId, result)
-                }
-            }
-
-            // Step element - navigate to @Step annotated methods
-            is BerryCrushStepElement -> {
-                if (PsiTreeUtil.firstChild(parent) == element) {
-                    val stepText = parent.stepText
-                    if (stepText != null) {
-                        createStepDefinitionMarker(element, stepText, result)
-                    }
-                }
-            }
-
-            // Assert directive - navigate to @Assertion annotated methods
-            is BerryCrushAssertElement -> {
-                if (PsiTreeUtil.firstChild(parent) == element) {
-                    val assertionText = parent.assertionText
-                    if (assertionText != null) {
-                        createAssertionDefinitionMarker(element, assertionText, result)
-                    }
-                }
-            }
-
-            // For other elements, check text-based patterns as fallback
-            else -> {
-                collectTextBasedMarkers(element, result)
-            }
-        }
+        // DISABLED: PSI-based markers are handled in getLineMarkerInfo()
+        // This method is kept for reference but not called
     }
 
     /**
      * Fallback for elements that aren't proper PSI types.
      * Only triggers on leaf elements to avoid duplicate markers.
      */
+    @Suppress("UnusedParameter", "UnusedPrivateMember")
     private fun collectTextBasedMarkers(
         element: PsiElement,
         result: MutableCollection<in RelatedItemLineMarkerInfo<*>>
     ) {
-        // Only process leaf elements to avoid duplicates
-        if (element.firstChild != null) return
-
-        val text = element.text
-        val trimmedText = text.trim()
-
-        // Check for fragment definition (fragment: name) - strict lowercase
-        if (trimmedText.startsWith("fragment:")) {
-            val fullText = element.text
-            val fragmentName = BerryCrushLineMarkerProvider.extractFragmentName(fullText)
-            if (fragmentName != null) {
-                createFragmentDefinitionMarker(element, fragmentName, result)
-            }
-        }
-
-        // Check for include keyword - strict lowercase
-        // The lexer might include trailing space in the token, e.g., "include "
-        if (trimmedText.startsWith("include ")) {
-            val parent = element.parent
-            val fullText = parent?.text ?: element.text
-            val fragmentName = extractIncludeFragmentName(fullText)
-            if (fragmentName != null) {
-                createIncludeDirectiveMarker(element, fragmentName, result)
-            }
-        }
-
-        // Check for operation reference (^operationId)
-        if (text.startsWith("^") && text.length > 1) {
-            val operationId = text.removePrefix("^").trim()
-            if (operationId.matches(Regex("[a-zA-Z_][a-zA-Z0-9_]*"))) {
-                createOperationReferenceMarkerDirect(element, operationId, result)
-            }
-        }
-
-        // Check for step keywords (given, when, then, and, but) - strict lowercase
-        // The lexer includes trailing space in the token, e.g., "given "
-        val stepKeyword = trimmedText.removeSuffix(" ").removeSuffix(":")
-        if (isStepKeyword(stepKeyword)) {
-            val parent = element.parent
-            val fullText = parent?.text ?: element.text
-            val stepText = extractStepText(fullText)
-            if (stepText != null) {
-                createStepDefinitionMarker(element, stepText, result)
-            }
-        }
-
-        // Check for assert keyword - strict lowercase
-        if (trimmedText.startsWith("assert")) {
-            val parent = element.parent
-            val fullText = parent?.text ?: element.text
-            val assertionText = extractAssertionText(fullText)
-            if (assertionText != null) {
-                createAssertionDefinitionMarker(element, assertionText, result)
-            }
-        }
+        // Text-based markers are now handled in getLineMarkerInfo() for better performance
+        // This method is kept for PSI-based markers only (which are handled in collectNavigationMarkers)
+        // No action needed here - avoids duplicate markers
     }
 
     private fun isStepKeyword(text: String): Boolean {
@@ -313,6 +199,25 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
                text == "then" ||
                text == "and" ||
                text == "but"
+    }
+
+    /**
+     * Checks if this element is the first significant (non-whitespace) element on its line.
+     * Uses document-based line number detection for accuracy.
+     */
+    private fun isFirstElementOnLine(element: PsiElement): Boolean {
+        val containingFile = element.containingFile ?: return true
+        val document = PsiDocumentManager.getInstance(element.project).getDocument(containingFile) ?: return true
+        
+        val elementOffset = element.textOffset
+        val lineNumber = document.getLineNumber(elementOffset)
+        val lineStartOffset = document.getLineStartOffset(lineNumber)
+        
+        // Get text from line start to element start
+        val textBeforeElement = document.getText(com.intellij.openapi.util.TextRange(lineStartOffset, elementOffset))
+        
+        // If there's non-whitespace content before this element, it's not first on line
+        return textBeforeElement.isBlank()
     }
 
     /**
@@ -348,118 +253,6 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
     private fun extractStepText(text: String): String? = Companion.extractStepText(text)
 
     private fun extractAssertionText(text: String): String? = Companion.extractAssertionText(text)
-
-    private fun createStepDefinitionMarker(
-        element: PsiElement,
-        stepText: String,
-        result: MutableCollection<in RelatedItemLineMarkerInfo<*>>
-    ) {
-        val methods = BerryCrushStepReference.findMatchingStepMethods(element.project, stepText)
-        if (methods.isNotEmpty()) {
-            val builder = NavigationGutterIconBuilder
-                .create(AllIcons.Gutter.ImplementedMethod)
-                .setTargets(methods)
-                .setTooltipText("Go to @Step definition")
-                .setPopupTitle("Step definitions")
-
-            result.add(builder.createLineMarkerInfo(element))
-        } else {
-            // Show a placeholder icon even if no @Step methods found
-            // This helps debug if the LineMarkerProvider is working
-            val builder = NavigationGutterIconBuilder
-                .create(AllIcons.Actions.QuickfixBulb)
-                .setTargets(listOf(element))
-                .setTooltipText("Step: $stepText (no @Step definition found)")
-
-            result.add(builder.createLineMarkerInfo(element))
-        }
-    }
-
-    private fun createAssertionDefinitionMarker(
-        element: PsiElement,
-        assertionText: String,
-        result: MutableCollection<in RelatedItemLineMarkerInfo<*>>
-    ) {
-        val methods = BerryCrushAssertionReference.findMatchingAssertionMethods(element.project, assertionText)
-        if (methods.isNotEmpty()) {
-            val builder = NavigationGutterIconBuilder
-                .create(AllIcons.Gutter.ImplementedMethod)
-                .setTargets(methods)
-                .setTooltipText("Go to @Assertion definition")
-                .setPopupTitle("Assertion definitions")
-
-            result.add(builder.createLineMarkerInfo(element))
-        }
-    }
-
-    private fun createFragmentDefinitionMarker(
-        element: PsiElement,
-        fragmentName: String,
-        result: MutableCollection<in RelatedItemLineMarkerInfo<*>>
-    ) {
-        // Find all usages of this fragment (reverse navigation)
-        val usages = IncludeUsageIndex.findIncludeUsages(element.project, fragmentName)
-
-        if (usages.isNotEmpty()) {
-            val builder = NavigationGutterIconBuilder
-                .create(AllIcons.Gutter.ImplementingMethod)
-                .setTargets(usages)
-                .setTooltipText("Fragment '$fragmentName' - ${usages.size} usage(s)")
-                .setPopupTitle("Usages of fragment '$fragmentName'")
-
-            result.add(builder.createLineMarkerInfo(element))
-        } else {
-            // No usages found, just show the definition marker
-            val builder = NavigationGutterIconBuilder
-                .create(BerryCrushIcons.FRAGMENT_FILE)
-                .setTargets(listOf(element))
-                .setTooltipText("Fragment: $fragmentName (no usages)")
-
-            result.add(builder.createLineMarkerInfo(element))
-        }
-    }
-
-    private fun createIncludeDirectiveMarker(
-        element: PsiElement,
-        fragmentName: String,
-        result: MutableCollection<in RelatedItemLineMarkerInfo<*>>
-    ) {
-        val target = BerryCrushFragmentReference.findFragmentByName(element.project, fragmentName)
-
-        if (target != null) {
-            val builder = NavigationGutterIconBuilder
-                .create(AllIcons.Gutter.ImplementedMethod)
-                .setTargets(listOf(target))
-                .setTooltipText("Go to fragment: $fragmentName")
-
-            result.add(builder.createLineMarkerInfo(element))
-        } else {
-            // Show a placeholder icon even if fragment is not found
-            val builder = NavigationGutterIconBuilder
-                .create(BerryCrushIcons.FRAGMENT_FILE)
-                .setTargets(listOf(element))
-                .setTooltipText("Fragment: $fragmentName (not found)")
-
-            result.add(builder.createLineMarkerInfo(element))
-        }
-    }
-
-    private fun createOperationReferenceMarkerDirect(
-        element: PsiElement,
-        operationId: String,
-        result: MutableCollection<in RelatedItemLineMarkerInfo<*>>
-    ) {
-        val target = BerryCrushOperationReference.findOperationInOpenAPI(element.project, operationId)
-
-        if (target != null) {
-            val builder = NavigationGutterIconBuilder
-                .create(AllIcons.Webreferences.Openapi)
-                .setTargets(listOf(target))
-                .setTooltipText("Go to OpenAPI operation: $operationId")
-
-            result.add(builder.createLineMarkerInfo(element))
-        }
-    }
 
     companion object {
         /**

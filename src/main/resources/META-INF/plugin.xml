@@ -42,6 +42,9 @@
     <depends>com.intellij.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
+        <!-- File Change Listener for inspection auto-refresh -->
+        <vfs.asyncListener implementation="com.berrycrush.intellij.listener.BerryCrushFileChangeListener"/>
+
         <!-- File-based Indices for fast lookup -->
         <fileBasedIndex implementation="com.berrycrush.intellij.index.FragmentIndex"/>
         <fileBasedIndex implementation="com.berrycrush.intellij.index.OperationUsageIndex"/>
@@ -130,5 +133,34 @@
         <!-- Run Line Markers (gutter run icons) -->
         <runLineMarkerContributor language="BerryCrush"
                                   implementationClass="com.berrycrush.intellij.run.BerryCrushRunLineMarkerProvider"/>
+
+        <!-- Inspections (no language attr - checks in implementation) -->
+        <localInspection groupName="BerryCrush"
+                         shortName="BerryCrushMissingFragment"
+                         displayName="Missing fragment reference"
+                         enabledByDefault="true"
+                         level="ERROR"
+                         implementationClass="com.berrycrush.intellij.inspection.MissingFragmentInspection"/>
+
+        <localInspection groupName="BerryCrush"
+                         shortName="BerryCrushUndefinedOperation"
+                         displayName="Undefined OpenAPI operation"
+                         enabledByDefault="true"
+                         level="WARNING"
+                         implementationClass="com.berrycrush.intellij.inspection.UndefinedOperationInspection"/>
+
+        <localInspection groupName="BerryCrush"
+                         shortName="BerryCrushUndefinedStep"
+                         displayName="Undefined custom step"
+                         enabledByDefault="true"
+                         level="WEAK WARNING"
+                         implementationClass="com.berrycrush.intellij.inspection.UndefinedStepInspection"/>
+
+        <localInspection groupName="BerryCrush"
+                         shortName="BerryCrushUndefinedAssertion"
+                         displayName="Undefined assertion"
+                         enabledByDefault="true"
+                         level="WEAK WARNING"
+                         implementationClass="com.berrycrush.intellij.inspection.UndefinedAssertionInspection"/>
     </extensions>
 </idea-plugin>
