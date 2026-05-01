@@ -10,11 +10,16 @@ import kotlin.test.assertFalse
  * Unit tests for IncludeUsageIndex.
  *
  * Tests the include directive regex pattern matching.
+ * The pattern only matches "include" at the start of a line (with optional whitespace).
  */
 class IncludeUsageIndexTest {
 
     // Test the regex pattern directly since integration testing requires more setup
-    private val includePattern = Regex("""include\s+(\^?[a-zA-Z_][a-zA-Z0-9_.\-]*)""", RegexOption.IGNORE_CASE)
+    // Pattern matches "include fragmentName" at the start of a line only
+    private val includePattern = Regex(
+        """^\s*include\s+(\^?[a-zA-Z_][a-zA-Z0-9_.\-]*)""",
+        setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE)
+    )
 
     @Test
     fun `pattern matches basic include`() {
@@ -87,15 +92,11 @@ class IncludeUsageIndexTest {
     }
 
     @Test
-    fun `pattern does not match include in word`() {
-        val content = "This line includes something"
+    fun `pattern does not match include in middle of line`() {
+        val content = "Given I include the header"
         val matches = includePattern.findAll(content).toList()
-        // "includes something" would match as "include s" followed by "omething"
-        // Let's verify what it captures
-        if (matches.isNotEmpty()) {
-            // If it matches, verify it's capturing correctly
-            assertTrue(matches[0].groupValues[1].startsWith("s"))
-        }
+        // Should not match because "include" is not at the start of the line
+        assertEquals(0, matches.size)
     }
 
     @Test
@@ -108,5 +109,25 @@ class IncludeUsageIndexTest {
         val matches = includePattern.findAll(content).toList()
         assertEquals(1, matches.size)
         assertEquals("login-steps", matches[0].groupValues[1])
+    }
+
+    @Test
+    fun `pattern matches with leading whitespace`() {
+        val content = "    include indented-fragment"
+        val matches = includePattern.findAll(content).toList()
+        assertEquals(1, matches.size)
+        assertEquals("indented-fragment", matches[0].groupValues[1])
+    }
+
+    @Test
+    fun `pattern does not match includes in step text`() {
+        val content = """
+            Given the system includes a header
+            When I include the data
+            Then it includes the result
+        """.trimIndent()
+        val matches = includePattern.findAll(content).toList()
+        // None should match because "include" is in the middle of step text
+        assertEquals(0, matches.size)
     }
 }

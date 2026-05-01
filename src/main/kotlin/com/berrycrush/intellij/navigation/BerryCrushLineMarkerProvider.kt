@@ -15,13 +15,11 @@ import com.berrycrush.intellij.reference.BerryCrushAssertionReference
 import com.intellij.codeInsight.daemon.LineMarkerInfo
 import com.intellij.codeInsight.daemon.LineMarkerProvider
 import com.intellij.codeInsight.daemon.RelatedItemLineMarkerInfo
-import com.intellij.codeInsight.daemon.RelatedItemLineMarkerProvider
 import com.intellij.codeInsight.navigation.NavigationGutterIconBuilder
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.editor.markup.GutterIconRenderer
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
-import javax.swing.Icon
 
 /**
  * Provides gutter icons for BerryCrush navigation.
@@ -89,7 +87,7 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
         // Check for fragment definition
         if (lowerText.startsWith("fragment:")) {
             val fullLineText = getFullLineText(element)
-            val fragmentName = extractFragmentName(fullLineText)
+            val fragmentName = BerryCrushLineMarkerProvider.extractFragmentName(fullLineText)
             if (fragmentName != null) {
                 val usages = IncludeUsageIndex.findIncludeUsages(element.project, fragmentName)
                 return if (usages.isNotEmpty()) {
@@ -115,15 +113,30 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
         
         // Check for include directive
         if (lowerText.startsWith("include")) {
-            val fragmentName = text.removePrefix("include").removePrefix("Include").trim().removePrefix("^").trim()
-            if (fragmentName.isNotEmpty()) {
+            // The element might be just the "include" keyword token
+            // Get full line text to extract fragment name
+            val fullLineText = getFullLineText(element)
+            val fragmentName = extractIncludeFragmentName(fullLineText)
+            
+            if (fragmentName != null) {
                 val target = BerryCrushFragmentReference.findFragmentByName(element.project, fragmentName)
-                if (target != null) {
-                    return NavigationGutterIconBuilder
+                return if (target != null) {
+                    NavigationGutterIconBuilder
                         .create(AllIcons.Gutter.ImplementedMethod)
                         .setTargets(listOf(target))
                         .setTooltipText("Go to fragment: $fragmentName")
                         .createLineMarkerInfo(element)
+                } else {
+                    // Show placeholder icon even if fragment is not found
+                    LineMarkerInfo(
+                        element,
+                        element.textRange,
+                        BerryCrushIcons.FRAGMENT_FILE,
+                        { "Fragment: $fragmentName (not found)" },
+                        null,
+                        GutterIconRenderer.Alignment.CENTER,
+                        { "Include directive" }
+                    )
                 }
             }
         }
@@ -181,6 +194,7 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
             is BerryCrushIncludeElement -> {
                 if (PsiTreeUtil.firstChild(parent) == element) {
                     val fragmentName = parent.fragmentName
+                        ?: extractIncludeFragmentName(parent.text)
                     if (fragmentName != null) {
                         createIncludeDirectiveMarker(element, fragmentName, result)
                     }
@@ -245,16 +259,19 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
         // Check for fragment definition (fragment: name) - leaf token "Fragment"
         if (trimmedText.startsWith("Fragment", ignoreCase = true)) {
             val fullText = element.text
-            val fragmentName = extractFragmentName(fullText)
+            val fragmentName = BerryCrushLineMarkerProvider.extractFragmentName(fullText)
             if (fragmentName != null) {
                 createFragmentDefinitionMarker(element, fragmentName, result)
             }
         }
 
-        // Check for include keyword
-        if (trimmedText.startsWith("include", ignoreCase = true)) {
-            val fragmentName = trimmedText.removePrefix("include").trim().removePrefix("^").trim()
-            if (fragmentName.isNotEmpty()) {
+        // Check for include keyword - look at parent text for full "include fragmentName"
+        // The lexer might include trailing space in the token, e.g., "include "
+        if (trimmedText.startsWith("include ", ignoreCase = true)) {
+            val parent = element.parent
+            val fullText = parent?.text ?: element.text
+            val fragmentName = extractIncludeFragmentName(fullText)
+            if (fragmentName != null) {
                 createIncludeDirectiveMarker(element, fragmentName, result)
             }
         }
@@ -375,11 +392,6 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
         }
     }
 
-    private fun extractFragmentName(text: String): String? {
-        val match = Regex("""fragment:\s*(\S+)""", RegexOption.IGNORE_CASE).find(text)
-        return match?.groupValues?.get(1)
-    }
-
     private fun createFragmentDefinitionMarker(
         element: PsiElement,
         fragmentName: String,
@@ -419,6 +431,14 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
                 .create(AllIcons.Gutter.ImplementedMethod)
                 .setTargets(listOf(target))
                 .setTooltipText("Go to fragment: $fragmentName")
+
+            result.add(builder.createLineMarkerInfo(element))
+        } else {
+            // Show a placeholder icon even if fragment is not found
+            val builder = NavigationGutterIconBuilder
+                .create(BerryCrushIcons.FRAGMENT_FILE)
+                .setTargets(listOf(element))
+                .setTooltipText("Fragment: $fragmentName (not found)")
 
             result.add(builder.createLineMarkerInfo(element))
         }
@@ -467,6 +487,14 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
          */
         internal fun extractFragmentName(text: String): String? {
             val match = Regex("""fragment:\s*(\S+)""", RegexOption.IGNORE_CASE).find(text)
+            return match?.groupValues?.get(1)
+        }
+
+        /**
+         * Extract fragment name from an include directive.
+         */
+        internal fun extractIncludeFragmentName(text: String): String? {
+            val match = Regex("""include\s+\^?([a-zA-Z_][a-zA-Z0-9_.\-]*)""", RegexOption.IGNORE_CASE).find(text)
             return match?.groupValues?.get(1)
         }
 

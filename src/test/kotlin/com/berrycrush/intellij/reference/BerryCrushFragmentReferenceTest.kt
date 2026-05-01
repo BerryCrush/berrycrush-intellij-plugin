@@ -1,5 +1,6 @@
 package com.berrycrush.intellij.reference
 
+import com.berrycrush.intellij.navigation.BerryCrushLineMarkerProvider
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -9,13 +10,6 @@ import kotlin.test.assertNull
  */
 class BerryCrushFragmentReferenceTest {
 
-    // Replicate the fragment name extraction logic for testing
-    // Note: Uses case-insensitive matching for "fragment"
-    private fun extractFragmentNameFromContent(text: String): String? {
-        val fragmentMatch = Regex("^\\s*fragment:\\s*(\\S+)", setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE)).find(text)
-        return fragmentMatch?.groupValues?.get(1)
-    }
-
     @Test
     fun `extracts fragment name from beginning of file`() {
         val content = """
@@ -24,7 +18,7 @@ class BerryCrushFragmentReferenceTest {
             When user enters credentials
         """.trimIndent()
 
-        assertEquals("login-steps", extractFragmentNameFromContent(content))
+        assertEquals("login-steps", BerryCrushLineMarkerProvider.extractFragmentName(content))
     }
 
     @Test
@@ -34,7 +28,7 @@ class BerryCrushFragmentReferenceTest {
             Given user has valid token
         """.trimIndent()
 
-        assertEquals("auth-flow", extractFragmentNameFromContent(content))
+        assertEquals("auth-flow", BerryCrushLineMarkerProvider.extractFragmentName(content))
     }
 
     @Test
@@ -44,7 +38,7 @@ class BerryCrushFragmentReferenceTest {
             Given test step
         """.trimIndent()
 
-        assertEquals("my-fragment", extractFragmentNameFromContent(content))
+        assertEquals("my-fragment", BerryCrushLineMarkerProvider.extractFragmentName(content))
     }
 
     @Test
@@ -54,7 +48,7 @@ class BerryCrushFragmentReferenceTest {
             Given test step
         """.trimIndent()
 
-        assertEquals("indented-fragment", extractFragmentNameFromContent(content))
+        assertEquals("indented-fragment", BerryCrushLineMarkerProvider.extractFragmentName(content))
     }
 
     @Test
@@ -65,7 +59,7 @@ class BerryCrushFragmentReferenceTest {
             Then some assertion
         """.trimIndent()
 
-        assertNull(extractFragmentNameFromContent(content))
+        assertNull(BerryCrushLineMarkerProvider.extractFragmentName(content))
     }
 
     @Test
@@ -79,7 +73,7 @@ class BerryCrushFragmentReferenceTest {
         """.trimIndent()
 
         // The regex finds the first match
-        assertEquals("first-fragment", extractFragmentNameFromContent(content))
+        assertEquals("first-fragment", BerryCrushLineMarkerProvider.extractFragmentName(content))
     }
 
     @Test
@@ -89,7 +83,7 @@ class BerryCrushFragmentReferenceTest {
             Given test step
         """.trimIndent()
 
-        assertEquals("api.v1.steps", extractFragmentNameFromContent(content))
+        assertEquals("api.v1.steps", BerryCrushLineMarkerProvider.extractFragmentName(content))
     }
 
     @Test
@@ -99,7 +93,7 @@ class BerryCrushFragmentReferenceTest {
             Given test step
         """.trimIndent()
 
-        assertEquals("my_custom_fragment", extractFragmentNameFromContent(content))
+        assertEquals("my_custom_fragment", BerryCrushLineMarkerProvider.extractFragmentName(content))
     }
 
     @Test
@@ -109,11 +103,11 @@ class BerryCrushFragmentReferenceTest {
             Given test step
         """.trimIndent()
 
-        assertEquals("step123", extractFragmentNameFromContent(content))
+        assertEquals("step123", BerryCrushLineMarkerProvider.extractFragmentName(content))
     }
 
     @Test
     fun `returns null for empty content`() {
-        assertNull(extractFragmentNameFromContent(""))
+        assertNull(BerryCrushLineMarkerProvider.extractFragmentName(""))
     }
 }

@@ -110,6 +110,34 @@ class BerryCrushLineMarkerProviderTest {
         assertNull(BerryCrushLineMarkerProvider.extractFragmentName(""))
     }
 
+    // Tests for extractIncludeFragmentName
+    @Test
+    fun `extractIncludeFragmentName returns fragment name from include`() {
+        assertEquals("login-steps", BerryCrushLineMarkerProvider.extractIncludeFragmentName("include login-steps"))
+    }
+
+    @Test
+    fun `extractIncludeFragmentName handles caret prefix`() {
+        assertEquals("operation-fragment", BerryCrushLineMarkerProvider.extractIncludeFragmentName("include ^operation-fragment"))
+    }
+
+    @Test
+    fun `extractIncludeFragmentName is case insensitive`() {
+        assertEquals("test", BerryCrushLineMarkerProvider.extractIncludeFragmentName("INCLUDE test"))
+        assertEquals("test", BerryCrushLineMarkerProvider.extractIncludeFragmentName("Include test"))
+    }
+
+    @Test
+    fun `extractIncludeFragmentName handles extra whitespace`() {
+        assertEquals("my-fragment", BerryCrushLineMarkerProvider.extractIncludeFragmentName("include    my-fragment"))
+    }
+
+    @Test
+    fun `extractIncludeFragmentName returns null when no include`() {
+        assertNull(BerryCrushLineMarkerProvider.extractIncludeFragmentName("Given test"))
+        assertNull(BerryCrushLineMarkerProvider.extractIncludeFragmentName(""))
+    }
+
     // Tests for isStepKeyword
     @Test
     fun `isStepKeyword recognizes Given`() {

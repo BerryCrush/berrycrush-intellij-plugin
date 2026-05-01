@@ -6,7 +6,6 @@ package com.berrycrush.intellij.index
 
 import com.berrycrush.intellij.language.FragmentFileType
 import com.berrycrush.intellij.language.ScenarioFileType
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiManager
 import com.intellij.psi.search.GlobalSearchScope
@@ -20,6 +19,8 @@ import com.intellij.util.io.EnumeratorStringDescriptor
 import com.intellij.util.io.KeyDescriptor
 import java.io.DataInput
 import java.io.DataOutput
+
+private const val ASSERT_PREFIX = "ASSERT:"
 
 /**
  * Index that maps step text patterns to their locations in scenario/fragment files.
@@ -89,27 +90,36 @@ class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
             val regex = patternToRegex(stepPattern)
 
             FileBasedIndex.getInstance().processAllKeys(NAME, { key ->
-                if (!key.startsWith("ASSERT:") && matchesPattern(key, regex)) {
-                    FileBasedIndex.getInstance().processValues(
-                        NAME, key, null,
-                        { file, data ->
-                            val psiFile = psiManager.findFile(file)
-                            if (psiFile != null) {
-                                // Find the element at the line offset
-                                val element = psiFile.findElementAt(data.offset)
-                                if (element != null) {
-                                    usages.add(element)
-                                }
-                            }
-                            true
-                        },
-                        scope
-                    )
+                if (!key.startsWith(ASSERT_PREFIX) && matchesPattern(key, regex)) {
+                    findElements(key, psiManager, usages, scope)
                 }
                 true
             }, scope, null)
 
             return usages
+        }
+
+        private fun findElements(
+            key: String,
+            psiManager: PsiManager,
+            usages: MutableList<PsiElement>,
+            scope: GlobalSearchScope
+        ) {
+            FileBasedIndex.getInstance().processValues(
+                NAME, key, null,
+                { file, data ->
+                    val psiFile = psiManager.findFile(file)
+                    if (psiFile != null) {
+                        // Find the element at the line offset
+                        val element = psiFile.findElementAt(data.offset)
+                        if (element != null) {
+                            usages.add(element)
+                        }
+                    }
+                    true
+                },
+                scope
+            )
         }
 
         /**
@@ -144,21 +154,8 @@ class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
             val regex = patternToRegex(assertionPattern)
 
             FileBasedIndex.getInstance().processAllKeys(NAME, { key ->
-                if (key.startsWith("ASSERT:") && matchesPattern(key.removePrefix("ASSERT:"), regex)) {
-                    FileBasedIndex.getInstance().processValues(
-                        NAME, key, null,
-                        { file, data ->
-                            val psiFile = psiManager.findFile(file)
-                            if (psiFile != null) {
-                                val element = psiFile.findElementAt(data.offset)
-                                if (element != null) {
-                                    usages.add(element)
-                                }
-                            }
-                            true
-                        },
-                        scope
-                    )
+                if (key.startsWith(ASSERT_PREFIX) && matchesPattern(key.removePrefix(ASSERT_PREFIX), regex)) {
+                    findElements(key, psiManager, usages, scope)
                 }
                 true
             }, scope, null)
@@ -175,22 +172,22 @@ class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
             // Use Regex.escapeReplacement to prevent backslash interpretation
             val regexPattern = pattern
                 // Handle curly-brace placeholders
-                .replace(Regex("""\{int\}"""), Regex.escapeReplacement("""(-?\d+)"""))
-                .replace(Regex("""\{string\}"""), Regex.escapeReplacement("""("[^"]*"|'[^']*'|[^\s]+)"""))
-                .replace(Regex("""\{word\}"""), Regex.escapeReplacement("""(\w+)"""))
-                .replace(Regex("""\{float\}"""), Regex.escapeReplacement("""(-?\d+\.?\d*)"""))
-                .replace(Regex("""\{number\}"""), Regex.escapeReplacement("""(-?\d+\.?\d*)"""))
-                .replace(Regex("""\{any\}"""), Regex.escapeReplacement("""(.+?)"""))
+                .replace(Regex("""\{int}"""), Regex.escapeReplacement("""(-?\d+)"""))
+                .replace(Regex("""\{string}"""), Regex.escapeReplacement("""("[^"]*"|'[^']*'|[^\s]+)"""))
+                .replace(Regex("""\{word}"""), Regex.escapeReplacement("""(\w+)"""))
+                .replace(Regex("""\{float}"""), Regex.escapeReplacement("""(-?\d+\.?\d*)"""))
+                .replace(Regex("""\{number}"""), Regex.escapeReplacement("""(-?\d+\.?\d*)"""))
+                .replace(Regex("""\{any}"""), Regex.escapeReplacement("""(.+?)"""))
                 // Anchor the pattern
                 .let { "^$it$" }
             
             return try {
                 Regex(regexPattern, RegexOption.IGNORE_CASE)
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 // If regex compilation fails, try escaping and doing simple match
                 try {
                     Regex("^${Regex.escape(pattern)}$", RegexOption.IGNORE_CASE)
-                } catch (e2: Exception) {
+                } catch (_: Exception) {
                     // Last resort: literal match
                     Regex(Regex.escape(pattern), RegexOption.IGNORE_CASE)
                 }
@@ -202,32 +199,6 @@ class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
          */
         internal fun matchesPattern(text: String, regex: Regex): Boolean {
             return regex.matches(text)
-        }
-
-        /**
-         * Get all indexed keys for debugging purposes (project scope)
-         */
-        fun getAllIndexedKeys(project: com.intellij.openapi.project.Project): List<String> {
-            val keys = mutableListOf<String>()
-            val scope = GlobalSearchScope.projectScope(project)
-            FileBasedIndex.getInstance().processAllKeys(NAME, { key ->
-                keys.add(key)
-                true
-            }, scope, null)
-            return keys
-        }
-
-        /**
-         * Get all indexed keys using allScope for debugging
-         */
-        fun getAllIndexedKeysAllScope(project: com.intellij.openapi.project.Project): List<String> {
-            val keys = mutableListOf<String>()
-            val scope = GlobalSearchScope.allScope(project)
-            FileBasedIndex.getInstance().processAllKeys(NAME, { key ->
-                keys.add(key)
-                true
-            }, scope, null)
-            return keys
         }
     }
 
