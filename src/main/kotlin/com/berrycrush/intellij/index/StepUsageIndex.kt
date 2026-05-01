@@ -65,7 +65,7 @@ class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
             project: com.intellij.openapi.project.Project,
             stepPattern: String
         ): List<PsiElement> {
-            return findStepUsagesWithScope(project, stepPattern, GlobalSearchScope.projectScope(project))
+            return findStepUsagesInScope(project, stepPattern, GlobalSearchScope.projectScope(project))
         }
 
         /**
@@ -75,10 +75,21 @@ class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
             project: com.intellij.openapi.project.Project,
             stepPattern: String
         ): List<PsiElement> {
-            return findStepUsagesWithScope(project, stepPattern, GlobalSearchScope.allScope(project))
+            return findStepUsagesInScope(project, stepPattern, GlobalSearchScope.allScope(project))
         }
 
-        private fun findStepUsagesWithScope(
+        /**
+         * Find all usages of a step pattern within the given scope.
+         *
+         * Use this for module-scoped search, passing in the result of
+         * ModuleScopeResolver.getDependentModulesScope() for reverse navigation.
+         *
+         * @param project The project
+         * @param stepPattern The @Step pattern to search for
+         * @param scope The search scope (e.g., dependent modules scope)
+         * @return List of PSI elements where the step is used
+         */
+        fun findStepUsagesInScope(
             project: com.intellij.openapi.project.Project,
             stepPattern: String,
             scope: GlobalSearchScope
@@ -129,7 +140,7 @@ class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
             project: com.intellij.openapi.project.Project,
             assertionPattern: String
         ): List<PsiElement> {
-            return findAssertionUsagesWithScope(project, assertionPattern, GlobalSearchScope.projectScope(project))
+            return findAssertionUsagesInScope(project, assertionPattern, GlobalSearchScope.projectScope(project))
         }
 
         /**
@@ -139,10 +150,21 @@ class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
             project: com.intellij.openapi.project.Project,
             assertionPattern: String
         ): List<PsiElement> {
-            return findAssertionUsagesWithScope(project, assertionPattern, GlobalSearchScope.allScope(project))
+            return findAssertionUsagesInScope(project, assertionPattern, GlobalSearchScope.allScope(project))
         }
 
-        private fun findAssertionUsagesWithScope(
+        /**
+         * Find all usages of an assertion pattern within the given scope.
+         *
+         * Use this for module-scoped search, passing in the result of
+         * ModuleScopeResolver.getDependentModulesScope() for reverse navigation.
+         *
+         * @param project The project
+         * @param assertionPattern The @Assertion pattern to search for
+         * @param scope The search scope (e.g., dependent modules scope)
+         * @return List of PSI elements where the assertion is used
+         */
+        fun findAssertionUsagesInScope(
             project: com.intellij.openapi.project.Project,
             assertionPattern: String,
             scope: GlobalSearchScope

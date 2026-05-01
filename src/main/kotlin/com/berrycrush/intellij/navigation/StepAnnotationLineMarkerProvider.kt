@@ -5,6 +5,7 @@
 package com.berrycrush.intellij.navigation
 
 import com.berrycrush.intellij.index.StepUsageIndex
+import com.berrycrush.intellij.util.ModuleScopeResolver
 import com.intellij.codeInsight.daemon.LineMarkerInfo
 import com.intellij.codeInsight.daemon.LineMarkerProvider
 import com.intellij.icons.AllIcons
@@ -18,6 +19,9 @@ import com.intellij.psi.impl.source.tree.LeafPsiElement
 /**
  * Provides gutter icons for @Step and @Assertion annotated methods in Java and Kotlin files,
  * showing navigation to usages in scenario/fragment files.
+ *
+ * Uses module-scoped search to only show usages from scenarios in modules that depend
+ * on the module containing the @Step/@Assertion method.
  */
 class StepAnnotationLineMarkerProvider : LineMarkerProvider {
 
@@ -60,8 +64,10 @@ class StepAnnotationLineMarkerProvider : LineMarkerProvider {
                             val pattern = getKotlinAnnotationPattern(current, annotationName)
                             
                             // @Step methods use step keywords (Given/When/Then/And/But)
+                            // Use module-scoped search: only find usages from dependent modules
                             if (hasStep && pattern != null) {
-                                val usages = StepUsageIndex.findStepUsagesAllScope(element.project, pattern)
+                                val scope = ModuleScopeResolver.getDependentModulesScope(element)
+                                val usages = StepUsageIndex.findStepUsagesInScope(element.project, pattern, scope)
                                 if (usages.isNotEmpty()) {
                                     return LineMarkerInfo(
                                         element,
@@ -82,9 +88,10 @@ class StepAnnotationLineMarkerProvider : LineMarkerProvider {
                             }
                             
                             // @Assertion methods use assert directive (assert pet name is "Fluffy")
+                            // Use module-scoped search: only find usages from dependent modules
                             if (hasAssertion && pattern != null) {
-                                // @Assertion methods are invoked via assert directive
-                                val usages = StepUsageIndex.findAssertionUsagesAllScope(element.project, pattern)
+                                val scope = ModuleScopeResolver.getDependentModulesScope(element)
+                                val usages = StepUsageIndex.findAssertionUsagesInScope(element.project, pattern, scope)
                                 if (usages.isNotEmpty()) {
                                     return LineMarkerInfo(
                                         element,
@@ -119,11 +126,13 @@ class StepAnnotationLineMarkerProvider : LineMarkerProvider {
         if (method == null) return null
 
         // Check for @Step annotation
+        // Use module-scoped search: only find usages from dependent modules
         val stepAnnotation = findAnnotation(method, STEP_ANNOTATION_FQN)
         if (stepAnnotation != null) {
             val pattern = getPatternFromAnnotation(stepAnnotation)
             if (pattern != null) {
-                val usages = StepUsageIndex.findStepUsages(element.project, pattern)
+                val scope = ModuleScopeResolver.getDependentModulesScope(element)
+                val usages = StepUsageIndex.findStepUsagesInScope(element.project, pattern, scope)
                 if (usages.isNotEmpty()) {
                     return LineMarkerInfo(
                         element,
@@ -145,11 +154,13 @@ class StepAnnotationLineMarkerProvider : LineMarkerProvider {
         }
 
         // Check for @Assertion annotation
+        // Use module-scoped search: only find usages from dependent modules
         val assertionAnnotation = findAnnotation(method, ASSERTION_ANNOTATION_FQN)
         if (assertionAnnotation != null) {
             val pattern = getPatternFromAnnotation(assertionAnnotation)
             if (pattern != null) {
-                val usages = StepUsageIndex.findAssertionUsages(element.project, pattern)
+                val scope = ModuleScopeResolver.getDependentModulesScope(element)
+                val usages = StepUsageIndex.findAssertionUsagesInScope(element.project, pattern, scope)
                 if (usages.isNotEmpty()) {
                     return LineMarkerInfo(
                         element,

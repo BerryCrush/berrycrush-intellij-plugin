@@ -256,8 +256,8 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
         val text = element.text
         val trimmedText = text.trim()
 
-        // Check for fragment definition (fragment: name) - leaf token "Fragment"
-        if (trimmedText.startsWith("Fragment", ignoreCase = true)) {
+        // Check for fragment definition (fragment: name) - strict lowercase
+        if (trimmedText.startsWith("fragment:")) {
             val fullText = element.text
             val fragmentName = BerryCrushLineMarkerProvider.extractFragmentName(fullText)
             if (fragmentName != null) {
@@ -265,9 +265,9 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
             }
         }
 
-        // Check for include keyword - look at parent text for full "include fragmentName"
+        // Check for include keyword - strict lowercase
         // The lexer might include trailing space in the token, e.g., "include "
-        if (trimmedText.startsWith("include ", ignoreCase = true)) {
+        if (trimmedText.startsWith("include ")) {
             val parent = element.parent
             val fullText = parent?.text ?: element.text
             val fragmentName = extractIncludeFragmentName(fullText)
@@ -284,8 +284,8 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
             }
         }
 
-        // Check for step keywords (Given, When, Then, And, But)
-        // The lexer includes trailing space in the token, e.g., "Given "
+        // Check for step keywords (given, when, then, and, but) - strict lowercase
+        // The lexer includes trailing space in the token, e.g., "given "
         val stepKeyword = trimmedText.removeSuffix(" ").removeSuffix(":")
         if (isStepKeyword(stepKeyword)) {
             val parent = element.parent
@@ -296,8 +296,8 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
             }
         }
 
-        // Check for assert keyword
-        if (trimmedText.startsWith("assert", ignoreCase = true)) {
+        // Check for assert keyword - strict lowercase
+        if (trimmedText.startsWith("assert")) {
             val parent = element.parent
             val fullText = parent?.text ?: element.text
             val assertionText = extractAssertionText(fullText)
@@ -308,11 +308,11 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
     }
 
     private fun isStepKeyword(text: String): Boolean {
-        return text.equals("Given", ignoreCase = true) ||
-               text.equals("When", ignoreCase = true) ||
-               text.equals("Then", ignoreCase = true) ||
-               text.equals("And", ignoreCase = true) ||
-               text.equals("But", ignoreCase = true)
+        return text == "given" ||
+               text == "when" ||
+               text == "then" ||
+               text == "and" ||
+               text == "but"
     }
 
     /**
@@ -463,50 +463,50 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
 
     companion object {
         /**
-         * Extract step text by removing the Given/When/Then/And/But prefix.
+         * Extract step text by removing the given/when/then/and/but prefix (strict lowercase).
          */
         internal fun extractStepText(text: String): String? {
             val trimmedText = text.trim()
-            val prefixPattern = Regex("""^(Given|When|Then|And|But)\s+""", RegexOption.IGNORE_CASE)
+            val prefixPattern = Regex("""^(given|when|then|and|but)\s+""")
             val match = prefixPattern.find(trimmedText) ?: return null
             return trimmedText.substring(match.range.last + 1).trim()
         }
 
         /**
-         * Extract assertion text by removing the Assert prefix.
+         * Extract assertion text by removing the assert prefix (strict lowercase).
          */
         internal fun extractAssertionText(text: String): String? {
             val trimmedText = text.trim()
-            val prefixPattern = Regex("""^assert\s+""", RegexOption.IGNORE_CASE)
+            val prefixPattern = Regex("""^assert\s+""")
             val match = prefixPattern.find(trimmedText) ?: return null
             return trimmedText.substring(match.range.last + 1).trim()
         }
 
         /**
-         * Extract fragment name from a Fragment: declaration line.
+         * Extract fragment name from a fragment: declaration line (strict lowercase).
          */
         internal fun extractFragmentName(text: String): String? {
-            val match = Regex("""fragment:\s*(\S+)""", RegexOption.IGNORE_CASE).find(text)
+            val match = Regex("""fragment:\s*(\S+)""").find(text)
             return match?.groupValues?.get(1)
         }
 
         /**
-         * Extract fragment name from an include directive.
+         * Extract fragment name from an include directive (strict lowercase).
          */
         internal fun extractIncludeFragmentName(text: String): String? {
-            val match = Regex("""include\s+\^?([a-zA-Z_][a-zA-Z0-9_.\-]*)""", RegexOption.IGNORE_CASE).find(text)
+            val match = Regex("""include\s+\^?([a-zA-Z_][a-zA-Z0-9_.\-]*)""").find(text)
             return match?.groupValues?.get(1)
         }
 
         /**
-         * Check if the given text is a step keyword.
+         * Check if the given text is a step keyword (strict lowercase).
          */
         internal fun isStepKeyword(text: String): Boolean {
-            return text.equals("Given", ignoreCase = true) ||
-                   text.equals("When", ignoreCase = true) ||
-                   text.equals("Then", ignoreCase = true) ||
-                   text.equals("And", ignoreCase = true) ||
-                   text.equals("But", ignoreCase = true)
+            return text == "given" ||
+                   text == "when" ||
+                   text == "then" ||
+                   text == "and" ||
+                   text == "but"
         }
     }
 }

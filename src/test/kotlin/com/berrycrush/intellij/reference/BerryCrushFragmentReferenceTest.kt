@@ -22,10 +22,10 @@ class BerryCrushFragmentReferenceTest {
     }
 
     @Test
-    fun `extracts fragment name with capitalized keyword`() {
+    fun `extracts fragment name with lowercase keyword`() {
         val content = """
-            Fragment: auth-flow
-            Given user has valid token
+            fragment: auth-flow
+            given user has valid token
         """.trimIndent()
 
         assertEquals("auth-flow", BerryCrushLineMarkerProvider.extractFragmentName(content))

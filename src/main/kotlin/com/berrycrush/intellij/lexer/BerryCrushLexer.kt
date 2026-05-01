@@ -200,39 +200,39 @@ class BerryCrushLexer : LexerBase() {
     }
 
     private fun tryMatchKeyword(): IElementType? {
-        // Try block keywords
+        // Try block keywords (strict lowercase matching)
         for ((keyword, token) in BLOCK_KEYWORDS) {
-            if (matchesAtCaseInsensitive(keyword)) {
+            if (matchesAt(keyword)) {
                 position += keyword.length
                 return token
             }
         }
 
-        // Try step keywords
+        // Try step keywords (strict lowercase matching)
         for ((keyword, token) in STEP_KEYWORDS) {
-            if (matchesAtCaseInsensitive(keyword)) {
+            if (matchesAt(keyword)) {
                 position += keyword.length
                 return token
             }
         }
 
-        // Try directives
+        // Try directives (strict lowercase matching)
         for ((keyword, token) in DIRECTIVES) {
-            if (matchesAtCaseInsensitive(keyword)) {
+            if (matchesAt(keyword)) {
                 position += keyword.length
                 return token
             }
         }
 
-        // Try assertion keywords
+        // Try assertion keywords (strict lowercase matching)
         for ((keyword, token) in ASSERTION_KEYWORDS) {
-            if (matchesAtCaseInsensitive(keyword)) {
+            if (matchesAt(keyword)) {
                 position += keyword.length
                 return token
             }
         }
 
-        // Try boolean literals
+        // Boolean literals are case-insensitive (JSON convention)
         if (matchesAtCaseInsensitive("true") && !isIdentifierChar(position + 4)) {
             position += 4
             return BerryCrushTokenTypes.BOOLEAN

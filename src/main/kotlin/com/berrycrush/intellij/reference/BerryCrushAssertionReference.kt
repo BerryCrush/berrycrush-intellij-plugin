@@ -1,5 +1,6 @@
 package com.berrycrush.intellij.reference
 
+import com.berrycrush.intellij.util.ModuleScopeResolver
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.JavaPsiFacade
@@ -18,6 +19,9 @@ import com.intellij.psi.search.searches.AnnotatedElementsSearch
  *
  * Enables navigation from assertion text in .scenario/.fragment files to
  * the corresponding @Assertion annotated method definitions.
+ *
+ * Uses module-scoped search to only show @Assertion methods that are in the
+ * scenario file's classpath (compile-time dependencies).
  */
 class BerryCrushAssertionReference(
     element: PsiElement,
@@ -32,25 +36,36 @@ class BerryCrushAssertionReference(
 
     override fun multiResolve(incompleteCode: Boolean): Array<ResolveResult> {
         val project = element.project
-        val matchingMethods = findMatchingAssertionMethods(project, assertionText)
+        // Use module-scoped search: only find @Assertion methods in this scenario's classpath
+        val scope = ModuleScopeResolver.getModuleDependencyScope(element)
+        val matchingMethods = findMatchingAssertionMethodsInScope(project, assertionText, scope)
         return matchingMethods.map { PsiElementResolveResult(it) }.toTypedArray()
     }
 
     override fun getVariants(): Array<Any> {
-        // Return all assertion patterns for completion
+        // Return all assertion patterns for completion (use module scope for better suggestions)
         val project = element.project
-        return getAllAssertionPatterns(project).toTypedArray()
+        val scope = ModuleScopeResolver.getModuleDependencyScope(element)
+        return getAllAssertionPatternsInScope(project, scope).toTypedArray()
     }
 
     companion object {
         private const val ASSERTION_ANNOTATION_FQN = "org.berrycrush.assertion.Assertion"
 
         /**
-         * Finds all @Assertion annotated methods that match the given text.
+         * Finds all @Assertion annotated methods that match the given text within the given scope.
+         *
+         * @param project The project
+         * @param assertionText The assertion text to match
+         * @param scope The search scope (typically module dependencies)
+         * @return List of matching @Assertion methods
          */
-        fun findMatchingAssertionMethods(project: Project, assertionText: String): List<PsiMethod> {
+        fun findMatchingAssertionMethodsInScope(
+            project: Project,
+            assertionText: String,
+            scope: GlobalSearchScope
+        ): List<PsiMethod> {
             val assertionAnnotationClass = findAssertionAnnotationClass(project) ?: return emptyList()
-            val scope = GlobalSearchScope.allScope(project)
             val methods = AnnotatedElementsSearch.searchPsiMethods(assertionAnnotationClass, scope)
 
             return methods.filter { method ->
@@ -60,12 +75,35 @@ class BerryCrushAssertionReference(
         }
 
         /**
+         * Finds all @Assertion annotated methods that match the given text.
+         * Searches the entire project (backward compatibility).
+         */
+        fun findMatchingAssertionMethods(project: Project, assertionText: String): List<PsiMethod> {
+            val scope = GlobalSearchScope.allScope(project)
+            return findMatchingAssertionMethodsInScope(project, assertionText, scope)
+        }
+
+        /**
+         * Gets all @Assertion annotated methods within the given scope.
+         */
+        fun getAllAssertionMethodsInScope(project: Project, scope: GlobalSearchScope): List<PsiMethod> {
+            val assertionAnnotationClass = findAssertionAnnotationClass(project) ?: return emptyList()
+            return AnnotatedElementsSearch.searchPsiMethods(assertionAnnotationClass, scope).toList()
+        }
+
+        /**
          * Gets all @Assertion annotated methods in the project.
          */
         fun getAllAssertionMethods(project: Project): List<PsiMethod> {
-            val assertionAnnotationClass = findAssertionAnnotationClass(project) ?: return emptyList()
             val scope = GlobalSearchScope.allScope(project)
-            return AnnotatedElementsSearch.searchPsiMethods(assertionAnnotationClass, scope).toList()
+            return getAllAssertionMethodsInScope(project, scope)
+        }
+
+        /**
+         * Gets all assertion patterns within the given scope.
+         */
+        fun getAllAssertionPatternsInScope(project: Project, scope: GlobalSearchScope): List<String> {
+            return getAllAssertionMethodsInScope(project, scope).mapNotNull { getAssertionPattern(it) }
         }
 
         /**

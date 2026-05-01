@@ -180,7 +180,8 @@ class BerryCrushAssertElement(node: ASTNode) : BerryCrushPsiElement(node) {
     val assertionText: String?
         get() {
             val text = node.text.trim()
-            val match = Regex("""^assert\s+(.+)$""", RegexOption.IGNORE_CASE).find(text)
+            // Strict lowercase matching for "assert" keyword
+            val match = Regex("""^assert\s+(.+)$""").find(text)
             return match?.groupValues?.get(1)?.trim()
         }
 }

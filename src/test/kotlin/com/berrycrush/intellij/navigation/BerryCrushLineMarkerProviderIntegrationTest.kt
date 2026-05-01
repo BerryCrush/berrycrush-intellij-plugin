@@ -22,7 +22,7 @@ class BerryCrushLineMarkerProviderIntegrationTest : BerryCrushTestCase() {
      */
     fun testParserCreatesIncludeElement() {
         val file = createScenarioFile("test-include", """
-            Scenario: Test include
+            scenario: Test include
             include login-steps
         """.trimIndent())
 
@@ -59,7 +59,7 @@ class BerryCrushLineMarkerProviderIntegrationTest : BerryCrushTestCase() {
      */
     fun testIncludeElementFragmentName() {
         val file = createScenarioFile("test-include-name", """
-            Scenario: Test include
+            scenario: Test include
             include auth-fragment
         """.trimIndent())
 
@@ -87,12 +87,12 @@ class BerryCrushLineMarkerProviderIntegrationTest : BerryCrushTestCase() {
         println("extractIncludeFragmentName('include my.fragment') = '$result3'")
         assertEquals("my.fragment", result3)
         
-        val result4 = BerryCrushLineMarkerProvider.extractIncludeFragmentName("Given I include the header")
-        println("extractIncludeFragmentName('Given I include the header') = '$result4'")
+        val result4 = BerryCrushLineMarkerProvider.extractIncludeFragmentName("given I include the header")
+        println("extractIncludeFragmentName('given I include the header') = '$result4'")
         // Note: the function doesn't check for line start, so it will return "the"
         // This is intentional - the line marker provider uses getLineMarkerInfo which 
         // is only called for the "include" token, not for step text
-        println("Note: 'Given I include the header' returns: $result4")
+        println("Note: 'given I include the header' returns: $result4")
     }
 
     /**
@@ -101,15 +101,15 @@ class BerryCrushLineMarkerProviderIntegrationTest : BerryCrushTestCase() {
     fun testLineMarkersForIncludeDirective() {
         // Create a fragment that the include directive will reference
         createFragmentFile("login", """
-            Fragment: login-steps
-            Given user is on login page
-            When user enters credentials
-            Then user is logged in
+            fragment: login-steps
+            given user is on login page
+            when user enters credentials
+            then user is logged in
         """.trimIndent())
 
         // Create a scenario file with an include directive
         createScenarioFile("test-markers", """
-            Scenario: Test markers
+            scenario: Test markers
             include login-steps
         """.trimIndent())
 
@@ -132,7 +132,7 @@ class BerryCrushLineMarkerProviderIntegrationTest : BerryCrushTestCase() {
     fun testIncludeDirectiveShowsGutterIconWhenFragmentNotFound() {
         // Create a scenario file with include directive referencing non-existent fragment
         createScenarioFile("test-missing-fragment", """
-            Scenario: Test missing
+            scenario: Test missing
             include non-existent-fragment
         """.trimIndent())
 

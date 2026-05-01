@@ -1,5 +1,6 @@
 package com.berrycrush.intellij.reference
 
+import com.berrycrush.intellij.util.ModuleScopeResolver
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.JavaPsiFacade
@@ -18,6 +19,9 @@ import com.intellij.psi.search.searches.AnnotatedElementsSearch
  *
  * Enables navigation from step text in .scenario/.fragment files to
  * the corresponding @Step annotated method definitions.
+ *
+ * Uses module-scoped search to only show @Step methods that are in the
+ * scenario file's classpath (compile-time dependencies).
  */
 class BerryCrushStepReference(
     element: PsiElement,
@@ -32,25 +36,36 @@ class BerryCrushStepReference(
 
     override fun multiResolve(incompleteCode: Boolean): Array<ResolveResult> {
         val project = element.project
-        val matchingMethods = findMatchingStepMethods(project, stepText)
+        // Use module-scoped search: only find @Step methods in this scenario's classpath
+        val scope = ModuleScopeResolver.getModuleDependencyScope(element)
+        val matchingMethods = findMatchingStepMethodsInScope(project, stepText, scope)
         return matchingMethods.map { PsiElementResolveResult(it) }.toTypedArray()
     }
 
     override fun getVariants(): Array<Any> {
-        // Return all step patterns for completion
+        // Return all step patterns for completion (use module scope for better suggestions)
         val project = element.project
-        return getAllStepPatterns(project).toTypedArray()
+        val scope = ModuleScopeResolver.getModuleDependencyScope(element)
+        return getAllStepPatternsInScope(project, scope).toTypedArray()
     }
 
     companion object {
         private const val STEP_ANNOTATION_FQN = "org.berrycrush.step.Step"
 
         /**
-         * Finds all @Step annotated methods that match the given step text.
+         * Finds all @Step annotated methods that match the given step text within the given scope.
+         *
+         * @param project The project
+         * @param stepText The step text to match
+         * @param scope The search scope (typically module dependencies)
+         * @return List of matching @Step methods
          */
-        fun findMatchingStepMethods(project: Project, stepText: String): List<PsiMethod> {
+        fun findMatchingStepMethodsInScope(
+            project: Project,
+            stepText: String,
+            scope: GlobalSearchScope
+        ): List<PsiMethod> {
             val stepAnnotationClass = findStepAnnotationClass(project) ?: return emptyList()
-            val scope = GlobalSearchScope.allScope(project)
             val methods = AnnotatedElementsSearch.searchPsiMethods(stepAnnotationClass, scope)
 
             return methods.filter { method ->
@@ -60,12 +75,35 @@ class BerryCrushStepReference(
         }
 
         /**
+         * Finds all @Step annotated methods that match the given step text.
+         * Searches the entire project (backward compatibility).
+         */
+        fun findMatchingStepMethods(project: Project, stepText: String): List<PsiMethod> {
+            val scope = GlobalSearchScope.allScope(project)
+            return findMatchingStepMethodsInScope(project, stepText, scope)
+        }
+
+        /**
+         * Gets all @Step annotated methods within the given scope.
+         */
+        fun getAllStepMethodsInScope(project: Project, scope: GlobalSearchScope): List<PsiMethod> {
+            val stepAnnotationClass = findStepAnnotationClass(project) ?: return emptyList()
+            return AnnotatedElementsSearch.searchPsiMethods(stepAnnotationClass, scope).toList()
+        }
+
+        /**
          * Gets all @Step annotated methods in the project.
          */
         fun getAllStepMethods(project: Project): List<PsiMethod> {
-            val stepAnnotationClass = findStepAnnotationClass(project) ?: return emptyList()
             val scope = GlobalSearchScope.allScope(project)
-            return AnnotatedElementsSearch.searchPsiMethods(stepAnnotationClass, scope).toList()
+            return getAllStepMethodsInScope(project, scope)
+        }
+
+        /**
+         * Gets all step patterns within the given scope.
+         */
+        fun getAllStepPatternsInScope(project: Project, scope: GlobalSearchScope): List<String> {
+            return getAllStepMethodsInScope(project, scope).mapNotNull { getStepPattern(it) }
         }
 
         /**

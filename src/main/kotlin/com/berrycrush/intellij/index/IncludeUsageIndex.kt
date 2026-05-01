@@ -56,10 +56,10 @@ class IncludeUsageIndex : ScalarIndexExtension<String>() {
 
         private const val VERSION = 1
 
-        // Match "include fragmentName" at the start of a line (with optional leading whitespace)
+        // Match "include fragmentName" at the start of a line (strict lowercase)
         private val INCLUDE_PATTERN = Regex(
             """^\s*include\s+(\^?[a-zA-Z_][a-zA-Z0-9_.\-]*)""",
-            setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE)
+            RegexOption.MULTILINE
         )
 
         /**
@@ -100,10 +100,10 @@ class IncludeUsageIndex : ScalarIndexExtension<String>() {
             val results = mutableListOf<PsiElement>()
             val text = file.text
             val escapedName = Regex.escape(fragmentName)
-            // Match "include fragmentName" at the start of a line (with optional leading whitespace)
+            // Match "include fragmentName" at the start of a line (strict lowercase)
             val pattern = Regex(
                 """^\s*(include\s+\^?$escapedName)(?!\w)""",
-                setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE)
+                RegexOption.MULTILINE
             )
 
             pattern.findAll(text).forEach { match ->
