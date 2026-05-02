@@ -162,5 +162,30 @@
                          enabledByDefault="true"
                          level="WEAK WARNING"
                          implementationClass="com.berrycrush.intellij.inspection.UndefinedAssertionInspection"/>
+
+        <!-- Refactoring Support -->
+        <lang.refactoringSupport language="BerryCrush"
+                                 implementationClass="com.berrycrush.intellij.refactoring.BerryCrushRefactoringSupportProvider"/>
+
+        <renameHandler implementation="com.berrycrush.intellij.refactoring.BerryCrushRenameHandler"/>
+
+        <renamePsiElementProcessor
+                implementation="com.berrycrush.intellij.refactoring.fragment.FragmentRenameProcessor"/>
+
+        <renamePsiElementProcessor
+                implementation="com.berrycrush.intellij.refactoring.variable.VariableRenameProcessor"/>
+
+        <refactoring.safeDeleteProcessor
+                implementation="com.berrycrush.intellij.refactoring.safedelete.BerryCrushSafeDeleteProcessor"/>
     </extensions>
+
+    <actions>
+        <action id="BerryCrush.SafeDeleteFragment"
+                class="com.berrycrush.intellij.refactoring.safedelete.SafeDeleteFragmentAction"
+                text="Safe Delete Fragment..."
+                description="Delete fragment file with usage check">
+            <add-to-group group-id="RefactoringMenu" anchor="after" relative-to-action="SafeDelete"/>
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="after" relative-to-action="SafeDelete"/>
+        </action>
+    </actions>
 </idea-plugin>
