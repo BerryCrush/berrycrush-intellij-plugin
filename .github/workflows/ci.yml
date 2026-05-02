@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup build environment
+        uses: ./.github/actions/setup-gradle
+        
+      - name: Build and check
+        run: ./gradlew check buildPlugin
+        
+      - name: Upload plugin artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: intellij-plugin
+          path: build/distributions/*.zip
+          retention-days: 30
+        
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reports
+          path: |
+            build/reports/
+          retention-days: 30

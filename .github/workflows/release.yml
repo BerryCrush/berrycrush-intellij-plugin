@@ -1,0 +1,90 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.0.0)'
+        required: true
+        type: string
+      publish_marketplace:
+        description: 'Publish to JetBrains Marketplace'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup build environment
+        uses: ./.github/actions/setup-gradle
+        
+      - name: Validate version format
+        run: |
+          if ! [[ "${{ inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Version must be in format X.Y.Z (e.g., 1.0.0)"
+            exit 1
+          fi
+        
+      - name: Update version in gradle.properties
+        run: |
+          sed -i "s/pluginVersion = .*/pluginVersion = ${{ inputs.version }}/" gradle.properties
+          cat gradle.properties
+          
+      - name: Build plugin
+        run: ./gradlew buildPlugin
+        
+      - name: Sign plugin
+        if: ${{ env.CERTIFICATE_CHAIN != '' }}
+        env:
+          CERTIFICATE_CHAIN: ${{ secrets.JETBRAINS_CERTIFICATE_CHAIN }}
+          PRIVATE_KEY: ${{ secrets.JETBRAINS_PRIVATE_KEY }}
+          PRIVATE_KEY_PASSWORD: ${{ secrets.JETBRAINS_PRIVATE_KEY_PASSWORD }}
+        run: ./gradlew signPlugin
+        
+      - name: Get plugin filename
+        id: plugin
+        run: |
+          PLUGIN_FILE=$(ls build/distributions/*.zip | head -1)
+          echo "filename=$(basename $PLUGIN_FILE)" >> $GITHUB_OUTPUT
+          echo "filepath=$PLUGIN_FILE" >> $GITHUB_OUTPUT
+          
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.version }}
+          name: v${{ inputs.version }}
+          body: |
+            ## BerryCrush IntelliJ Plugin v${{ inputs.version }}
+            
+            ### Installation
+            
+            1. Download the plugin ZIP file below
+            2. In IntelliJ IDEA, go to **Settings** → **Plugins** → **⚙️** → **Install Plugin from Disk...**
+            3. Select the downloaded ZIP file
+            4. Restart IntelliJ IDEA
+            
+            ### Changes
+            
+            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
+          files: |
+            build/distributions/*.zip
+          draft: false
+          prerelease: false
+          
+      - name: Publish to JetBrains Marketplace
+        if: ${{ inputs.publish_marketplace && env.MARKETPLACE_TOKEN != '' }}
+        env:
+          MARKETPLACE_TOKEN: ${{ secrets.JETBRAINS_MARKETPLACE_TOKEN }}
+        run: ./gradlew publishPlugin

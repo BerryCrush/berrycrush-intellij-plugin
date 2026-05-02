@@ -1,0 +1,101 @@
+name: Documentation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'doc/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          
+      - name: Install MkDocs
+        run: pip install mkdocs mkdocs-material
+        
+      - name: Create MkDocs config
+        run: |
+          cat > mkdocs.yml << 'EOF'
+          site_name: BerryCrush IntelliJ Plugin
+          site_description: IntelliJ IDEA Plugin for BerryCrush Scenario Files
+          docs_dir: doc
+          site_dir: _site
+          
+          theme:
+            name: material
+            palette:
+              primary: deep-purple
+              accent: pink
+            features:
+              - navigation.sections
+              - navigation.expand
+              - toc.integrate
+              - content.code.copy
+              
+          nav:
+            - Home: index.md
+            - Installation: installation.md
+            - Getting Started: getting-started.md
+            - Features:
+              - Syntax Highlighting: features/syntax.md
+              - Navigation: features/navigation.md
+              - Refactoring: features/refactoring.md
+              - Inspections: features/inspections.md
+              - Quick Fixes: features/quickfixes.md
+              - Test Runner: features/test-runner.md
+              - OpenAPI Integration: features/openapi.md
+            - Configuration:
+              - Settings: configuration/settings.md
+            - Development:
+              - Setup: development/setup.md
+              - Architecture: development/architecture.md
+              - Contributing: development/contributing.md
+              
+          markdown_extensions:
+            - pymdownx.highlight:
+                anchor_linenums: true
+            - pymdownx.superfences
+            - pymdownx.tabbed:
+                alternate_style: true
+            - admonition
+            - tables
+            - toc:
+                permalink: true
+          EOF
+          
+      - name: Build documentation
+        run: mkdocs build
+        
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
