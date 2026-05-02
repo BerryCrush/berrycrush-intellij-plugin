@@ -1,12 +1,11 @@
 name: Release
 
 on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Version to release (e.g., 1.0.0)'
-        required: true
-        type: string
       publish_marketplace:
         description: 'Publish to JetBrains Marketplace'
         required: false
@@ -27,19 +26,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         
-      - name: Setup build environment
-        uses: ./.github/actions/setup-gradle
-        
+      - name: Get version from tag
+        id: version
+        run: |
+          # Remove 'v' prefix from tag (refs/tags/v1.0.0 -> 1.0.0)
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+          
       - name: Validate version format
         run: |
-          if ! [[ "${{ inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          if ! [[ "${{ steps.version.outputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Error: Version must be in format X.Y.Z (e.g., 1.0.0)"
             exit 1
           fi
         
+      - name: Setup build environment
+        uses: ./.github/actions/setup-gradle
+        
       - name: Update version in gradle.properties
         run: |
-          sed -i "s/pluginVersion = .*/pluginVersion = ${{ inputs.version }}/" gradle.properties
+          sed -i "s/pluginVersion = .*/pluginVersion = ${{ steps.version.outputs.version }}/" gradle.properties
           cat gradle.properties
           
       - name: Build plugin
@@ -63,10 +70,10 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ inputs.version }}
-          name: v${{ inputs.version }}
+          tag_name: v${{ steps.version.outputs.version }}
+          name: v${{ steps.version.outputs.version }}
           body: |
-            ## BerryCrush IntelliJ Plugin v${{ inputs.version }}
+            ## BerryCrush IntelliJ Plugin v${{ steps.version.outputs.version }}
             
             ### Installation
             
