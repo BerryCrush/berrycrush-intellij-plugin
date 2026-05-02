@@ -4,6 +4,7 @@ IntelliJ IDEA plugin providing language support for BerryCrush scenario and frag
 
 ## Features
 
+### Editor Support
 - **File Types**: Support for `.scenario` and `.fragment` files with dedicated icons
 - **Syntax Highlighting**: Color coding for keywords, directives, strings, variables, JSON paths
 - **Code Folding**: Collapse features, scenarios, fragments, backgrounds, and examples
@@ -12,9 +13,19 @@ IntelliJ IDEA plugin providing language support for BerryCrush scenario and frag
 - **Commenter**: Toggle line comments with `Ctrl+/` / `Cmd+/`
 - **Brace Matching**: Highlight matching brackets and braces
 
+### Navigation
+- **Gutter Icons**: Navigate from include directives to fragment definitions
+- **Find Usages**: Find all usages of fragments across scenario files
+- **Go to Definition**: Navigate to OpenAPI operations, step definitions, and fragments
+
+### Refactoring
+- **Rename Fragment**: Rename fragment files with automatic reference updates
+- **Rename Variable**: Rename variables across scenario files
+- **Safe Delete**: Safely delete fragment files with usage checking
+
 ## Requirements
 
-- IntelliJ IDEA 2024.3+ (build 243 to 261.*)
+- IntelliJ IDEA 2025.3+ (build 253 to 261.*)
 
 ## Installation
 
@@ -90,7 +101,11 @@ intellij/
 │   ├── folding/        # Code folding
 │   ├── structure/      # Structure view
 │   ├── completion/     # Completion contributor
-│   └── commenter/      # Line commenter
+│   ├── commenter/      # Line commenter
+│   ├── navigation/     # Gutter icons & line markers
+│   ├── reference/      # Reference resolution
+│   ├── refactoring/    # Rename & safe delete support
+│   └── index/          # File indexes for search
 ├── src/main/resources/
 │   ├── META-INF/plugin.xml
 │   └── icons/          # File type icons

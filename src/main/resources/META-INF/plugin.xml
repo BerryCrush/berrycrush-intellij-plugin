@@ -177,16 +177,13 @@
 
         <refactoring.safeDeleteProcessor
                 implementation="com.berrycrush.intellij.refactoring.safedelete.BerryCrushSafeDeleteProcessor"/>
+
+        <!-- Target Element Evaluator for finding elements at caret position -->
+        <targetElementEvaluator language="BerryCrush"
+                implementationClass="com.berrycrush.intellij.navigation.BerryCrushTargetElementEvaluator"/>
     </extensions>
 
     <actions>
-        <!-- Per-fragment safe delete (when cursor is on fragment definition) -->
-        <action id="BerryCrush.DeleteFragment"
-                class="com.berrycrush.intellij.refactoring.safedelete.SafeDeleteFragmentAction"
-                text="Delete Fragment..."
-                description="Delete this fragment definition from the file">
-            <add-to-group group-id="RefactoringMenu" anchor="last"/>
-            <add-to-group group-id="EditorPopupMenu" anchor="before" relative-to-action="EditorCut"/>
-        </action>
+        <!-- Actions removed - native Safe Delete now works for fragments -->
     </actions>
 </idea-plugin>

@@ -180,6 +180,35 @@ class BerryCrushLexerTest {
         assertContains(tokens, BerryCrushTokenTypes.JSON_PATH)
     }
 
+    @Test
+    fun `test lexer tokenizes capitalized step keywords`() {
+        val input = """
+            Given user is logged in
+            When user clicks button
+            Then result is shown
+        """.trimIndent()
+        val tokens = tokenize(input)
+
+        assertContains(tokens, BerryCrushTokenTypes.GIVEN, "Given should be tokenized")
+        assertContains(tokens, BerryCrushTokenTypes.WHEN, "When should be tokenized")
+        assertContains(tokens, BerryCrushTokenTypes.THEN, "Then should be tokenized")
+    }
+
+    @Test
+    fun `test lexer tokenizes capitalized Fragment keyword`() {
+        val input = """
+            Fragment: my-fragment
+            Given step one
+            When step two
+        """.trimIndent()
+        val tokens = tokenize(input)
+
+        assertContains(tokens, BerryCrushTokenTypes.FRAGMENT, "Fragment should be tokenized")
+        assertContains(tokens, BerryCrushTokenTypes.NEWLINE, "Should have newline tokens")
+        assertContains(tokens, BerryCrushTokenTypes.GIVEN, "Given should be tokenized")
+        assertContains(tokens, BerryCrushTokenTypes.WHEN, "When should be tokenized")
+    }
+
     // --- Helper functions ---
 
     private fun tokenize(text: String): List<Pair<IElementType?, String>> {

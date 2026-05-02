@@ -35,6 +35,12 @@ import com.intellij.psi.util.PsiTreeUtil
 class BerryCrushLineMarkerProvider : LineMarkerProvider {
 
     override fun getLineMarkerInfo(element: PsiElement): LineMarkerInfo<*>? {
+        // Line markers must be registered for leaf elements only (per IntelliJ guidelines)
+        // Skip non-leaf elements to avoid performance warnings
+        if (element.firstChild != null) {
+            return null
+        }
+
         // Only create markers for elements that are the FIRST significant element on their line
         // This prevents duplicate markers when multiple elements on the same line match patterns
         if (!isFirstElementOnLine(element)) {

@@ -1,5 +1,6 @@
 package com.berrycrush.intellij.psi
 
+import com.berrycrush.intellij.lexer.BerryCrushTokenTypes
 import com.berrycrush.intellij.reference.BerryCrushFragmentReference
 import com.berrycrush.intellij.reference.BerryCrushOperationReference
 import com.intellij.extapi.psi.ASTWrapperPsiElement
@@ -137,7 +138,7 @@ class BerryCrushFragmentElement(node: ASTNode) : BerryCrushPsiElement(node), Psi
     val fragmentName: String?
         get() {
             val text = node.text
-            val match = Regex("""Fragment:\s*(.+)""").find(text.lines().first())
+            val match = Regex("""[Ff]ragment:\s*(.+)""").find(text.lines().first())
             return match?.groupValues?.get(1)?.trim()
         }
 
@@ -145,7 +146,21 @@ class BerryCrushFragmentElement(node: ASTNode) : BerryCrushPsiElement(node), Psi
 
     override fun setName(name: String): PsiElement = this
 
-    override fun getNameIdentifier(): PsiElement? = null
+    override fun getNameIdentifier(): PsiElement? {
+        // Find the TEXT token after the FRAGMENT keyword that contains the name
+        var child = node.firstChildNode
+        while (child != null) {
+            if (child.elementType == BerryCrushTokenTypes.TEXT) {
+                return child.psi
+            }
+            // Stop searching after first NEWLINE (name is on the first line)
+            if (child.elementType == BerryCrushTokenTypes.NEWLINE) {
+                break
+            }
+            child = child.treeNext
+        }
+        return null
+    }
 }
 
 /**

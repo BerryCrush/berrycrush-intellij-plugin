@@ -3,6 +3,7 @@ package com.berrycrush.intellij.refactoring.safedelete
 import com.berrycrush.intellij.index.IncludeUsageIndex
 import com.berrycrush.intellij.language.FragmentFileType
 import com.berrycrush.intellij.psi.BerryCrushFile
+import com.berrycrush.intellij.psi.BerryCrushFragmentElement
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.search.GlobalSearchScope
@@ -12,7 +13,11 @@ import com.intellij.refactoring.safeDelete.SafeDeleteProcessorDelegate
 import com.intellij.usageView.UsageInfo
 
 /**
- * Safe delete processor for BerryCrush fragment files.
+ * Safe delete processor for BerryCrush fragment files and fragment elements.
+ *
+ * Supports two modes:
+ * 1. File-level deletion: Deletes entire .fragment file
+ * 2. Element-level deletion: Deletes individual fragment block within a file
  *
  * Checks for usages before allowing deletion:
  * - Warns if fragment is included anywhere
@@ -22,10 +27,15 @@ import com.intellij.usageView.UsageInfo
 class BerryCrushSafeDeleteProcessor : SafeDeleteProcessorDelegate {
 
     override fun handlesElement(element: PsiElement): Boolean {
+        // Handle individual fragment elements (for per-fragment deletion)
+        if (element is BerryCrushFragmentElement) {
+            return true
+        }
+        // Handle fragment files
         if (element is PsiFile) {
             return element.virtualFile?.extension == FragmentFileType.EXTENSION
         }
-        // Also handle BerryCrushFile
+        // Handle BerryCrushFile
         return element is BerryCrushFile &&
             element.virtualFile?.extension == FragmentFileType.EXTENSION
     }
@@ -35,16 +45,14 @@ class BerryCrushSafeDeleteProcessor : SafeDeleteProcessorDelegate {
         allElementsToDelete: Array<out PsiElement>,
         usages: MutableList<in UsageInfo>,
     ): NonCodeUsageSearchInfo {
-        val file = when (element) {
-            is PsiFile -> element
-            else -> element.containingFile
-        } ?: return NonCodeUsageSearchInfo(
-            SafeDeleteProcessor.getDefaultInsideDeletedCondition(allElementsToDelete),
-            listOf(element),
-        )
+        val project = element.project
 
-        val fragmentNames = extractFragmentNames(file)
-        val project = file.project
+        // Get fragment names based on element type
+        val fragmentNames = when (element) {
+            is BerryCrushFragmentElement -> listOfNotNull(element.fragmentName)
+            is PsiFile -> extractFragmentNames(element)
+            else -> element.containingFile?.let { extractFragmentNames(it) } ?: emptyList()
+        }
 
         // Find usages via our index
         fragmentNames.forEach { fragmentName ->
@@ -53,13 +61,15 @@ class BerryCrushSafeDeleteProcessor : SafeDeleteProcessorDelegate {
                 .forEach { usages.add(it) }
         }
 
-        // Also search for generic usages (references to the file)
-        SafeDeleteProcessor.findGenericElementUsages(
-            element,
-            usages,
-            allElementsToDelete,
-            GlobalSearchScope.projectScope(project),
-        )
+        // For file-level deletion, also search for generic usages
+        if (element is PsiFile || element is BerryCrushFile) {
+            SafeDeleteProcessor.findGenericElementUsages(
+                element,
+                usages,
+                allElementsToDelete,
+                GlobalSearchScope.projectScope(project),
+            )
+        }
 
         return NonCodeUsageSearchInfo(
             SafeDeleteProcessor.getDefaultInsideDeletedCondition(allElementsToDelete),
@@ -81,7 +91,33 @@ class BerryCrushSafeDeleteProcessor : SafeDeleteProcessorDelegate {
     override fun findConflicts(
         element: PsiElement,
         allElementsToDelete: Array<out PsiElement>,
-    ): Collection<String>? = null
+    ): Collection<String>? {
+        val conflicts = mutableListOf<String>()
+        val project = element.project
+
+        // Get fragment names based on element type
+        val fragmentNames = when (element) {
+            is BerryCrushFragmentElement -> listOfNotNull(element.fragmentName)
+            is PsiFile -> extractFragmentNames(element)
+            else -> element.containingFile?.let { extractFragmentNames(it) } ?: emptyList()
+        }
+
+        // Find usages and report as conflicts
+        fragmentNames.forEach { fragmentName ->
+            val usages = IncludeUsageIndex.findIncludeUsages(project, fragmentName)
+            if (usages.isNotEmpty()) {
+                val usageFiles = usages.mapNotNull { it.containingFile?.name }.distinct()
+                val usageDescription = if (usageFiles.size <= 3) {
+                    usageFiles.joinToString(", ")
+                } else {
+                    "${usageFiles.take(3).joinToString(", ")} and ${usageFiles.size - 3} more"
+                }
+                conflicts.add("Fragment '$fragmentName' is included in: $usageDescription")
+            }
+        }
+
+        return if (conflicts.isEmpty()) null else conflicts
+    }
 
     @Suppress("DEPRECATION")
     override fun preprocessUsages(

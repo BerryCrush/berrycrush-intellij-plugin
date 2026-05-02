@@ -86,9 +86,40 @@ class BerryCrushParser : PsiParser {
 
     private fun parseFragment(builder: PsiBuilder) {
         val marker = builder.mark()
-        builder.advanceLexer()
+        builder.advanceLexer() // consume "fragment"
         skipToEndOfLine(builder)
+
+        // Parse all content until next top-level block
+        while (!builder.eof() && !isTopLevelKeyword(builder.tokenType)) {
+            parseFragmentContent(builder)
+        }
+
         marker.done(BerryCrushElementTypes.FRAGMENT)
+    }
+
+    /**
+     * Checks if the token type represents a top-level block keyword.
+     * These keywords mark the start of a new block and end the current fragment.
+     */
+    private fun isTopLevelKeyword(tokenType: IElementType?): Boolean =
+        tokenType in TOP_LEVEL_KEYWORDS
+
+    /**
+     * Parses content within a fragment block (steps, directives, etc.).
+     */
+    private fun parseFragmentContent(builder: PsiBuilder) {
+        when (builder.tokenType) {
+            BerryCrushTokenTypes.GIVEN,
+            BerryCrushTokenTypes.WHEN,
+            BerryCrushTokenTypes.THEN,
+            BerryCrushTokenTypes.AND,
+            BerryCrushTokenTypes.BUT -> parseStep(builder)
+            BerryCrushTokenTypes.CALL -> parseCallDirective(builder)
+            BerryCrushTokenTypes.INCLUDE -> parseIncludeDirective(builder)
+            BerryCrushTokenTypes.ASSERT -> parseAssertDirective(builder)
+            BerryCrushTokenTypes.OPERATION_REF -> parseOperationRef(builder)
+            else -> builder.advanceLexer()
+        }
     }
 
     private fun parseBackground(builder: PsiBuilder) {
@@ -162,5 +193,18 @@ class BerryCrushParser : PsiParser {
         while (builder.tokenType == BerryCrushTokenTypes.NEWLINE) {
             builder.advanceLexer()
         }
+    }
+
+    companion object {
+        /**
+         * Keywords that mark the start of a new top-level block.
+         * Used to determine fragment boundaries.
+         */
+        private val TOP_LEVEL_KEYWORDS = setOf(
+            BerryCrushTokenTypes.FEATURE,
+            BerryCrushTokenTypes.SCENARIO,
+            BerryCrushTokenTypes.OUTLINE,
+            BerryCrushTokenTypes.FRAGMENT,
+        )
     }
 }

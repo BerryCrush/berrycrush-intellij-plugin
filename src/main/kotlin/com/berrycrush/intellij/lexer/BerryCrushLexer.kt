@@ -200,17 +200,17 @@ class BerryCrushLexer : LexerBase() {
     }
 
     private fun tryMatchKeyword(): IElementType? {
-        // Try block keywords (strict lowercase matching)
+        // Try block keywords (case-insensitive to match Gherkin convention)
         for ((keyword, token) in BLOCK_KEYWORDS) {
-            if (matchesAt(keyword)) {
+            if (matchesAtCaseInsensitive(keyword)) {
                 position += keyword.length
                 return token
             }
         }
 
-        // Try step keywords (strict lowercase matching)
+        // Try step keywords (case-insensitive to match Gherkin convention)
         for ((keyword, token) in STEP_KEYWORDS) {
-            if (matchesAt(keyword)) {
+            if (matchesAtCaseInsensitive(keyword)) {
                 position += keyword.length
                 return token
             }
