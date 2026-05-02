@@ -82,6 +82,9 @@
         <lang.psiStructureViewFactory language="BerryCrush"
                                       implementationClass="com.berrycrush.intellij.structure.BerryCrushStructureViewFactory"/>
 
+        <!-- Breadcrumbs -->
+        <breadcrumbsInfoProvider implementation="com.berrycrush.intellij.navigation.BerryCrushBreadcrumbsProvider"/>
+
         <!-- Completion -->
         <completion.contributor language="BerryCrush"
                                 implementationClass="com.berrycrush.intellij.completion.BerryCrushCompletionContributor"/>

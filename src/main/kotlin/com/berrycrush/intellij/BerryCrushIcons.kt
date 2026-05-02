@@ -26,4 +26,14 @@ object BerryCrushIcons {
 
     @JvmField
     val RUN_CONFIGURATION: Icon = load("/icons/run-configuration.svg")
+
+    // Structure view icons - reuse existing icons as fallbacks
+    @JvmField
+    val OPERATION: Icon = STEP  // API operation calls
+
+    @JvmField
+    val ASSERTION: Icon = STEP  // Assert directives
+
+    @JvmField
+    val VARIABLE: Icon = STEP   // Extract directives
 }

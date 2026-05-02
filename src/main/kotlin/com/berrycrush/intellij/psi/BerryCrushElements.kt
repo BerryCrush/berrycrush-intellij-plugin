@@ -102,7 +102,7 @@ class BerryCrushFeatureElement(node: ASTNode) : BerryCrushPsiElement(node), PsiN
     val featureName: String?
         get() {
             val text = node.text
-            val match = Regex("""Feature:\s*(.+)""").find(text.lines().first())
+            val match = Regex("""[Ff]eature:\s*(.+)""").find(text.lines().first())
             return match?.groupValues?.get(1)?.trim()
         }
 
@@ -120,7 +120,7 @@ class BerryCrushScenarioElement(node: ASTNode) : BerryCrushPsiElement(node), Psi
     val scenarioName: String?
         get() {
             val text = node.text
-            val match = Regex("""Scenario:\s*(.+)""").find(text.lines().first())
+            val match = Regex("""[Ss]cenario:\s*(.+)""").find(text.lines().first())
             return match?.groupValues?.get(1)?.trim()
         }
 
@@ -169,13 +169,13 @@ class BerryCrushFragmentElement(node: ASTNode) : BerryCrushPsiElement(node), Psi
 class BerryCrushStepElement(node: ASTNode) : BerryCrushPsiElement(node) {
     val keyword: String?
         get() {
-            val text = node.text.trim()
+            val text = node.text.trim().lowercase()
             return when {
-                text.startsWith("Given") -> "Given"
-                text.startsWith("When") -> "When"
-                text.startsWith("Then") -> "Then"
-                text.startsWith("And") -> "And"
-                text.startsWith("But") -> "But"
+                text.startsWith("given") -> "given"
+                text.startsWith("when") -> "when"
+                text.startsWith("then") -> "then"
+                text.startsWith("and") -> "and"
+                text.startsWith("but") -> "but"
                 else -> null
             }
         }
@@ -183,8 +183,10 @@ class BerryCrushStepElement(node: ASTNode) : BerryCrushPsiElement(node) {
     val stepText: String?
         get() {
             val text = node.text.trim()
-            val keyword = keyword ?: return null
-            return text.removePrefix(keyword).trim()
+            val kw = keyword ?: return null
+            // Remove the keyword prefix (case-insensitive)
+            val prefixLength = kw.length
+            return text.substring(prefixLength).trim()
         }
 }
 
