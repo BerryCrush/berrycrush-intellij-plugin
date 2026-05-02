@@ -1,5 +1,6 @@
 package com.berrycrush.intellij.refactoring
 
+import com.berrycrush.intellij.language.FragmentFileType
 import com.berrycrush.intellij.psi.BerryCrushFile
 import com.intellij.lang.refactoring.RefactoringSupportProvider
 import com.intellij.psi.PsiElement
@@ -10,6 +11,7 @@ import com.intellij.psi.PsiElement
  * Supports:
  * - In-place rename for fragment definitions
  * - In-place rename for variable placeholders
+ * - Safe delete for fragment definitions
  */
 class BerryCrushRefactoringSupportProvider : RefactoringSupportProvider() {
 
@@ -18,6 +20,12 @@ class BerryCrushRefactoringSupportProvider : RefactoringSupportProvider() {
 
     override fun isInplaceRenameAvailable(element: PsiElement, context: PsiElement?): Boolean =
         element.containingFile is BerryCrushFile && isRenameableElement(element)
+
+    override fun isSafeDeleteAvailable(element: PsiElement): Boolean {
+        val file = element.containingFile ?: return false
+        // Safe delete available for fragment files
+        return file.virtualFile?.extension == FragmentFileType.EXTENSION
+    }
 
     private fun isRenameableElement(element: PsiElement): Boolean {
         val text = element.text

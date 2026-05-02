@@ -180,12 +180,13 @@
     </extensions>
 
     <actions>
-        <action id="BerryCrush.SafeDeleteFragment"
+        <!-- Per-fragment safe delete (when cursor is on fragment definition) -->
+        <action id="BerryCrush.DeleteFragment"
                 class="com.berrycrush.intellij.refactoring.safedelete.SafeDeleteFragmentAction"
-                text="Safe Delete Fragment..."
-                description="Delete fragment file with usage check">
-            <add-to-group group-id="RefactoringMenu" anchor="after" relative-to-action="SafeDelete"/>
-            <add-to-group group-id="ProjectViewPopupMenu" anchor="after" relative-to-action="SafeDelete"/>
+                text="Delete Fragment..."
+                description="Delete this fragment definition from the file">
+            <add-to-group group-id="RefactoringMenu" anchor="last"/>
+            <add-to-group group-id="EditorPopupMenu" anchor="before" relative-to-action="EditorCut"/>
         </action>
     </actions>
 </idea-plugin>

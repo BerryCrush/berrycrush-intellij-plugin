@@ -5,7 +5,9 @@ import com.berrycrush.intellij.language.FragmentFileType
 import com.berrycrush.intellij.psi.BerryCrushFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
+import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.refactoring.safeDelete.NonCodeUsageSearchInfo
+import com.intellij.refactoring.safeDelete.SafeDeleteProcessor
 import com.intellij.refactoring.safeDelete.SafeDeleteProcessorDelegate
 import com.intellij.usageView.UsageInfo
 
@@ -19,32 +21,56 @@ import com.intellij.usageView.UsageInfo
  */
 class BerryCrushSafeDeleteProcessor : SafeDeleteProcessorDelegate {
 
-    override fun handlesElement(element: PsiElement): Boolean =
-        element is PsiFile && element.virtualFile?.extension == FragmentFileType.EXTENSION
+    override fun handlesElement(element: PsiElement): Boolean {
+        if (element is PsiFile) {
+            return element.virtualFile?.extension == FragmentFileType.EXTENSION
+        }
+        // Also handle BerryCrushFile
+        return element is BerryCrushFile &&
+            element.virtualFile?.extension == FragmentFileType.EXTENSION
+    }
 
     override fun findUsages(
         element: PsiElement,
         allElementsToDelete: Array<out PsiElement>,
         usages: MutableList<in UsageInfo>,
-    ): NonCodeUsageSearchInfo? {
-        if (element !is PsiFile) return null
+    ): NonCodeUsageSearchInfo {
+        val file = when (element) {
+            is PsiFile -> element
+            else -> element.containingFile
+        } ?: return NonCodeUsageSearchInfo(
+            SafeDeleteProcessor.getDefaultInsideDeletedCondition(allElementsToDelete),
+            listOf(element),
+        )
 
-        val fragmentNames = extractFragmentNames(element)
-        val project = element.project
+        val fragmentNames = extractFragmentNames(file)
+        val project = file.project
 
+        // Find usages via our index
         fragmentNames.forEach { fragmentName ->
             IncludeUsageIndex.findIncludeUsages(project, fragmentName)
                 .map { UsageInfo(it) }
                 .forEach { usages.add(it) }
         }
 
-        return null
+        // Also search for generic usages (references to the file)
+        SafeDeleteProcessor.findGenericElementUsages(
+            element,
+            usages,
+            allElementsToDelete,
+            GlobalSearchScope.projectScope(project),
+        )
+
+        return NonCodeUsageSearchInfo(
+            SafeDeleteProcessor.getDefaultInsideDeletedCondition(allElementsToDelete),
+            listOf(element),
+        )
     }
 
     override fun getElementsToSearch(
         element: PsiElement,
         allElementsToDelete: Collection<PsiElement>,
-    ): Collection<PsiElement>? = null
+    ): Collection<PsiElement> = listOf(element)
 
     override fun getAdditionalElementsToDelete(
         element: PsiElement,
@@ -61,7 +87,7 @@ class BerryCrushSafeDeleteProcessor : SafeDeleteProcessorDelegate {
     override fun preprocessUsages(
         project: com.intellij.openapi.project.Project,
         usages: Array<out UsageInfo>,
-    ): Array<UsageInfo>? = usages.toList().toTypedArray()
+    ): Array<UsageInfo> = usages.toList().toTypedArray()
 
     override fun prepareForDeletion(element: PsiElement) {
         // No preparation needed
