@@ -11,11 +11,11 @@ class FragmentIndexTest : BerryCrushTestCase() {
 
     fun testIndexesFragmentDefinition() {
         createFragmentFile("login", """
-            Fragment: login-steps
+            fragment: login-steps
             
-            Given user is on login page
-            When user enters credentials
-            Then user is logged in
+            given user is on login page
+            when user enters credentials
+            then user is logged in
         """.trimIndent())
 
         val fragmentNames = FragmentIndex.getAllFragmentNames(project)
@@ -24,11 +24,11 @@ class FragmentIndexTest : BerryCrushTestCase() {
 
     fun testIndexesMultipleFragmentsInSameFile() {
         createFragmentFile("common", """
-            Fragment: setup-steps
-            Given system is initialized
+            fragment: setup-steps
+            given system is initialized
             
-            Fragment: cleanup-steps
-            Then system is cleaned up
+            fragment: cleanup-steps
+            then system is cleaned up
         """.trimIndent())
 
         val fragmentNames = FragmentIndex.getAllFragmentNames(project)
@@ -38,8 +38,8 @@ class FragmentIndexTest : BerryCrushTestCase() {
 
     fun testFindsFragmentFilesByName() {
         createFragmentFile("auth", """
-            Fragment: auth-flow
-            Given user has valid token
+            fragment: auth-flow
+            given user has valid token
         """.trimIndent())
 
         val files = FragmentIndex.getFragmentFiles(project, "auth-flow")
@@ -50,7 +50,7 @@ class FragmentIndexTest : BerryCrushTestCase() {
     fun testHandlesCaseInsensitiveFragmentKeyword() {
         createFragmentFile("mixed", """
             fragment: lowercase-fragment
-            Given test step
+            given test step
         """.trimIndent())
 
         val fragmentNames = FragmentIndex.getAllFragmentNames(project)
@@ -69,12 +69,12 @@ class FragmentIndexTest : BerryCrushTestCase() {
     fun testFileWithoutFragmentDirectiveReturnsNoFragments() {
         createFragmentFile("no-directive", """
             # This is just a comment
-            Given some step
-            Then some assertion
+            given some step
+            then some assertion
         """.trimIndent())
 
         // Should have no fragments from this file
-        // (checking that Fragment: pattern is required)
+        // (checking that fragment: pattern is required)
         val files = FragmentIndex.getFragmentFiles(project, "no-directive")
         assertTrue(files.isEmpty())
     }

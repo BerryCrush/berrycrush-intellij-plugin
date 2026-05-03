@@ -1,74 +1,162 @@
 package com.berrycrush.intellij.inspection
 
 import com.berrycrush.intellij.BerryCrushTestCase
+import com.intellij.codeInspection.InspectionManager
+import com.intellij.codeInspection.ProblemDescriptor
+import com.intellij.codeInspection.ProblemsHolder
 
 /**
  * Tests for UndefinedAssertionInspection.
  *
- * Tests the assertion detection patterns.
+ * Tests the actual inspection behavior using the IntelliJ testing framework.
  */
 class UndefinedAssertionInspectionTest : BerryCrushTestCase() {
 
-    fun testAssertPatternMatching() {
-        val pattern = Regex(
-            """^\s*assert\s+(.+)$""",
-            RegexOption.IGNORE_CASE
+    private val inspection = UndefinedAssertionInspection()
+
+    // ========== Inspection Properties Tests ==========
+
+    fun testInspectionDisplayName() {
+        assertEquals("Undefined assertion", inspection.displayName)
+    }
+
+    fun testInspectionShortName() {
+        assertEquals("BerryCrushUndefinedAssertion", inspection.shortName)
+    }
+
+    fun testInspectionGroupDisplayName() {
+        assertEquals("BerryCrush", inspection.groupDisplayName)
+    }
+
+    fun testInspectionEnabledByDefault() {
+        assertTrue("Should be enabled by default", inspection.isEnabledByDefault)
+    }
+
+    // ========== Assertion Detection Tests ==========
+
+    fun testProblemForUndefinedAssertion() {
+        // Assert without matching @Assertion should be flagged
+        val psiFile = myFixture.addFileToProject("test.scenario", """
+            scenario: test
+              then: verify
+                assert response is valid
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        val undefinedAssertionProblems = problems.filter {
+            it.descriptionTemplate.contains("has no matching @Assertion definition")
+        }
+        assertTrue(
+            "Undefined assertion should be flagged",
+            undefinedAssertionProblems.isNotEmpty()
         )
-        
-        // Should match assert directives
-        var match = pattern.find("assert response is valid")
-        assertNotNull(match)
-        assertEquals("response is valid", match?.groupValues?.get(1))
-        
-        match = pattern.find("  assert status code is 200")
-        assertNotNull(match)
-        assertEquals("status code is 200", match?.groupValues?.get(1))
-        
-        match = pattern.find("ASSERT user exists")
-        assertNotNull(match)
-        assertEquals("user exists", match?.groupValues?.get(1))
     }
 
-    fun testAssertPatternDoesNotMatchProseText() {
-        val pattern = Regex(
-            """^\s*assert\s+(.+)$""",
-            RegexOption.IGNORE_CASE
+    fun testEmptyAssertionTextNotFlagged() {
+        // Empty assertion text should not be flagged
+        val psiFile = myFixture.addFileToProject("test2.scenario", """
+            scenario: test
+              then: verify
+                assert
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "Empty assertion should not be flagged",
+            problems.isEmpty()
         )
-        
-        // Should NOT match 'assert' in prose (doesn't start line)
-        val match = pattern.find("user will assert their rights")
-        assertNull("Should not match 'assert' in middle of text", match)
     }
 
-    fun testAssertionTextExtraction() {
-        val pattern = Regex("""^\s*assert\s+(.+)$""", RegexOption.IGNORE_CASE)
-        
-        // Test with quoted string
-        var match = pattern.find("assert response contains \"success\"")
-        assertEquals("response contains \"success\"", match?.groupValues?.get(1))
-        
-        // Test with number
-        match = pattern.find("assert count is 42")
-        assertEquals("count is 42", match?.groupValues?.get(1))
+    fun testCaseInsensitiveAssertKeyword() {
+        // Assert keyword should be case insensitive
+        val psiFile = myFixture.addFileToProject("test3.scenario", """
+            scenario: test
+              then: verify
+                ASSERT response is valid
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        val undefinedAssertionProblems = problems.filter {
+            it.descriptionTemplate.contains("has no matching @Assertion definition")
+        }
+        assertTrue(
+            "ASSERT keyword should be recognized",
+            undefinedAssertionProblems.isNotEmpty()
+        )
     }
 
-    fun testMultipleAssertionsInSequence() {
-        val content = """
-            then: verify results
-              assert first condition
-              assert second condition
-              assert third condition
-        """.trimIndent()
-        
-        val pattern = Regex("""^\s*assert\s+(.+)$""", RegexOption.IGNORE_CASE)
-        val assertions = content.lines()
-            .mapNotNull { pattern.find(it) }
-            .map { it.groupValues[1] }
-        
-        assertEquals(3, assertions.size)
-        assertEquals("first condition", assertions[0])
-        assertEquals("second condition", assertions[1])
-        assertEquals("third condition", assertions[2])
+    fun testAssertInProseNotFlagged() {
+        // "assert" in prose (not at line start) should not be flagged
+        val psiFile = myFixture.addFileToProject("test4.scenario", """
+            scenario: test
+              given: user will assert their rights
+                call GET /api/users
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "Assert in prose should not be flagged",
+            problems.isEmpty()
+        )
+    }
+
+    fun testMultipleAssertionsEachFlagged() {
+        // Each undefined assertion should be flagged
+        val psiFile = myFixture.addFileToProject("test5.scenario", """
+            scenario: test
+              then: verify
+                assert first condition
+                assert second condition
+                assert third condition
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        assertEquals(
+            "All undefined assertions should be flagged",
+            3,
+            problems.size
+        )
+    }
+
+    fun testAssertionWithQuickFix() {
+        // Undefined assertion should have a quick fix
+        val psiFile = myFixture.addFileToProject("test6.scenario", """
+            scenario: test
+              then: verify
+                assert custom check
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        assertTrue("Should have problems", problems.isNotEmpty())
+
+        val problem = problems.first()
+        val fixes = problem.fixes
+        assertNotNull("Should have quick fix", fixes)
+        assertTrue("Should have at least one fix", fixes?.isNotEmpty() == true)
+    }
+
+    // ========== Non-BerryCrush Files Tests ==========
+
+    fun testIgnoresNonBerryCrushFiles() {
+        val psiFile = myFixture.addFileToProject("test.txt", """
+            assert something
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "Non-BerryCrush files should be ignored",
+            problems.isEmpty()
+        )
+    }
+
+    // ========== Helper Methods ==========
+
+    private fun runInspection(file: com.intellij.psi.PsiFile): List<ProblemDescriptor> {
+        val manager = InspectionManager.getInstance(project)
+        val holder = ProblemsHolder(manager, file, false)
+        val visitor = inspection.buildVisitor(holder, false)
+        visitor.visitFile(file)
+        return holder.results
     }
 }
 

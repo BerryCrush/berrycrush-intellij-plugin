@@ -1,96 +1,185 @@
 package com.berrycrush.intellij.index
 
-import org.junit.jupiter.api.Test
-import kotlin.test.assertEquals
+import com.berrycrush.intellij.BerryCrushTestCase
 
 /**
  * Unit tests for OperationUsageIndex.
  *
- * Tests the operation reference (^operationId) regex pattern matching.
+ * Tests the actual index class behavior using the IntelliJ testing framework.
  */
-class OperationUsageIndexTest {
+class OperationUsageIndexTest : BerryCrushTestCase() {
 
-    // Test the regex pattern directly
-    private val operationPattern = Regex("""\^([a-zA-Z_]\w*)""")
+    // ========== Index Detection Tests ==========
 
-    @Test
-    fun `pattern matches basic operation reference`() {
-        val content = "Given ^createUser is called"
-        val matches = operationPattern.findAll(content).toList()
-        assertEquals(1, matches.size)
-        assertEquals("createUser", matches[0].groupValues[1])
+    fun testIndexesBasicOperationReference() {
+        createScenarioFile("test", """
+            scenario: test
+              given: setup
+                call ^createUser
+        """.trimIndent())
+
+        val operations = OperationUsageIndex.getAllOperationIds(project)
+        assertTrue(
+            "Should index 'createUser'",
+            operations.contains("createUser")
+        )
     }
 
-    @Test
-    fun `pattern matches multiple operation references`() {
-        val content = """
-            Given ^createUser is called
-            When ^updateUser is called
-            Then ^deleteUser is called
-        """.trimIndent()
-        val matches = operationPattern.findAll(content).toList()
-        assertEquals(3, matches.size)
-        assertEquals("createUser", matches[0].groupValues[1])
-        assertEquals("updateUser", matches[1].groupValues[1])
-        assertEquals("deleteUser", matches[2].groupValues[1])
+    fun testIndexesMultipleOperationReferences() {
+        createScenarioFile("test2", """
+            scenario: test
+              given: setup
+                call ^createUser
+              when: action
+                call ^updateUser
+              then: verify
+                call ^deleteUser
+        """.trimIndent())
+
+        val operations = OperationUsageIndex.getAllOperationIds(project)
+        assertTrue("Should index 'createUser'", operations.contains("createUser"))
+        assertTrue("Should index 'updateUser'", operations.contains("updateUser"))
+        assertTrue("Should index 'deleteUser'", operations.contains("deleteUser"))
     }
 
-    @Test
-    fun `pattern matches operation with underscores`() {
-        val content = "Given ^get_user_by_id is called"
-        val matches = operationPattern.findAll(content).toList()
-        assertEquals("get_user_by_id", matches[0].groupValues[1])
+    fun testIndexesOperationWithUnderscores() {
+        createScenarioFile("test3", """
+            scenario: test
+              given: setup
+                call ^get_user_by_id
+        """.trimIndent())
+
+        val operations = OperationUsageIndex.getAllOperationIds(project)
+        assertTrue(
+            "Should index 'get_user_by_id'",
+            operations.contains("get_user_by_id")
+        )
     }
 
-    @Test
-    fun `pattern matches operation starting with letter`() {
-        val content = "Given ^getUserById is called"
-        val matches = operationPattern.findAll(content).toList()
-        assertEquals("getUserById", matches[0].groupValues[1])
+    fun testIndexesOperationStartingWithUnderscore() {
+        createScenarioFile("test4", """
+            scenario: test
+              given: setup
+                call ^_privateOp
+        """.trimIndent())
+
+        val operations = OperationUsageIndex.getAllOperationIds(project)
+        assertTrue(
+            "Should index '_privateOp'",
+            operations.contains("_privateOp")
+        )
     }
 
-    @Test
-    fun `pattern matches operation starting with underscore`() {
-        val content = "Given ^_privateOp is called"
-        val matches = operationPattern.findAll(content).toList()
-        assertEquals("_privateOp", matches[0].groupValues[1])
+    fun testIndexesOperationWithNumbers() {
+        createScenarioFile("test5", """
+            scenario: test
+              given: setup
+                call ^User123
+        """.trimIndent())
+
+        val operations = OperationUsageIndex.getAllOperationIds(project)
+        assertTrue(
+            "Should index 'User123'",
+            operations.contains("User123")
+        )
     }
 
-    @Test
-    fun `pattern matches operation with numbers`() {
-        val content = "Given ^User123 is called"
-        val matches = operationPattern.findAll(content).toList()
-        assertEquals("User123", matches[0].groupValues[1])
+    fun testDoesNotIndexCaretWithoutValidId() {
+        createScenarioFile("test6", """
+            scenario: test
+              given: this line has ^ by itself
+        """.trimIndent())
+
+        val operations = OperationUsageIndex.getAllOperationIds(project)
+        // Should not index 'in' which comes after the caret
+        // The pattern requires the caret to be followed by a valid identifier start
+        assertFalse(
+            "Should not index text after isolated caret",
+            operations.contains("by")
+        )
     }
 
-    @Test
-    fun `pattern does not match caret without valid id`() {
-        val content = "This line has ^ in middle"
-        val matches = operationPattern.findAll(content).toList()
-        assertEquals(0, matches.size)
+    fun testDoesNotIndexOperationStartingWithNumber() {
+        createScenarioFile("test7", """
+            scenario: test
+              given: setup
+                call ^123invalid
+        """.trimIndent())
+
+        val operations = OperationUsageIndex.getAllOperationIds(project)
+        assertFalse(
+            "Should not index '123invalid' (starts with number)",
+            operations.contains("123invalid")
+        )
     }
 
-    @Test
-    fun `pattern does not match operation starting with number`() {
-        val content = "Given ^123invalid is called"
-        val matches = operationPattern.findAll(content).toList()
-        // Should not match because operation must start with letter or underscore
-        assertEquals(0, matches.size)
+    fun testIndexesOperationAtEndOfLine() {
+        createScenarioFile("test8", """
+            scenario: test
+              given: setup
+                call ^getUser
+        """.trimIndent())
+
+        val operations = OperationUsageIndex.getAllOperationIds(project)
+        assertTrue(
+            "Should index 'getUser'",
+            operations.contains("getUser")
+        )
     }
 
-    @Test
-    fun `pattern matches operation at end of line`() {
-        val content = "Call ^getUser"
-        val matches = operationPattern.findAll(content).toList()
-        assertEquals("getUser", matches[0].groupValues[1])
+    fun testIndexesOperationInStepText() {
+        createScenarioFile("test9", """
+            scenario: test
+              given: ^createUser is called
+        """.trimIndent())
+
+        val operations = OperationUsageIndex.getAllOperationIds(project)
+        assertTrue(
+            "Should index 'createUser' in step text",
+            operations.contains("createUser")
+        )
     }
 
-    @Test
-    fun `pattern stops at non-word character`() {
-        val content = "Given ^createUser, and ^deleteUser"
-        val matches = operationPattern.findAll(content).toList()
-        assertEquals(2, matches.size)
-        assertEquals("createUser", matches[0].groupValues[1])
-        assertEquals("deleteUser", matches[1].groupValues[1])
+    // ========== File Lookup Tests ==========
+
+    fun testGetFilesReferencingOperation() {
+        createScenarioFile("referencer", """
+            scenario: test
+              given: setup
+                call ^targetOp
+        """.trimIndent())
+
+        createScenarioFile("other", """
+            scenario: other
+              given: setup
+                call GET /api
+        """.trimIndent())
+
+        val files = OperationUsageIndex.getFilesReferencingOperation(project, "targetOp")
+        assertEquals(
+            "Should find one file referencing 'targetOp'",
+            1,
+            files.size
+        )
+        assertTrue(
+            "Should be the referencer file",
+            files.first().name == "referencer.scenario"
+        )
+    }
+
+    // ========== Include Directive Tests ==========
+
+    fun testIndexesOperationInIncludeDirective() {
+        createScenarioFile("test10", """
+            scenario: test
+              given: setup
+                include ^fragmentOp
+        """.trimIndent())
+
+        val operations = OperationUsageIndex.getAllOperationIds(project)
+        assertTrue(
+            "Should index 'fragmentOp' from include directive",
+            operations.contains("fragmentOp")
+        )
     }
 }

@@ -183,30 +183,83 @@ class BerryCrushLexerTest {
     @Test
     fun `test lexer tokenizes capitalized step keywords`() {
         val input = """
-            Given user is logged in
-            When user clicks button
-            Then result is shown
+            given user is logged in
+            when user clicks button
+            then result is shown
         """.trimIndent()
         val tokens = tokenize(input)
 
-        assertContains(tokens, BerryCrushTokenTypes.GIVEN, "Given should be tokenized")
-        assertContains(tokens, BerryCrushTokenTypes.WHEN, "When should be tokenized")
-        assertContains(tokens, BerryCrushTokenTypes.THEN, "Then should be tokenized")
+        assertContains(tokens, BerryCrushTokenTypes.GIVEN, "given should be tokenized")
+        assertContains(tokens, BerryCrushTokenTypes.WHEN, "when should be tokenized")
+        assertContains(tokens, BerryCrushTokenTypes.THEN, "then should be tokenized")
     }
 
     @Test
     fun `test lexer tokenizes capitalized Fragment keyword`() {
         val input = """
-            Fragment: my-fragment
-            Given step one
-            When step two
+            fragment: my-fragment
+            given step one
+            when step two
         """.trimIndent()
         val tokens = tokenize(input)
 
         assertContains(tokens, BerryCrushTokenTypes.FRAGMENT, "Fragment should be tokenized")
         assertContains(tokens, BerryCrushTokenTypes.NEWLINE, "Should have newline tokens")
-        assertContains(tokens, BerryCrushTokenTypes.GIVEN, "Given should be tokenized")
-        assertContains(tokens, BerryCrushTokenTypes.WHEN, "When should be tokenized")
+        assertContains(tokens, BerryCrushTokenTypes.GIVEN, "given should be tokenized")
+        assertContains(tokens, BerryCrushTokenTypes.WHEN, "when should be tokenized")
+    }
+
+    // ========== Strict Lowercase Keyword Tests ==========
+
+    @Test
+    fun `test lexer requires strict lowercase for scenario`() {
+        val tokens = tokenize("Scenario: Test")
+        // Capital 'S' should NOT be recognized as SCENARIO keyword
+        assertNotContains(tokens, BerryCrushTokenTypes.SCENARIO, "Uppercase 'Scenario:' should not be tokenized as SCENARIO")
+    }
+
+    @Test
+    fun `test lexer requires strict lowercase for fragment`() {
+        val tokens = tokenize("Fragment: test")
+        // Capital 'F' should NOT be recognized as FRAGMENT keyword
+        assertNotContains(tokens, BerryCrushTokenTypes.FRAGMENT, "Uppercase 'Fragment:' should not be tokenized as FRAGMENT")
+    }
+
+    @Test
+    fun `test lexer requires strict lowercase for feature`() {
+        val tokens = tokenize("Feature: Test")
+        // Capital 'F' should NOT be recognized as FEATURE keyword
+        assertNotContains(tokens, BerryCrushTokenTypes.FEATURE, "Uppercase 'Feature:' should not be tokenized as FEATURE")
+    }
+
+    @Test
+    fun `test lexer requires strict lowercase for given`() {
+        val tokens = tokenize("Given a precondition")
+        // Capital 'G' should NOT be recognized as GIVEN keyword
+        assertNotContains(tokens, BerryCrushTokenTypes.GIVEN, "Uppercase 'Given' should not be tokenized as GIVEN")
+    }
+
+    @Test
+    fun `test lexer requires strict lowercase for when`() {
+        val tokens = tokenize("When user clicks")
+        // Capital 'W' should NOT be recognized as WHEN keyword
+        assertNotContains(tokens, BerryCrushTokenTypes.WHEN, "Uppercase 'When' should not be tokenized as WHEN")
+    }
+
+    @Test
+    fun `test lexer requires strict lowercase for then`() {
+        val tokens = tokenize("Then result is shown")
+        // Capital 'T' should NOT be recognized as THEN keyword
+        assertNotContains(tokens, BerryCrushTokenTypes.THEN, "Uppercase 'Then' should not be tokenized as THEN")
+    }
+
+    @Test
+    fun `test lexer requires strict lowercase for all uppercase keywords`() {
+        val tokens = tokenize("GIVEN test WHEN action THEN result")
+        // All uppercase should NOT be recognized
+        assertNotContains(tokens, BerryCrushTokenTypes.GIVEN, "GIVEN should not be tokenized")
+        assertNotContains(tokens, BerryCrushTokenTypes.WHEN, "WHEN should not be tokenized")
+        assertNotContains(tokens, BerryCrushTokenTypes.THEN, "THEN should not be tokenized")
     }
 
     // --- Helper functions ---
@@ -230,5 +283,14 @@ class BerryCrushLexerTest {
     ) {
         val found = tokens.any { it.first == expectedType }
         assert(found) { "$message\nTokens: ${tokens.map { "${it.first} '${it.second}'" }}" }
+    }
+
+    private fun assertNotContains(
+        tokens: List<Pair<IElementType?, String>>,
+        unexpectedType: IElementType,
+        message: String = "Unexpected token type $unexpectedType found"
+    ) {
+        val found = tokens.any { it.first == unexpectedType }
+        assert(!found) { "$message\nTokens: ${tokens.map { "${it.first} '${it.second}'" }}" }
     }
 }

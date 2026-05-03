@@ -12,10 +12,10 @@ class BerryCrushParserTest : BerryCrushTestCase() {
 
     fun testFragmentContainsNestedSteps() {
         val file = createFragmentFile("test", """
-            Fragment: my-fragment
-            Given step one
-            When step two
-            Then step three
+            fragment: my-fragment
+            given step one
+            when step two
+            then step three
         """.trimIndent())
 
         val psiFile = psiManager.findFile(file)
@@ -39,11 +39,11 @@ class BerryCrushParserTest : BerryCrushTestCase() {
 
     fun testMultipleFragmentsAreSeparate() {
         val file = createFragmentFile("multi", """
-            Fragment: first
-            Given first step
+            fragment: first
+            given first step
 
-            Fragment: second
-            When second step
+            fragment: second
+            when second step
         """.trimIndent())
 
         val psiFile = psiManager.findFile(file)

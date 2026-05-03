@@ -14,8 +14,8 @@ class BerryCrushFragmentReferenceTest {
     fun `extracts fragment name from beginning of file`() {
         val content = """
             fragment: login-steps
-            Given user is on login page
-            When user enters credentials
+            given user is on login page
+            when user enters credentials
         """.trimIndent()
 
         assertEquals("login-steps", BerryCrushLineMarkerProvider.extractFragmentName(content))
@@ -35,7 +35,7 @@ class BerryCrushFragmentReferenceTest {
     fun `extracts fragment name with extra whitespace`() {
         val content = """
             fragment:    my-fragment
-            Given test step
+            given test step
         """.trimIndent()
 
         assertEquals("my-fragment", BerryCrushLineMarkerProvider.extractFragmentName(content))
@@ -45,7 +45,7 @@ class BerryCrushFragmentReferenceTest {
     fun `extracts fragment name with leading whitespace`() {
         val content = """
               fragment: indented-fragment
-            Given test step
+            given test step
         """.trimIndent()
 
         assertEquals("indented-fragment", BerryCrushLineMarkerProvider.extractFragmentName(content))
@@ -55,8 +55,8 @@ class BerryCrushFragmentReferenceTest {
     fun `returns null when no fragment directive`() {
         val content = """
             # This is a comment
-            Given some step
-            Then some assertion
+            given some step
+            then some assertion
         """.trimIndent()
 
         assertNull(BerryCrushLineMarkerProvider.extractFragmentName(content))
@@ -66,10 +66,10 @@ class BerryCrushFragmentReferenceTest {
     fun `extracts first fragment when multiple present`() {
         val content = """
             fragment: first-fragment
-            Given step one
+            given step one
             
             fragment: second-fragment
-            Given step two
+            given step two
         """.trimIndent()
 
         // The regex finds the first match
@@ -80,7 +80,7 @@ class BerryCrushFragmentReferenceTest {
     fun `handles fragment name with dots`() {
         val content = """
             fragment: api.v1.steps
-            Given test step
+            given test step
         """.trimIndent()
 
         assertEquals("api.v1.steps", BerryCrushLineMarkerProvider.extractFragmentName(content))
@@ -90,7 +90,7 @@ class BerryCrushFragmentReferenceTest {
     fun `handles fragment name with underscores`() {
         val content = """
             fragment: my_custom_fragment
-            Given test step
+            given test step
         """.trimIndent()
 
         assertEquals("my_custom_fragment", BerryCrushLineMarkerProvider.extractFragmentName(content))
@@ -100,7 +100,7 @@ class BerryCrushFragmentReferenceTest {
     fun `handles fragment name with numbers`() {
         val content = """
             fragment: step123
-            Given test step
+            given test step
         """.trimIndent()
 
         assertEquals("step123", BerryCrushLineMarkerProvider.extractFragmentName(content))

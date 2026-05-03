@@ -11,8 +11,8 @@ class RefactoringTest : BerryCrushTestCase() {
 
     fun testRefactoringSupportProviderDetectsFragmentDefinition() {
         val file = createFragmentFile("test", """
-            Fragment: my-fragment
-            Given step one
+            fragment: my-fragment
+            given step one
         """.trimIndent())
 
         val psiFile = psiManager.findFile(file)
@@ -20,7 +20,7 @@ class RefactoringTest : BerryCrushTestCase() {
 
         val provider = BerryCrushRefactoringSupportProvider()
         // Find element on the fragment definition line
-        val element = psiFile!!.findElementAt(10) // Inside "Fragment: my-fragment"
+        val element = psiFile!!.findElementAt(10) // Inside "fragment: my-fragment"
         assertNotNull(element)
 
         // Provider should allow rename
@@ -29,9 +29,9 @@ class RefactoringTest : BerryCrushTestCase() {
 
     fun testRefactoringSupportProviderDetectsIncludeDirective() {
         val file = createScenarioFile("test", """
-            Scenario: Test
+            scenario: Test
             include my-fragment
-            Then done
+            then done
         """.trimIndent())
 
         val psiFile = psiManager.findFile(file)
@@ -46,8 +46,8 @@ class RefactoringTest : BerryCrushTestCase() {
 
     fun testRefactoringSupportProviderDetectsVariablePlaceholder() {
         val file = createScenarioFile("test", """
-            Scenario: Test
-            Given step with {{myVar}}
+            scenario: Test
+            given step with {{myVar}}
         """.trimIndent())
 
         val psiFile = psiManager.findFile(file)
@@ -62,8 +62,8 @@ class RefactoringTest : BerryCrushTestCase() {
 
     fun testFragmentRenameProcessorCanProcessFragmentDefinition() {
         val file = createFragmentFile("test", """
-            Fragment: my-fragment
-            Given step
+            fragment: my-fragment
+            given step
         """.trimIndent())
 
         val psiFile = psiManager.findFile(file)
@@ -78,7 +78,7 @@ class RefactoringTest : BerryCrushTestCase() {
 
     fun testFragmentRenameProcessorCanProcessIncludeDirective() {
         val file = createScenarioFile("test", """
-            Scenario: Test
+            scenario: Test
             include my-fragment
         """.trimIndent())
 
@@ -94,8 +94,8 @@ class RefactoringTest : BerryCrushTestCase() {
 
     fun testVariableRenameProcessorCanProcessVariableUsage() {
         val file = createScenarioFile("test", """
-            Scenario: Test
-            Given step with {{petId}}
+            scenario: Test
+            given step with {{petId}}
         """.trimIndent())
 
         val psiFile = psiManager.findFile(file)
@@ -110,7 +110,7 @@ class RefactoringTest : BerryCrushTestCase() {
 
     fun testVariableRenameProcessorCanProcessVariableDefinition() {
         val file = createScenarioFile("test", """
-            Scenario: Test
+            scenario: Test
             extract $.id => petId
         """.trimIndent())
 

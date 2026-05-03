@@ -1,94 +1,158 @@
 package com.berrycrush.intellij.inspection
 
 import com.berrycrush.intellij.BerryCrushTestCase
+import com.intellij.codeInspection.InspectionManager
+import com.intellij.codeInspection.ProblemDescriptor
+import com.intellij.codeInspection.ProblemsHolder
+import com.intellij.psi.PsiManager
 
 /**
  * Tests for UndefinedStepInspection.
  *
- * Tests the step detection patterns.
+ * Tests the actual inspection behavior using the IntelliJ testing framework.
  */
 class UndefinedStepInspectionTest : BerryCrushTestCase() {
 
-    fun testStepPatternMatching() {
-        val pattern = Regex(
-            """^\s*(given|when|then|and|but):?\s*(.*)$""",
-            RegexOption.IGNORE_CASE
-        )
-        
-        // Should match step keywords
-        var match = pattern.find("given: I have a pet")
-        assertNotNull(match)
-        assertEquals("given", match?.groupValues?.get(1)?.lowercase())
-        assertEquals("I have a pet", match?.groupValues?.get(2)?.trim())
-        
-        match = pattern.find("When user logs in")
-        assertNotNull(match)
-        assertEquals("when", match?.groupValues?.get(1)?.lowercase())
-        
-        match = pattern.find("  then: result is displayed")
-        assertNotNull(match)
-        assertEquals("then", match?.groupValues?.get(1)?.lowercase())
-        
-        match = pattern.find("and: another condition")
-        assertNotNull(match)
-        assertEquals("and", match?.groupValues?.get(1)?.lowercase())
-        
-        match = pattern.find("but: exception case")
-        assertNotNull(match)
-        assertEquals("but", match?.groupValues?.get(1)?.lowercase())
+    private val inspection = UndefinedStepInspection()
+
+    // ========== Inspection Properties Tests ==========
+
+    fun testInspectionDisplayName() {
+        assertEquals("Undefined custom step", inspection.displayName)
     }
 
-    fun testDirectivePatternMatching() {
-        val pattern = Regex(
-            """^(call|assert|extract|include)\s+.*""",
-            RegexOption.IGNORE_CASE
-        )
-        
-        // Should match directives
-        assertTrue(pattern.matches("call ^listPets"))
-        assertTrue(pattern.matches("assert response is valid"))
-        assertTrue(pattern.matches("extract $.id as petId"))
-        assertTrue(pattern.matches("include auth-fragment"))
-        
-        // Should not match regular text
-        assertFalse(pattern.matches("given I call the API"))
-        assertFalse(pattern.matches("user should include header"))
+    fun testInspectionShortName() {
+        assertEquals("BerryCrushUndefinedStep", inspection.shortName)
     }
 
-    fun testStepTextExtraction() {
-        // Test colon syntax
-        val colonMatch = Regex("""^\s*(given|when|then):?\s*(.*)$""", RegexOption.IGNORE_CASE)
-            .find("given: I have a pet")
-        assertEquals("I have a pet", colonMatch?.groupValues?.get(2)?.trim())
-        
-        // Test space syntax
-        val spaceMatch = Regex("""^\s*(given|when|then):?\s*(.*)$""", RegexOption.IGNORE_CASE)
-            .find("when user logs in")
-        assertEquals("user logs in", spaceMatch?.groupValues?.get(2)?.trim())
+    fun testInspectionGroupDisplayName() {
+        assertEquals("BerryCrush", inspection.groupDisplayName)
     }
 
-    fun testStepsWithDirectivesAreSkipped() {
-        // This tests the logic that steps followed by directives should not be flagged
-        val lines = listOf(
-            "given: setup",
-            "  call ^operation",
-            "when: action"
+    fun testInspectionEnabledByDefault() {
+        assertTrue("Should be enabled by default", inspection.isEnabledByDefault)
+    }
+
+    // ========== Step Detection Tests ==========
+
+    fun testNoProblemsForStepWithDirective() {
+        // Step followed by directive should not be flagged
+        val psiFile = myFixture.addFileToProject("test.scenario", """
+            scenario: test
+              given: setup
+                call GET /api/users
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "Step with directive should not be flagged",
+            problems.isEmpty()
         )
-        
-        val stepPattern = Regex("""^\s*(given|when|then|and|but):?\s*(.*)$""", RegexOption.IGNORE_CASE)
-        val directivePattern = Regex("""^\s*(call|assert|extract|include)\s+.*""", RegexOption.IGNORE_CASE)
-        
-        // Line 0 is a step, line 1 is a directive, so line 0 has a directive
-        val line0IsStep = stepPattern.matches(lines[0].trim())
-        val line1IsDirective = directivePattern.matches(lines[1].trim())
-        
-        assertTrue("Line 0 should be a step", line0IsStep)
-        assertTrue("Line 1 should be a directive", line1IsDirective)
-        
-        // Line 2 is a step without a following directive
-        val line2IsStep = stepPattern.matches(lines[2].trim())
-        assertTrue("Line 2 should be a step", line2IsStep)
-        // No line 3, so no directive follows
+    }
+
+    fun testNoProblemsForEmptyStepText() {
+        // Empty step text should not be flagged
+        val psiFile = myFixture.addFileToProject("test2.scenario", """
+            scenario: test
+              given:
+                call GET /api/users
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "Empty step should not be flagged",
+            problems.isEmpty()
+        )
+    }
+
+    fun testProblemForUndefinedStepWithoutDirective() {
+        // Step without directive and no matching @Step should be flagged
+        val psiFile = myFixture.addFileToProject("test3.scenario", """
+            scenario: test
+              given: I have a pet named Fluffy
+              when: user action
+                call GET /api/users
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        // Note: The step "I have a pet named Fluffy" has no following directive
+        // and no @Step definition, so it should be flagged
+        val undefinedStepProblems = problems.filter {
+            it.descriptionTemplate.contains("has no matching @Step definition")
+        }
+        assertTrue(
+            "Step without directive should be flagged",
+            undefinedStepProblems.isNotEmpty()
+        )
+    }
+
+    fun testAllStepKeywordsRecognized() {
+        // All step keywords should be recognized
+        val psiFile = myFixture.addFileToProject("test4.scenario", """
+            scenario: test
+              given: first step
+                call GET /api
+              when: second step
+                call POST /api
+              then: third step
+                assert status 200
+              and: fourth step
+                assert header Content-Type
+              but: fifth step
+                extract $.id
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        // All steps have directives, so no problems
+        assertTrue(
+            "Steps with directives should not be flagged",
+            problems.isEmpty()
+        )
+    }
+
+    fun testCaseInsensitiveStepKeywords() {
+        // Step keywords should be case insensitive
+        val psiFile = myFixture.addFileToProject("test5.scenario", """
+            scenario: test
+              Given: setup with directive
+                call GET /api
+              WHEN: action with directive
+                call POST /api
+              Then: verification with directive
+                assert status 200
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "Capitalized step keywords should be recognized",
+            problems.isEmpty()
+        )
+    }
+
+    // ========== Non-BerryCrush Files Tests ==========
+
+    fun testIgnoresNonBerryCrushFiles() {
+        // Inspection should skip non-BerryCrush files
+        val psiFile = myFixture.addFileToProject("test.txt", """
+            given: this is plain text
+            when: not a scenario
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "Non-BerryCrush files should be ignored",
+            problems.isEmpty()
+        )
+    }
+
+    // ========== Helper Methods ==========
+
+    private fun runInspection(file: com.intellij.psi.PsiFile): List<ProblemDescriptor> {
+        val manager = InspectionManager.getInstance(project)
+        val holder = ProblemsHolder(manager, file, false)
+        val visitor = inspection.buildVisitor(holder, false)
+        visitor.visitFile(file)
+        return holder.results
     }
 }
 

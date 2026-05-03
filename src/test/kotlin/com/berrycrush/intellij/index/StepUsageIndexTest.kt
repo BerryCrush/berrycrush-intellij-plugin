@@ -131,17 +131,17 @@ class StepUsageIndexTest {
 
         @Test
         fun `extracts text after Given`() {
-            assertEquals("user is logged in", StepUsageIndex.extractStepText("Given user is logged in"))
+            assertEquals("user is logged in", StepUsageIndex.extractStepText("given user is logged in"))
         }
 
         @Test
         fun `extracts text after When`() {
-            assertEquals("user clicks submit", StepUsageIndex.extractStepText("When user clicks submit"))
+            assertEquals("user clicks submit", StepUsageIndex.extractStepText("when user clicks submit"))
         }
 
         @Test
         fun `extracts text after Then`() {
-            assertEquals("success message appears", StepUsageIndex.extractStepText("Then success message appears"))
+            assertEquals("success message appears", StepUsageIndex.extractStepText("then success message appears"))
         }
 
         @Test
@@ -158,18 +158,18 @@ class StepUsageIndexTest {
         fun `handles case insensitive prefixes`() {
             assertEquals("test", StepUsageIndex.extractStepText("given test"))
             assertEquals("test", StepUsageIndex.extractStepText("GIVEN test"))
-            assertEquals("test", StepUsageIndex.extractStepText("Given test"))
+            assertEquals("test", StepUsageIndex.extractStepText("given test"))
         }
 
         @Test
         fun `trims whitespace`() {
-            assertEquals("user is logged in", StepUsageIndex.extractStepText("  Given  user is logged in  "))
+            assertEquals("user is logged in", StepUsageIndex.extractStepText("  given  user is logged in  "))
         }
 
         @Test
         fun `returns null for non-step lines`() {
             assertNull(StepUsageIndex.extractStepText("Feature: Test"))
-            assertNull(StepUsageIndex.extractStepText("Scenario: Test"))
+            assertNull(StepUsageIndex.extractStepText("scenario: Test"))
             assertNull(StepUsageIndex.extractStepText("# Comment"))
             assertNull(StepUsageIndex.extractStepText(""))
         }
@@ -202,7 +202,7 @@ class StepUsageIndexTest {
 
         @Test
         fun `returns null for non-assertion lines`() {
-            assertNull(StepUsageIndex.extractAssertionText("Given test"))
+            assertNull(StepUsageIndex.extractAssertionText("given test"))
             assertNull(StepUsageIndex.extractAssertionText("Feature: Test"))
             assertNull(StepUsageIndex.extractAssertionText(""))
         }

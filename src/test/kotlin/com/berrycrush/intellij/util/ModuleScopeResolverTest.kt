@@ -20,14 +20,14 @@ class ModuleScopeResolverTest {
 
     @Test
     fun `getModuleDependencyScope returns scope for null module`() {
-        // When module is null, should return allScope
+        // when module is null, should return allScope
         // This test documents the fallback behavior
         // Note: Cannot test without a real Project instance
     }
 
     @Test
     fun `getDependentModulesScope returns scope for null module`() {
-        // When module is null, should return allScope
+        // when module is null, should return allScope
         // This test documents the fallback behavior
         // Note: Cannot test without a real Project instance
     }

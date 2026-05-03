@@ -1,39 +1,56 @@
 package com.berrycrush.intellij.inspection
 
 import com.berrycrush.intellij.BerryCrushTestCase
-import com.berrycrush.intellij.reference.BerryCrushOperationReference
+import com.intellij.codeInspection.InspectionManager
+import com.intellij.codeInspection.ProblemDescriptor
+import com.intellij.codeInspection.ProblemsHolder
 
 /**
  * Tests for UndefinedOperationInspection.
  *
- * Tests the operation detection logic.
+ * Tests the actual inspection behavior using the IntelliJ testing framework.
  */
 class UndefinedOperationInspectionTest : BerryCrushTestCase() {
 
-    fun testCallPatternMatching() {
-        // Test the regex pattern matching
-        val pattern = Regex("""call\s+\^(\w+)""")
-        
-        // Should match
-        var match = pattern.find("call ^listPets")
-        assertNotNull(match)
-        assertEquals("listPets", match?.groupValues?.get(1))
-        
-        match = pattern.find("    call ^createPet")
-        assertNotNull(match)
-        assertEquals("createPet", match?.groupValues?.get(1))
-        
-        // Should not match (no caret)
-        match = pattern.find("call listPets")
-        assertNull(match)
-        
-        // Should not match (in prose)
-        match = pattern.find("user should call the service")
-        assertNull(match)
+    private val inspection = UndefinedOperationInspection()
+
+    // ========== Inspection Properties Tests ==========
+
+    fun testInspectionDisplayName() {
+        assertEquals("Undefined OpenAPI operation", inspection.displayName)
     }
 
-    fun testOperationLookupWithOpenAPIFile() {
-        // Create an OpenAPI spec
+    fun testInspectionShortName() {
+        assertEquals("BerryCrushUndefinedOperation", inspection.shortName)
+    }
+
+    fun testInspectionGroupDisplayName() {
+        assertEquals("BerryCrush", inspection.groupDisplayName)
+    }
+
+    fun testInspectionEnabledByDefault() {
+        assertTrue("Should be enabled by default", inspection.isEnabledByDefault)
+    }
+
+    // ========== Operation Detection Tests ==========
+
+    fun testNoProblemsWhenNoOpenAPISpec() {
+        // Without OpenAPI spec, inspection should skip
+        val psiFile = myFixture.addFileToProject("test.scenario", """
+            scenario: test
+              given: setup
+                call ^unknownOp
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "Without OpenAPI spec, should not flag operations",
+            problems.isEmpty()
+        )
+    }
+
+    fun testNoProblemsForDefinedOperation() {
+        // Create OpenAPI spec with operation
         myFixture.addFileToProject("openapi.yaml", """
             openapi: 3.0.0
             info:
@@ -48,17 +65,22 @@ class UndefinedOperationInspectionTest : BerryCrushTestCase() {
                       description: OK
         """.trimIndent())
 
-        // Verify operation is found
-        val operations = BerryCrushOperationReference.findAllOperationIds(project)
+        val psiFile = myFixture.addFileToProject("test2.scenario", """
+            scenario: test
+              given: setup
+                call ^listPets
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
         assertTrue(
-            "listPets should be found in OpenAPI spec",
-            operations.contains("listPets")
+            "Defined operation should not be flagged",
+            problems.isEmpty()
         )
     }
 
-    fun testUndefinedOperationNotInOpenAPI() {
-        // Create an OpenAPI spec with only listPets
-        myFixture.addFileToProject("openapi.yaml", """
+    fun testProblemForUndefinedOperation() {
+        // Create OpenAPI spec without the referenced operation
+        myFixture.addFileToProject("openapi2.yaml", """
             openapi: 3.0.0
             info:
               title: Test API
@@ -72,20 +94,81 @@ class UndefinedOperationInspectionTest : BerryCrushTestCase() {
                       description: OK
         """.trimIndent())
 
-        val operations = BerryCrushOperationReference.findAllOperationIds(project)
-        assertFalse(
-            "unknownOp should not be in OpenAPI spec",
-            operations.contains("unknownOp")
+        val psiFile = myFixture.addFileToProject("test3.scenario", """
+            scenario: test
+              given: setup
+                call ^undefinedOp
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        val undefinedOpProblems = problems.filter {
+            it.descriptionTemplate.contains("not found in OpenAPI specs")
+        }
+        assertTrue(
+            "Undefined operation should be flagged",
+            undefinedOpProblems.isNotEmpty()
         )
     }
 
-    fun testNoOpenAPIFilesReturnsEmptyOperations() {
-        // Without any OpenAPI files, no operations should be found
-        val operations = BerryCrushOperationReference.findAllOperationIds(project)
+    fun testCallWithoutCaretNotFlagged() {
+        // call without ^ is HTTP call, not operation reference
+        myFixture.addFileToProject("openapi3.yaml", """
+            openapi: 3.0.0
+            info:
+              title: Test API
+              version: 1.0.0
+            paths:
+              /pets:
+                get:
+                  operationId: listPets
+                  responses:
+                    '200':
+                      description: OK
+        """.trimIndent())
+
+        val psiFile = myFixture.addFileToProject("test4.scenario", """
+            scenario: test
+              given: setup
+                call GET /api/pets
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
         assertTrue(
-            "Without OpenAPI files, no operations should be found",
-            operations.isEmpty()
+            "HTTP call should not be flagged",
+            problems.isEmpty()
         )
+    }
+
+    // ========== Non-BerryCrush Files Tests ==========
+
+    fun testIgnoresNonBerryCrushFiles() {
+        myFixture.addFileToProject("openapi4.yaml", """
+            openapi: 3.0.0
+            info:
+              title: Test API
+              version: 1.0.0
+            paths: {}
+        """.trimIndent())
+
+        val psiFile = myFixture.addFileToProject("test.txt", """
+            call ^unknownOp
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "Non-BerryCrush files should be ignored",
+            problems.isEmpty()
+        )
+    }
+
+    // ========== Helper Methods ==========
+
+    private fun runInspection(file: com.intellij.psi.PsiFile): List<ProblemDescriptor> {
+        val manager = InspectionManager.getInstance(project)
+        val holder = ProblemsHolder(manager, file, false)
+        val visitor = inspection.buildVisitor(holder, false)
+        visitor.visitFile(file)
+        return holder.results
     }
 }
 

@@ -16,8 +16,8 @@ class SafeDeleteTest : BerryCrushTestCase() {
 
     fun testSafeDeleteProcessorHandlesFragmentFile() {
         val file = createFragmentFile("test", """
-            Fragment: test-fragment
-            Given step
+            fragment: test-fragment
+            given step
         """.trimIndent())
 
         val psiFile = psiManager.findFile(file)
@@ -29,8 +29,8 @@ class SafeDeleteTest : BerryCrushTestCase() {
 
     fun testSafeDeleteProcessorDoesNotHandleScenarioFile() {
         val file = createScenarioFile("test", """
-            Scenario: Test
-            Given step
+            scenario: Test
+            given step
         """.trimIndent())
 
         val psiFile = psiManager.findFile(file)
@@ -43,9 +43,9 @@ class SafeDeleteTest : BerryCrushTestCase() {
 
     fun testSafeDeleteProcessorHandlesFragmentElement() {
         val file = createFragmentFile("test", """
-            Fragment: test-fragment
-              Given step one
-              When step two
+            fragment: test-fragment
+              given step one
+              when step two
         """.trimIndent())
 
         val psiFile = psiManager.findFile(file)
@@ -62,15 +62,15 @@ class SafeDeleteTest : BerryCrushTestCase() {
     fun testSafeDeleteFindsUsagesOfIncludedFragment() {
         // Create fragment
         val fragmentFile = createFragmentFile("common", """
-            Fragment: common-steps
-            Given common setup
+            fragment: common-steps
+            given common setup
         """.trimIndent())
 
         // Create scenario that includes the fragment
         createScenarioFile("test", """
-            Scenario: Test
+            scenario: Test
             include common-steps
-            Then done
+            then done
         """.trimIndent())
 
         // Verify include usage is indexed
@@ -91,16 +91,16 @@ class SafeDeleteTest : BerryCrushTestCase() {
     fun testSafeDeleteFindsUsagesForFragmentElement() {
         // Create fragment file with multiple fragments
         val fragmentFile = createFragmentFile("multi", """
-            Fragment: first-fragment
-            Given first setup
+            fragment: first-fragment
+            given first setup
 
-            Fragment: second-fragment
-            Given second setup
+            fragment: second-fragment
+            given second setup
         """.trimIndent())
 
         // Create scenario that includes the first fragment
         createScenarioFile("test", """
-            Scenario: Test
+            scenario: Test
             include first-fragment
         """.trimIndent())
 
@@ -123,8 +123,8 @@ class SafeDeleteTest : BerryCrushTestCase() {
 
     fun testSafeDeleteFindsNoUsagesForUnusedFragment() {
         val file = createFragmentFile("unused", """
-            Fragment: unused-fragment
-            Given unused step
+            fragment: unused-fragment
+            given unused step
         """.trimIndent())
 
         val psiFile = psiManager.findFile(file)
@@ -140,18 +140,18 @@ class SafeDeleteTest : BerryCrushTestCase() {
     fun testSafeDeleteFindsMultipleUsages() {
         // Create fragment
         val fragmentFile = createFragmentFile("shared", """
-            Fragment: shared-steps
-            Given shared setup
+            fragment: shared-steps
+            given shared setup
         """.trimIndent())
 
         // Create multiple scenarios that include the fragment
         createScenarioFile("test1", """
-            Scenario: Test1
+            scenario: Test1
             include shared-steps
         """.trimIndent())
 
         createScenarioFile("test2", """
-            Scenario: Test2
+            scenario: Test2
             include shared-steps
         """.trimIndent())
 
@@ -167,8 +167,8 @@ class SafeDeleteTest : BerryCrushTestCase() {
 
     fun testRefactoringSupportProviderAllowsSafeDeleteForFragmentElement() {
         val file = createFragmentFile("test", """
-            Fragment: test-fragment
-              Given step
+            fragment: test-fragment
+              given step
         """.trimIndent())
 
         val psiFile = psiManager.findFile(file)
@@ -186,10 +186,10 @@ class SafeDeleteTest : BerryCrushTestCase() {
 
     fun testFragmentElementContainsNestedSteps() {
         val file = createFragmentFile("test", """
-            Fragment: test-fragment
-            Given step one
-            When step two
-            Then step three
+            fragment: test-fragment
+            given step one
+            when step two
+            then step three
         """.trimIndent())
 
         val psiFile = psiManager.findFile(file)
@@ -205,15 +205,15 @@ class SafeDeleteTest : BerryCrushTestCase() {
 
     fun testTargetElementEvaluatorFindsFragmentElement() {
         val file = createFragmentFile("test", """
-            Fragment: test-fragment
-            Given step one
+            fragment: test-fragment
+            given step one
         """.trimIndent())
 
         val psiFile = psiManager.findFile(file)
         assertNotNull(psiFile)
 
         // Find a leaf element inside the fragment (e.g., the first element)
-        val leafElement = psiFile!!.findElementAt(10) // Position within "Fragment:"
+        val leafElement = psiFile!!.findElementAt(10) // Position within "fragment:"
         assertNotNull("Should find element at offset", leafElement)
 
         val evaluator = BerryCrushTargetElementEvaluator()
@@ -226,8 +226,8 @@ class SafeDeleteTest : BerryCrushTestCase() {
 
     fun testTargetElementEvaluatorAcceptsFragmentAsNamedParent() {
         val file = createFragmentFile("test", """
-            Fragment: test-fragment
-            Given step
+            fragment: test-fragment
+            given step
         """.trimIndent())
 
         val psiFile = psiManager.findFile(file)
@@ -246,13 +246,13 @@ class SafeDeleteTest : BerryCrushTestCase() {
     fun testFindConflictsReturnsConflictsWhenUsagesExist() {
         // Create fragment
         val fragmentFile = createFragmentFile("conflict", """
-            Fragment: conflict-fragment
-            Given setup step
+            fragment: conflict-fragment
+            given setup step
         """.trimIndent())
 
         // Create scenario that includes the fragment
         createScenarioFile("user", """
-            Scenario: User scenario
+            scenario: User scenario
             include conflict-fragment
         """.trimIndent())
 
@@ -272,8 +272,8 @@ class SafeDeleteTest : BerryCrushTestCase() {
 
     fun testFindConflictsReturnsNullWhenNoUsages() {
         val file = createFragmentFile("nousage", """
-            Fragment: no-usage-fragment
-            Given step
+            fragment: no-usage-fragment
+            given step
         """.trimIndent())
 
         val psiFile = psiManager.findFile(file)
