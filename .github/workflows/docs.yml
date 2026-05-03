@@ -31,6 +31,9 @@ jobs:
       - name: Install MkDocs
         run: pip install mkdocs mkdocs-material
         
+      - name: Install BerryCrush lexer
+        run: pip install -e doc/_extensions/
+        
       - name: Create MkDocs config
         run: |
           cat > mkdocs.yml << 'EOF'
