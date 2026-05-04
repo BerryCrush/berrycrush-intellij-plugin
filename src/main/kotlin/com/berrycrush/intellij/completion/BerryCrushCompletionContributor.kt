@@ -1,13 +1,18 @@
 package com.berrycrush.intellij.completion
 
 import com.berrycrush.intellij.language.BerryCrushLanguage
+import com.berrycrush.intellij.psi.BerryCrushIncludeElement
+import com.berrycrush.intellij.reference.BerryCrushFragmentReference
 import com.intellij.codeInsight.completion.CompletionContributor
 import com.intellij.codeInsight.completion.CompletionParameters
 import com.intellij.codeInsight.completion.CompletionProvider
 import com.intellij.codeInsight.completion.CompletionResultSet
 import com.intellij.codeInsight.completion.CompletionType
 import com.intellij.codeInsight.lookup.LookupElementBuilder
+import com.intellij.icons.AllIcons
 import com.intellij.patterns.PlatformPatterns
+import com.intellij.psi.PsiFile
+import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.ProcessingContext
 
 /**
@@ -41,6 +46,13 @@ class BerryCrushCompletionProvider : CompletionProvider<CompletionParameters>() 
         val text = position.containingFile.text
         val offset = parameters.offset
 
+        // Check if we're inside an include directive's parameter block
+        val includeElement = PsiTreeUtil.getParentOfType(position, BerryCrushIncludeElement::class.java)
+        if (includeElement != null && isInParameterBlockPosition(text, offset, includeElement)) {
+            addParameterCompletions(includeElement, result)
+            return
+        }
+
         // Determine context based on position in the file
         val lineStart = findLineStart(text, offset)
         val lineText = text.substring(lineStart, offset).trimStart()
@@ -68,6 +80,59 @@ class BerryCrushCompletionProvider : CompletionProvider<CompletionParameters>() 
                 addAllKeywords(result)
             }
         }
+    }
+
+    /**
+     * Check if the cursor is in a position suitable for parameter completion
+     * (after the include line, in an indented position).
+     */
+    private fun isInParameterBlockPosition(text: String, offset: Int, includeElement: BerryCrushIncludeElement): Boolean {
+        // Check if we're after the include line (not on the same line)
+        val includeEndOffset = includeElement.textRange.startOffset + includeElement.text.indexOf('\n')
+        if (offset <= includeEndOffset) return false
+
+        // Check indentation - parameters should be indented
+        val lineStart = findLineStart(text, offset)
+        val indent = countIndent(text.substring(lineStart, offset))
+        return indent >= 3 // Parameters are typically indented 3+ levels
+    }
+
+    /**
+     * Add parameter name completions based on fragment's expected variables.
+     */
+    private fun addParameterCompletions(includeElement: BerryCrushIncludeElement, result: CompletionResultSet) {
+        val fragmentName = includeElement.fragmentName ?: return
+        val project = includeElement.project
+
+        // Find the fragment definition
+        val fragmentFile = BerryCrushFragmentReference.findFragmentByName(project, fragmentName)
+            as? PsiFile ?: return
+
+        // Extract expected parameters from fragment
+        val expectedParams = extractExpectedParameters(fragmentFile)
+        val providedParams = includeElement.parameterNames
+
+        // Suggest parameters that haven't been provided yet
+        expectedParams.subtract(providedParams).forEach { paramName ->
+            result.addElement(
+                LookupElementBuilder.create("$paramName: ")
+                    .withIcon(AllIcons.Nodes.Parameter)
+                    .withTypeText("parameter")
+                    .withPresentableText(paramName)
+            )
+        }
+    }
+
+    /**
+     * Extract expected parameter names from a fragment file.
+     * Looks for {{variableName}} patterns in the fragment content.
+     */
+    private fun extractExpectedParameters(fragmentFile: PsiFile): Set<String> {
+        val text = fragmentFile.text
+        val pattern = Regex("""\{\{(\w+)\}\}""")
+        return pattern.findAll(text)
+            .map { it.groupValues[1] }
+            .toSet()
     }
 
     private fun findLineStart(text: String, offset: Int): Int {

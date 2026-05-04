@@ -104,6 +104,29 @@ include login-steps           # Include fragment named "login-steps"
 include ^setup                # Caret prefix optional
 ```
 
+### Parameterized Fragment Includes
+
+Fragments can accept parameters as indented key-value pairs:
+
+```berrycrush
+include create_user
+  name: "John Doe"
+  email: "john@example.com"
+  age: 30
+```
+
+Parameters support various value types:
+
+```berrycrush
+include configure_entity
+  name: "Fluffy"              # String value
+  count: 123                   # Number value
+  active: true                 # Boolean value
+  data: {"key": "val"}        # JSON object
+  tags: ["a", "b"]            # JSON array
+  owner: {{currentUser}}       # Variable reference
+```
+
 ## Variables
 
 Dynamic values using mustache syntax:

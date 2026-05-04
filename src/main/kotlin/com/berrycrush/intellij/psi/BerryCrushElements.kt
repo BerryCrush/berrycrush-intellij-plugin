@@ -22,7 +22,7 @@ abstract class BerryCrushPsiElement(node: ASTNode) : ASTWrapperPsiElement(node) 
 }
 
 /**
- * Include directive element: `include fragmentName`
+ * Include directive element: `include fragmentName` with optional parameters.
  */
 class BerryCrushIncludeElement(node: ASTNode) : BerryCrushPsiElement(node), PsiNameIdentifierOwner {
     val fragmentName: String?
@@ -31,6 +31,18 @@ class BerryCrushIncludeElement(node: ASTNode) : BerryCrushPsiElement(node), PsiN
             val match = Regex("""include\s+\^?([a-zA-Z_][a-zA-Z0-9_.\-]*)""").find(text)
             return match?.groupValues?.get(1)
         }
+
+    /**
+     * Get all parameter elements for this include directive.
+     */
+    val parameters: List<BerryCrushIncludeParameterElement>
+        get() = findChildrenByClass(BerryCrushIncludeParameterElement::class.java).toList()
+
+    /**
+     * Get parameter names as a set.
+     */
+    val parameterNames: Set<String>
+        get() = parameters.mapNotNull { it.parameterName }.toSet()
 
     override fun getName(): String? = fragmentName
 
@@ -201,6 +213,41 @@ class BerryCrushAssertElement(node: ASTNode) : BerryCrushPsiElement(node) {
             val match = Regex("""^assert\s+(.+)$""").find(text)
             return match?.groupValues?.get(1)?.trim()
         }
+}
+
+/**
+ * Include parameter element: `paramName: value` inside an include directive.
+ */
+class BerryCrushIncludeParameterElement(node: ASTNode) : BerryCrushPsiElement(node), PsiNameIdentifierOwner {
+    /**
+     * The parameter name (key before the colon).
+     */
+    val parameterName: String?
+        get() {
+            val text = node.text.trim()
+            val colonIndex = text.indexOf(':')
+            return if (colonIndex > 0) text.substring(0, colonIndex).trim() else null
+        }
+
+    /**
+     * The parameter value (after the colon).
+     */
+    val parameterValue: String?
+        get() {
+            val text = node.text.trim()
+            val colonIndex = text.indexOf(':')
+            return if (colonIndex >= 0 && colonIndex < text.length - 1) {
+                text.substring(colonIndex + 1).trim()
+            } else {
+                null
+            }
+        }
+
+    override fun getName(): String? = parameterName
+
+    override fun setName(name: String): PsiElement = this
+
+    override fun getNameIdentifier(): PsiElement? = null
 }
 
 /**

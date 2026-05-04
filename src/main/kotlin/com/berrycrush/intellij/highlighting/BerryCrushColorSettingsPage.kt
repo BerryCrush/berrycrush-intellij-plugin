@@ -34,6 +34,14 @@ feature: Pet Store API
       assert schema
       assert header Content-Type contains "application/json"
 
+  scenario: create pet with parameters
+    when I create a custom pet
+      include create_pet
+        name: "Fluffy"
+        status: "available"
+        price: 29.99
+    then the pet is created
+
   outline: create pet with name
     when I create a pet named "{{name}}"
       call ^createPet
@@ -58,6 +66,12 @@ fragment: common-auth
         password: "secret123"
     assert status 200
     extract token = $.accessToken
+
+fragment: create_pet
+  when creating the pet
+    call ^createPet
+      body: {"name": "{{name}}", "status": "{{status}}"}
+    assert status 201
 """
 
     override fun getAdditionalHighlightingTagToDescriptorMap(): Map<String, TextAttributesKey>? = null
@@ -84,6 +98,7 @@ fragment: common-auth
             AttributesDescriptor("Comments", BerryCrushHighlightingColors.COMMENT),
             AttributesDescriptor("Braces", BerryCrushHighlightingColors.BRACES),
             AttributesDescriptor("Pipe", BerryCrushHighlightingColors.PIPE),
+            AttributesDescriptor("Parameter keys", BerryCrushHighlightingColors.PARAMETER_KEY),
             AttributesDescriptor("Bad character", BerryCrushHighlightingColors.BAD_CHARACTER),
         )
     }

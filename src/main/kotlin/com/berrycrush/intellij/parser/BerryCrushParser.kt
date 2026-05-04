@@ -157,13 +157,74 @@ class BerryCrushParser : PsiParser {
         // Parse fragment reference
         val tokenType = builder.tokenType
         if (tokenType == BerryCrushTokenTypes.IDENTIFIER ||
-            tokenType == BerryCrushTokenTypes.OPERATION_REF
+            tokenType == BerryCrushTokenTypes.OPERATION_REF ||
+            tokenType == BerryCrushTokenTypes.TEXT
         ) {
             parseFragmentRef(builder)
         }
 
         skipToEndOfLine(builder)
+
+        // Parse optional parameter block (indented key: value pairs)
+        parseIncludeParameters(builder)
+
         marker.done(BerryCrushElementTypes.INCLUDE_DIRECTIVE)
+    }
+
+    /**
+     * Parse parameter block for include directive.
+     * Parameters are indented key: value pairs following the include line.
+     */
+    private fun parseIncludeParameters(builder: PsiBuilder) {
+        // Parse parameters while they exist
+        while (builder.tokenType == BerryCrushTokenTypes.INDENT && tryParseParameter(builder)) {
+            // Continue parsing parameters
+        }
+    }
+
+    /**
+     * Try to parse a single parameter entry.
+     * Returns true if a parameter was successfully parsed, false otherwise.
+     */
+    private fun tryParseParameter(builder: PsiBuilder): Boolean {
+        val paramMarker = builder.mark()
+        builder.advanceLexer() // consume INDENT
+
+        // Skip whitespace after indent
+        while (builder.tokenType == BerryCrushTokenTypes.WHITE_SPACE) {
+            builder.advanceLexer()
+        }
+
+        // Check if this looks like a parameter (identifier/text followed by colon)
+        val hasParamName =
+            builder.tokenType == BerryCrushTokenTypes.IDENTIFIER ||
+                builder.tokenType == BerryCrushTokenTypes.TEXT
+
+        if (!hasParamName) {
+            paramMarker.rollbackTo()
+            return false
+        }
+
+        // Parse parameter name
+        builder.advanceLexer()
+
+        // Skip whitespace before colon
+        while (builder.tokenType == BerryCrushTokenTypes.WHITE_SPACE) {
+            builder.advanceLexer()
+        }
+
+        // Look for colon
+        if (builder.tokenType != BerryCrushTokenTypes.COLON) {
+            paramMarker.rollbackTo()
+            return false
+        }
+
+        builder.advanceLexer() // consume colon
+
+        // Parse the rest of the line as parameter value
+        skipToEndOfLine(builder)
+        paramMarker.done(BerryCrushElementTypes.PARAMETER)
+        return true
     }
 
     private fun parseOperationRef(builder: PsiBuilder) {

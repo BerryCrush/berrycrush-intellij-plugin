@@ -74,6 +74,10 @@
 
         <colorSettingsPage implementation="com.berrycrush.intellij.highlighting.BerryCrushColorSettingsPage"/>
 
+        <!-- Annotator for context-aware highlighting -->
+        <annotator language="BerryCrush"
+                   implementationClass="com.berrycrush.intellij.highlighting.BerryCrushAnnotator"/>
+
         <!-- Code Folding -->
         <lang.foldingBuilder language="BerryCrush"
                              implementationClass="com.berrycrush.intellij.folding.BerryCrushFoldingBuilder"/>
@@ -165,6 +169,20 @@
                          enabledByDefault="true"
                          level="WEAK WARNING"
                          implementationClass="com.berrycrush.intellij.inspection.UndefinedAssertionInspection"/>
+
+        <localInspection groupName="BerryCrush"
+                         shortName="BerryCrushUnusedParameter"
+                         displayName="Unused fragment parameter"
+                         enabledByDefault="true"
+                         level="WEAK WARNING"
+                         implementationClass="com.berrycrush.intellij.inspection.UnusedParameterInspection"/>
+
+        <localInspection groupName="BerryCrush"
+                         shortName="BerryCrushDuplicateParameter"
+                         displayName="Duplicate fragment parameter"
+                         enabledByDefault="true"
+                         level="ERROR"
+                         implementationClass="com.berrycrush.intellij.inspection.DuplicateParameterInspection"/>
 
         <!-- Refactoring Support -->
         <lang.refactoringSupport language="BerryCrush"

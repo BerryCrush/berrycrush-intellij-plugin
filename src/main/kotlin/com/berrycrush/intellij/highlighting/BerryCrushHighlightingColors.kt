@@ -108,6 +108,13 @@ object BerryCrushHighlightingColors {
         DefaultLanguageHighlighterColors.OPERATION_SIGN
     )
 
+    // Parameter keys in include directives (paramName:)
+    @JvmField
+    val PARAMETER_KEY: TextAttributesKey = createTextAttributesKey(
+        "BERRYCRUSH_PARAMETER_KEY",
+        DefaultLanguageHighlighterColors.INSTANCE_FIELD
+    )
+
     // Bad character
     @JvmField
     val BAD_CHARACTER: TextAttributesKey = createTextAttributesKey(
