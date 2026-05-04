@@ -40,6 +40,7 @@
 
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.java</depends>
+    <depends>JUnit</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- File Change Listener for inspection auto-refresh -->
@@ -131,15 +132,22 @@
         <lang.findUsagesProvider language="BerryCrush"
                                  implementationClass="com.berrycrush.intellij.navigation.BerryCrushFindUsagesProvider"/>
 
-        <!-- Run Configuration -->
+        <!-- Test Framework Integration -->
+        <!-- Enables IntelliJ's native JUnit runner to recognize BerryCrush test classes -->
+        <testFramework implementation="com.berrycrush.intellij.test.BerryCrushTestFramework"
+                       id="berrycrush"
+                       order="before junit5"/>
+
+        <!-- BerryCrush Run Configuration -->
+        <!-- Extends JUnit with file:// URL navigation for scenario files -->
         <configurationType implementation="com.berrycrush.intellij.run.BerryCrushConfigurationType"/>
+        <runConfigurationProducer implementation="com.berrycrush.intellij.run.BerryCrushConfigurationProducer"
+                                  order="first"/>
 
-        <!-- Run Configuration Producer (creates configs from context) -->
-        <runConfigurationProducer implementation="com.berrycrush.intellij.run.BerryCrushRunConfigurationProducer"/>
-
-        <!-- Run Line Markers (gutter run icons) -->
+        <!-- Run Gutter Icons for Scenarios -->
+        <!-- Provides play icons for scenario/outline/feature keywords in .scenario files -->
         <runLineMarkerContributor language="BerryCrush"
-                                  implementationClass="com.berrycrush.intellij.run.BerryCrushRunLineMarkerProvider"/>
+                                  implementationClass="com.berrycrush.intellij.run.BerryCrushScenarioRunLineMarkerProvider"/>
 
         <!-- Inspections (no language attr - checks in implementation) -->
         <localInspection groupName="BerryCrush"

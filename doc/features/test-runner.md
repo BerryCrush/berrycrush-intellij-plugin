@@ -1,18 +1,31 @@
 # Test Runner
 
-The BerryCrush plugin integrates with IntelliJ's test runner for seamless test execution.
+The BerryCrush plugin integrates with IntelliJ's JUnit test runner for seamless test execution.
+
+## Overview
+
+BerryCrush tests run via IntelliJ's native JUnit runner. The plugin registers a `testFramework` extension that recognizes BerryCrush test classes and enables JUnit integration.
+
+### How It Works
+
+1. Classes annotated with `@BerryCrushScenarios` or `@BerryCrushSpec` are recognized as test classes
+2. Gutter icons appear for running tests
+3. Clicking the gutter creates a JUnit run configuration
+4. IntelliJ's JUnit runner executes the tests
+5. Test results appear in the Run tool window with navigation support
 
 ## Running Tests
 
 ### From Gutter Icons
 
 Click the green play button (▶) that appears next to:
-- `scenario:` - Run a single scenario
+- Test classes annotated with `@BerryCrushScenarios` or `@BerryCrushSpec`
+- Methods annotated with `@ScenarioTest`
 
 ### From Context Menu
 
-1. Right-click inside a `.scenario` file
-2. Select **Run 'filename.scenario'**
+1. Right-click on a test class or method
+2. Select **Run 'ClassName'** or **Run 'methodName()'**
 
 ### From Keyboard
 
@@ -25,30 +38,14 @@ Click the green play button (▶) that appears next to:
 
 ## Run Configurations
 
-### Automatic Creation
-
-The plugin automatically creates run configurations when you:
-- Click a gutter icon
-- Use **Run** context menu
-- Use keyboard shortcuts
+The plugin uses IntelliJ's native JUnit run configurations. When you click a gutter icon, a JUnit configuration is created automatically.
 
 ### Manual Creation
 
 1. **Run** → **Edit Configurations**
-2. Click **+** → **BerryCrush**
-3. Configure options
+2. Click **+** → **JUnit**
+3. Select the test class or method
 4. Save
-
-### Configuration Options
-
-| Option | Description |
-|--------|-------------|
-| **File** | `.scenario` or `.fragment` file to run |
-| **Scenario** | Specific scenario name (optional) |
-| **Tags** | Filter by tags (e.g., `@smoke`) |
-| **OpenAPI** | Path to OpenAPI spec |
-| **Environment** | Environment variables |
-| **Working Directory** | Execution directory |
 
 ## Test Results
 
@@ -60,12 +57,11 @@ After execution, view results in **Run** tool window:
 - ❌ Red X: Test failed
 - ⏭️ Skip icon: Test skipped
 
-### Features
+### Navigation
 
-- Click test name to jump to source
-- View full output in console
-- Re-run failed tests only
-- Export results
+**Double-click** on a scenario name in the test results tree to navigate directly to the `.scenario` file at the corresponding line.
+
+This works because BerryCrush provides `FileSource` information to the JUnit Platform, which IntelliJ's test runner uses for navigation.
 
 ### Output Console
 
@@ -87,67 +83,49 @@ The console shows:
 
 - See HTTP request/response bodies
 - View variable values
-- Step-by-step execution (if configured)
+- Set breakpoints in step implementations
 
 ## Filtering Tests
 
 ### By Tags
 
-Run scenarios with specific tags:
+Use `@BerryCrushTags` annotation to filter scenarios:
 
-```berrycrush
-@smoke @critical
-scenario: Important test
-  ...
+```kotlin
+@BerryCrushScenarios(locations = ["scenarios/*.scenario"])
+@BerryCrushTags(include = ["smoke"], exclude = ["slow"])
+class SmokeTests
 
-@regression
-scenario: Regular test
-  ...
+### By Scenario Location
+
+Use `@BerryCrushScenarios` to specify which scenarios to run:
+
+```kotlin
+@BerryCrushScenarios(locations = ["scenarios/auth/*.scenario"])
+class AuthTests
 ```
-
-Run command:
-```
---tags @smoke
-```
-
-### By Scenario Name
-
-Specify scenario name in run configuration:
-- Exact match: `Create user`
-- Pattern: `*user*`
-
-### By File
-
-Select specific `.scenario` file in configuration.
 
 ## Environment Variables
 
-Set environment variables for tests:
+Configure test properties in your test class:
 
-1. Edit run configuration
-2. Click **Environment variables**
-3. Add key-value pairs
-
-Example:
-```
-BASE_URL=https://api.test.com
-API_KEY=test-key-123
+```kotlin
+@BerryCrushSpec(paths = ["petstore.yaml"], baseUrl = "http://localhost:8080")
+class PetstoreTests {
+    // ...
+}
 ```
 
-Access in scenarios:
-```berrycrush
-given base URL is {{env.BASE_URL}}
-when I call ^endpoint with header:
-  | X-API-Key | {{env.API_KEY}} |
-```
+Or use JUnit's `@BeforeEach` with `BerryCrushConfiguration`:
 
-## Multiple Configurations
-
-Create configurations for different environments:
-
-- **Local Tests**: `BASE_URL=http://localhost:8080`
-- **Staging Tests**: `BASE_URL=https://staging.api.com`
-- **Production Tests**: `BASE_URL=https://api.com`
+```kotlin
+@BerryCrushSpec(paths = ["petstore.yaml"])
+class PetstoreTests {
+    @BeforeEach
+    fun setup(config: BerryCrushConfiguration) {
+        config.baseUrl = System.getenv("BASE_URL") ?: "http://localhost:8080"
+    }
+}
 
 Quick switch between configurations in the toolbar dropdown.
 

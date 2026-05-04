@@ -119,20 +119,30 @@ scenario: Admin can view users
 
 ## Running Tests
 
-### From the Gutter
+BerryCrush tests are executed through JUnit. Create a test class that references your scenarios:
 
-1. Click the green **▶** icon next to `scenario:`
-2. Select **Run 'Scenario...'**
+### Step 1: Create a Test Class
 
-### From the Context Menu
+```kotlin
+import org.berrycrush.junit.BerryCrushScenarios
 
-1. Right-click inside a scenario file
-2. Select **Run 'filename.scenario'**
+@BerryCrushScenarios(locations = ["my-first-test.scenario"])
+class MyFirstTest
+```
+
+### Step 2: Run from the Gutter
+
+1. Click the green **▶** icon next to the class name
+2. Select **Run 'MyFirstTest'**
 
 ### From the Keyboard
 
-1. Place cursor inside a scenario
+1. Place cursor inside the test class
 2. Press `Ctrl+Shift+R` (Mac) or `Ctrl+Shift+F10` (Windows/Linux)
+
+### Test Results Navigation
+
+After tests run, **double-click** on a scenario name in the test results tree to navigate directly to the `.scenario` file.
 
 ## Inspections
 

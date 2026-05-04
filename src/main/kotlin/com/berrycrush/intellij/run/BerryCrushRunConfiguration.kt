@@ -1,93 +1,61 @@
 package com.berrycrush.intellij.run
 
+import com.berrycrush.intellij.BerryCrushIcons
 import com.intellij.execution.Executor
 import com.intellij.execution.configurations.ConfigurationFactory
+import com.intellij.execution.configurations.ConfigurationType
 import com.intellij.execution.configurations.RunConfiguration
-import com.intellij.execution.configurations.RunConfigurationBase
-import com.intellij.execution.configurations.RunProfileState
-import com.intellij.execution.configurations.RuntimeConfigurationError
-import com.intellij.execution.configurations.RuntimeConfigurationException
-import com.intellij.execution.runners.ExecutionEnvironment
-import com.intellij.openapi.options.SettingsEditor
+import com.intellij.execution.junit.JUnitConfiguration
+import com.intellij.execution.testframework.sm.runner.SMTRunnerConsoleProperties
 import com.intellij.openapi.project.Project
-import java.io.File
+import javax.swing.Icon
 
 /**
- * Run configuration for executing BerryCrush scenario tests.
+ * BerryCrush run configuration type.
  *
- * This configuration stores:
- * - Path to the .scenario file
- * - Optional scenario name filter
- * - Optional feature name filter
- * - Module for classpath resolution
+ * This is a minimal wrapper around JUnit that:
+ * 1. Delegates all execution to JUnit
+ * 2. Provides custom console properties with file:// URL navigation support
+ *
+ * The key difference from plain JUnit is that BerryCrush tests use FileSource
+ * which generates file:// location hints. JUnit's default JavaTestLocator only
+ * handles java:// URLs. This configuration adds FileUrlProvider support.
+ */
+class BerryCrushConfigurationType : ConfigurationType {
+    override fun getDisplayName(): String = "BerryCrush"
+    override fun getConfigurationTypeDescription(): String = "BerryCrush test configuration"
+    override fun getIcon(): Icon = BerryCrushIcons.SCENARIO_FILE
+    override fun getId(): String = "BerryCrushConfiguration"
+
+    override fun getConfigurationFactories(): Array<ConfigurationFactory> =
+        arrayOf(BerryCrushConfigurationFactory(this))
+}
+
+/**
+ * Factory for creating BerryCrush run configurations.
+ */
+class BerryCrushConfigurationFactory(type: ConfigurationType) : ConfigurationFactory(type) {
+    override fun getId(): String = "BerryCrush"
+
+    override fun createTemplateConfiguration(project: Project): RunConfiguration =
+        BerryCrushRunConfiguration(project, this, "BerryCrush")
+
+    override fun getName(): String = "BerryCrush"
+}
+
+/**
+ * BerryCrush run configuration that extends JUnitConfiguration.
+ *
+ * Inherits all JUnit functionality and only overrides console properties
+ * to support file:// URL navigation for .scenario files.
  */
 class BerryCrushRunConfiguration(
     project: Project,
     factory: ConfigurationFactory,
     name: String,
-) : RunConfigurationBase<BerryCrushRunConfigurationOptions>(project, factory, name) {
+) : JUnitConfiguration(name, project, factory) {
 
-    override fun getOptions(): BerryCrushRunConfigurationOptions {
-        return super.getOptions() as BerryCrushRunConfigurationOptions
-    }
-
-    /**
-     * Path to the .scenario file to execute.
-     */
-    var scenarioFilePath: String
-        get() = options.scenarioFilePath
-        set(value) {
-            options.scenarioFilePath = value
-        }
-
-    /**
-     * Optional: Specific scenario name to run.
-     */
-    var scenarioName: String?
-        get() = options.scenarioName
-        set(value) {
-            options.scenarioName = value
-        }
-
-    /**
-     * Optional: Specific feature name to run.
-     */
-    var featureName: String?
-        get() = options.featureName
-        set(value) {
-            options.featureName = value
-        }
-
-    /**
-     * Module name for classpath configuration.
-     */
-    var moduleName: String?
-        get() = options.moduleName
-        set(value) {
-            options.moduleName = value
-        }
-
-    override fun getConfigurationEditor(): SettingsEditor<out RunConfiguration> {
-        return BerryCrushRunConfigurationEditor(project)
-    }
-
-    override fun getState(executor: Executor, environment: ExecutionEnvironment): RunProfileState {
-        return BerryCrushRunState(this, environment)
-    }
-
-    @Throws(RuntimeConfigurationException::class)
-    override fun checkConfiguration() {
-        if (scenarioFilePath.isEmpty()) {
-            throw RuntimeConfigurationError("No scenario file specified")
-        }
-
-        val file = File(scenarioFilePath)
-        if (!file.exists()) {
-            throw RuntimeConfigurationError("Scenario file not found: $scenarioFilePath")
-        }
-
-        if (!file.extension.equals("scenario", ignoreCase = true)) {
-            throw RuntimeConfigurationError("File must have .scenario extension: $scenarioFilePath")
-        }
+    override fun createTestConsoleProperties(executor: Executor): SMTRunnerConsoleProperties {
+        return BerryCrushConsoleProperties(this, executor)
     }
 }

@@ -9,6 +9,7 @@ import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.DumbService
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.vfs.AsyncFileListener
 import com.intellij.openapi.vfs.VirtualFile
@@ -68,52 +69,19 @@ class BerryCrushFileChangeListener : AsyncFileListener {
         }
     }
 
-    private fun getAffectedFile(event: VFileEvent): VirtualFile? {
-        return when (event) {
-            is VFileCreateEvent -> event.file
-            is VFileDeleteEvent -> event.file
-            is VFileContentChangeEvent -> event.file
-            is VFileMoveEvent -> event.file
-            is VFilePropertyChangeEvent -> event.file
-            else -> event.file
+    private fun getAffectedFile(event: VFileEvent): VirtualFile? = event.file
+
+    private fun isOpenAPISpecFile(file: VirtualFile): Boolean = checkOpenAPIContent(file)
+
+    private fun checkOpenAPIContent(file: VirtualFile): Boolean = runCatching {
+        ProjectManager.getInstance().openProjects.filter{ !it.isDisposed }.any { project ->
+            val psiManager = PsiManager.getInstance(project)
+            val psiFile = psiManager.findFile(file)
+            psiFile != null && BerryCrushOperationReference.isOpenAPISpec(psiFile)
         }
-    }
-
-    private fun isOpenAPISpecFile(file: VirtualFile): Boolean {
-        // First try filename-based heuristic (fast, no PSI needed)
-        if (hasOpenAPIFilename(file)) {
-            return true
-        }
-
-        // Then try content-based detection using BerryCrushOperationReference
-        // This requires project context and PSI, so may not work during VFS events
-        return checkOpenAPIContent(file)
-    }
-
-    private fun hasOpenAPIFilename(file: VirtualFile): Boolean {
-        val name = file.name.lowercase()
-        return name.contains("openapi") || 
-               name.contains("swagger") ||
-               name == "api.yaml" || 
-               name == "api.yml" || 
-               name == "api.json"
-    }
-
-    private fun checkOpenAPIContent(file: VirtualFile): Boolean {
-        try {
-            for (project in ProjectManager.getInstance().openProjects) {
-                if (project.isDisposed) continue
-                val psiManager = PsiManager.getInstance(project)
-                val psiFile = psiManager.findFile(file)
-                if (psiFile != null && BerryCrushOperationReference.isOpenAPISpec(psiFile)) {
-                    return true
-                }
-            }
-        } catch (e: Exception) {
-            LOG.debug("Could not check OpenAPI spec content", e)
-        }
-        return false
-    }
+    }.onFailure { e ->
+        LOG.debug("Could not check OpenAPI spec content", e)
+    }.getOrElse { false }
 
     private fun scheduleAnalysisRestart(requestIndexRebuild: Boolean) {
         // Debounce multiple rapid changes
@@ -121,7 +89,7 @@ class BerryCrushFileChangeListener : AsyncFileListener {
 
         // Use invokeLater with delay to ensure VFS and indexes are fully updated
         ApplicationManager.getApplication().invokeLater({
-            try {
+            runCatching {
                 for (project in ProjectManager.getInstance().openProjects) {
                     if (project.isDisposed) continue
 
@@ -136,18 +104,17 @@ class BerryCrushFileChangeListener : AsyncFileListener {
                         pendingRestart.set(false)
                     }
                 }
-            } catch (e: Exception) {
+            }.onFailure { e ->
                 LOG.debug("Error scheduling analysis restart", e)
                 pendingRestart.set(false)
             }
         }, ModalityState.nonModal())
     }
 
-    private fun restartAnalysisForProject(project: com.intellij.openapi.project.Project) {
+    private fun restartAnalysisForProject(project: Project) {
         if (project.isDisposed) return
 
-        try {
-            // Commit all documents to ensure PSI is up to date
+        runCatching {
             PsiDocumentManager.getInstance(project).commitAllDocuments()
 
             val fileEditorManager = FileEditorManager.getInstance(project)
@@ -161,11 +128,11 @@ class BerryCrushFileChangeListener : AsyncFileListener {
                     .forEach { file ->
                         psiManager.findFile(file)?.let { psiFile ->
                             LOG.debug("Restarting analysis for: ${file.name}")
-                            analyzer.restart(psiFile)
+                            analyzer.restart(psiFile, "Restart analysis")
                         }
                     }
             }
-        } catch (e: Exception) {
+        }.onFailure { e ->
             LOG.debug("Error restarting analysis for BerryCrush files", e)
         }
     }

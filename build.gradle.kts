@@ -22,6 +22,7 @@ dependencies {
     intellijPlatform {
         intellijIdea(providers.gradleProperty("platformVersion"))
         bundledPlugin("com.intellij.java")
+        bundledPlugin("JUnit")
         testFramework(TestFrameworkType.Platform)
     }
 
