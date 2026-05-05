@@ -30,8 +30,10 @@ class BerryCrushConfigurationProducer : LazyRunConfigurationProducer<BerryCrushR
         private val BERRYCRUSH_ANNOTATIONS = setOf(
             "org.berrycrush.junit.BerryCrushScenarios",
             "org.berrycrush.junit.BerryCrushSpec",
+            "org.berrycrush.junit.BerryCrushConfiguration",
             "BerryCrushScenarios",
-            "BerryCrushSpec"
+            "BerryCrushSpec",
+            "BerryCrushConfiguration"
         )
     }
 

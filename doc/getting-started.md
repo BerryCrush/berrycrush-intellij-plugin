@@ -144,6 +144,12 @@ class MyFirstTest
 
 After tests run, **double-click** on a scenario name in the test results tree to navigate directly to the `.scenario` file.
 
+!!! note "Gradle Projects: Configure IntelliJ Test Runner"
+    For Gradle-based projects, you must configure IntelliJ to use its built-in
+    test runner instead of Gradle for navigation to work.
+    See [Test Runner Configuration](configuration/settings.md#test-runner-configuration)
+    for details. Maven projects typically work without changes.
+
 ## Inspections
 
 The plugin checks your code for issues:

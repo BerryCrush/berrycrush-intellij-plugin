@@ -215,6 +215,59 @@ Exclude directories from indexing if not needed:
 
 **Settings** → **Project Structure** → **Modules** → **Excluded**
 
+## Test Runner Configuration
+
+For Gradle-based projects, configure IntelliJ to use its built-in test runner
+instead of delegating to Gradle for optimal BerryCrush test experience.
+
+!!! note
+    This configuration is only needed for **Gradle projects**. Maven projects typically
+    use IntelliJ's built-in test runner by default and should work without changes.
+
+### Why This Matters (Gradle Projects)
+
+BerryCrush tests use `file://` location hints to enable navigation from the test tree
+directly to `.scenario` files. This navigation only works when using IntelliJ's built-in
+test runner because:
+
+- The BerryCrush plugin registers a custom `TestLocator` that handles `file://` URLs
+- When Gradle runs tests, IntelliJ's test locator extensions are bypassed
+- Gradle has its own test output processing that doesn't support our navigation
+
+### Configure Test Runner
+
+1. Open **Settings** (or **Preferences** on Mac)
+2. Navigate to **Build, Execution, Deployment** → **Build Tools** → **Gradle**
+3. Find the **Run tests using:** dropdown
+4. Change from **Gradle** to **IntelliJ IDEA**
+
+![Test Runner Setting](images/test-runner-setting.png)
+
+### Features Enabled
+
+With IntelliJ test runner configured:
+
+| Feature | Description |
+|---------|-------------|
+| **Scenario navigation** | Double-click test tree items to navigate to `.scenario` files |
+| **BerryCrush configuration** | Gutter icons create BerryCrush configs with proper navigation |
+| **Scenario filtering** | Run individual scenarios with `-DberryCrush.scenarioName` VM options |
+| **Feature filtering** | Run all scenarios in a feature with `-DberryCrush.featureName` |
+
+### Running from Scenario Files
+
+When using IntelliJ test runner, you can:
+
+1. Click the **play icon** next to a `scenario:` or `feature:` keyword
+2. Select a test class from the dropdown (if multiple exist)
+3. The test runs with automatic scenario filtering
+
+The generated run configuration includes VM options:
+```
+-DberryCrush.scenarioFile="filename.scenario"
+-DberryCrush.scenarioName="Scenario Name"
+```
+
 ## Export/Import Settings
 
 ### Export
