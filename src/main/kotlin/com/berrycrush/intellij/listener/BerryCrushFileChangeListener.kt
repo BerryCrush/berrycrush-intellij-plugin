@@ -71,9 +71,27 @@ class BerryCrushFileChangeListener : AsyncFileListener {
 
     private fun getAffectedFile(event: VFileEvent): VirtualFile? = event.file
 
-    private fun isOpenAPISpecFile(file: VirtualFile): Boolean = checkOpenAPIContent(file)
+    private fun isOpenAPISpecFile(file: VirtualFile): Boolean {
+        val fileName = file.name.lowercase()
+        
+        // Filename heuristic: files with openapi/swagger in name are likely OpenAPI specs
+        if (fileName.contains("openapi") || fileName.contains("swagger")) {
+            // Still verify minimal content structure
+            return checkOpenAPIContent(file, relaxedCheck = true)
+        }
+        
+        // For other yaml/json files, do full content check
+        return checkOpenAPIContent(file, relaxedCheck = false)
+    }
 
-    private fun checkOpenAPIContent(file: VirtualFile): Boolean = runCatching {
+    private fun checkOpenAPIContent(file: VirtualFile, relaxedCheck: Boolean): Boolean = runCatching {
+        // Try to read file content directly first (works in tests)
+        val content = file.inputStream?.bufferedReader()?.use { it.readText() }
+        if (content != null) {
+            return@runCatching BerryCrushOperationReference.isOpenAPISpec(content, relaxedLengthCheck = relaxedCheck)
+        }
+        
+        // Fall back to PSI-based check
         ProjectManager.getInstance().openProjects.filter{ !it.isDisposed }.any { project ->
             val psiManager = PsiManager.getInstance(project)
             val psiFile = psiManager.findFile(file)

@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.berrycrush.intellij</id>
     <name>BerryCrush</name>
-    <vendor email="support@berrycrush.org" url="https://github.com/berrycrush/berrycrush">BerryCrush</vendor>
+    <vendor url="https://github.com/BerryCrush/berrycrush-intellij-plugin/issues">BerryCrush</vendor>
 
     <description><![CDATA[
     <h2>BerryCrush - OpenAPI-Driven BDD Testing</h2>

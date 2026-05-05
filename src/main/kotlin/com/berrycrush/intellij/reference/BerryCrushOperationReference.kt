@@ -87,16 +87,24 @@ class BerryCrushOperationReference(
 
         /**
          * Check if a file is an OpenAPI specification.
+         * Uses both filename heuristics and content analysis.
          */
         fun isOpenAPISpec(psiFile: PsiFile?): Boolean {
             if (psiFile == null) return false
 
+            val fileName = psiFile.name.lowercase()
             val text = psiFile.text
-            return isOpenAPISpec(text)
+            
+            // Filename heuristic: if filename contains "openapi" or "swagger", relax length check
+            val hasOpenAPIFilename = fileName.contains("openapi") || fileName.contains("swagger")
+            
+            return isOpenAPISpec(text, relaxedLengthCheck = hasOpenAPIFilename)
         }
 
-        fun isOpenAPISpec(text: String): Boolean {
-            if (text.length < 100) return false // Too short to be OpenAPI
+        fun isOpenAPISpec(text: String, relaxedLengthCheck: Boolean = false): Boolean {
+            // Apply length check unless relaxed (e.g., for files with openapi/swagger in name)
+            val minLength = if (relaxedLengthCheck) 20 else 100
+            if (text.length < minLength) return false
 
             // Check for OpenAPI 3.x marker
             if (text.contains(Regex("""openapi:\s*['"]?3\."""))) {

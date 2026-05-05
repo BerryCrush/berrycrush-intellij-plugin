@@ -73,8 +73,7 @@ class BerryCrushScenarioRunLineMarkerProvider : RunLineMarkerContributor(), Dumb
             else -> return null
         }
 
-        // Get the scenario file path for filtering
-        val scenarioFilePath = file.virtualFile?.path ?: return null
+        // Get the scenario file name for filtering
         val scenarioFileName = file.virtualFile?.name ?: return null
 
         // Create custom run actions
