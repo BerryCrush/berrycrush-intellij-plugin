@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
   <rect x="1" y="1" width="14" height="14" rx="2" fill="#4B8BBE" opacity="0.15"/>
   <path d="M6 4.5v7l5.5-3.5z" fill="#4CAF50"/>
-  <circle cx="12" cy="12" r="3" fill="#4B8BBE"/>
-  <text x="12" y="13.5" text-anchor="middle" font-size="5" fill="white" font-family="sans-serif" font-weight="bold">S</text>
+  <circle cx="12" cy="12" r="3" style="fill: rgb(21,24,96)"/>
+  <text x="12" y="13.5" text-anchor="middle" font-size="5" font-family="sans-serif" font-weight="bold" style="fill: rgb(37,147,6);">S</text>
 </svg>

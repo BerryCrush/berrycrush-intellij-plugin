@@ -1,4 +1,4 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
-  <rect x="2" y="2" width="12" height="12" rx="2" fill="#2196F3" opacity="0.3"/>
-  <text x="8" y="11" font-family="sans-serif" font-size="8" font-weight="bold" fill="#2196F3" text-anchor="middle">S</text>
+  <rect x="2" y="2" width="12" height="12" rx="2" style="fill: rgb(36,24,99)" opacity="0.9"/>
+  <text x="8" y="11" font-family="sans-serif" font-size="8" font-weight="bold" style="fill: rgb(37,147,6);" text-anchor="middle">S</text>
 </svg>
