@@ -46,6 +46,17 @@
         <Bug pattern="RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE"/>
     </Match>
     
+    <!-- Kotlin when expressions with else branch compiled to switch without default -->
+    <Match>
+        <Bug pattern="SF_SWITCH_NO_DEFAULT"/>
+    </Match>
+    
+    <!-- IntelliJ CustomCodeStyleSettings extends class with equals() but manages its own state -->
+    <Match>
+        <Class name="com.berrycrush.intellij.codestyle.BerryCrushCodeStyleSettings"/>
+        <Bug pattern="HE_INHERITS_EQUALS_USE_HASHCODE"/>
+    </Match>
+    
     <!-- Bad cast to abstract collection - common with Kotlin collections -->
     <Match>
         <Bug pattern="BC_BAD_CAST_TO_ABSTRACT_COLLECTION"/>

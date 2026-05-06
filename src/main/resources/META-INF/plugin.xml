@@ -210,6 +210,18 @@
         <!-- Target Element Evaluator for finding elements at caret position -->
         <targetElementEvaluator language="BerryCrush"
                 implementationClass="com.berrycrush.intellij.navigation.BerryCrushTargetElementEvaluator"/>
+
+        <!-- Code Formatting -->
+        <lang.formatter language="BerryCrush"
+                        implementationClass="com.berrycrush.intellij.formatting.BerryCrushFormattingModelBuilder"/>
+
+        <!-- Code Style Settings -->
+        <langCodeStyleSettingsProvider
+                implementation="com.berrycrush.intellij.codestyle.BerryCrushLanguageCodeStyleSettingsProvider"/>
+        
+        <!-- Post-format processor for table alignment -->
+        <postFormatProcessor
+                implementation="com.berrycrush.intellij.formatting.BerryCrushPostFormatProcessor"/>
     </extensions>
 
     <actions>
