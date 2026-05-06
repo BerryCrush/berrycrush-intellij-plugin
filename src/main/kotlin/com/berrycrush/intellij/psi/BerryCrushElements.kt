@@ -97,7 +97,7 @@ class BerryCrushOperationRefElement(node: ASTNode) : BerryCrushPsiElement(node),
 }
 
 /**
- * Call directive element: `call ^operationId`
+ * Call directive element: `call ^operationId` with optional parameters
  */
 class BerryCrushCallElement(node: ASTNode) : BerryCrushPsiElement(node) {
     val operationRef: BerryCrushOperationRefElement?
@@ -105,6 +105,18 @@ class BerryCrushCallElement(node: ASTNode) : BerryCrushPsiElement(node) {
 
     val operationId: String?
         get() = operationRef?.operationId
+
+    /**
+     * Get all parameter elements for this call directive.
+     */
+    val parameters: List<BerryCrushIncludeParameterElement>
+        get() = findChildrenByClass(BerryCrushIncludeParameterElement::class.java).toList()
+
+    /**
+     * Get parameter names as a set.
+     */
+    val parameterNames: Set<String>
+        get() = parameters.mapNotNull { it.parameterName }.toSet()
 }
 
 /**

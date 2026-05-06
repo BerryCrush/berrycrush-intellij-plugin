@@ -28,7 +28,7 @@ class UndefinedAssertionInspection : BerryCrushInspection() {
             ASSERT_PATTERN.find(line)?.let { match ->
                 val assertionText = match.groupValues[1].trim()
 
-                if (assertionText.isNotBlank()) {
+                if (assertionText.isNotBlank() && !isBuiltInAssertion(assertionText)) {
                     val matchingMethods = BerryCrushAssertionReference.findMatchingAssertionMethodsInScope(
                         project,
                         assertionText,
@@ -50,11 +50,35 @@ class UndefinedAssertionInspection : BerryCrushInspection() {
         }
     }
 
+    /**
+     * Check if the assertion text matches a built-in assertion pattern.
+     */
+    private fun isBuiltInAssertion(text: String): Boolean {
+        return BUILT_IN_PATTERNS.any { it.matches(text) }
+    }
+
     companion object {
         // Matches: assert <assertion text>
         private val ASSERT_PATTERN = Regex(
             """^\s*assert\s+(.+)$""",
             RegexOption.IGNORE_CASE
+        )
+
+        // Built-in assertion patterns (from scenario-syntax.rst)
+        private val BUILT_IN_PATTERNS = listOf(
+            // status <code> or statusCode <code>
+            Regex("""^status(Code)?\s+(\d+|\dxx)$""", RegexOption.IGNORE_CASE),
+            // contains "<text>" or not contains "<text>"
+            Regex("""^(not\s+)?contains\s+.+$""", RegexOption.IGNORE_CASE),
+            // JSONPath assertions: $.path equals/=/matches/notEmpty/size/exists/not equals/not exists
+            Regex("""^\$[^\s]+\s+(equals|=|matches|notEmpty|size|exists)\s*.*$""", RegexOption.IGNORE_CASE),
+            Regex("""^\$[^\s]+\s+not\s+(equals|exists)\s*.*$""", RegexOption.IGNORE_CASE),
+            // header <name> or header <name> = "<value>" or header <name>: "<value>"
+            Regex("""^header\s+\S+.*$""", RegexOption.IGNORE_CASE),
+            // responseTime <ms>
+            Regex("""^responseTime\s+\d+$""", RegexOption.IGNORE_CASE),
+            // schema (with optional path)
+            Regex("""^schema(\s+.+)?$""", RegexOption.IGNORE_CASE),
         )
     }
 }

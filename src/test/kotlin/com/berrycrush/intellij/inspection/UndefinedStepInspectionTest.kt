@@ -129,6 +129,78 @@ class UndefinedStepInspectionTest : BerryCrushTestCase() {
         )
     }
 
+    // ========== Comment Skipping Tests ==========
+
+    fun testNoProblemsForStepWithCommentThenDirective() {
+        // Step followed by comment then directive should not be flagged
+        val psiFile = myFixture.addFileToProject("test_comment1.scenario", """
+            scenario: test
+              then: I get this
+                # comment
+                assert status 200
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "Step with comment then directive should not be flagged",
+            problems.isEmpty()
+        )
+    }
+
+    fun testNoProblemsForStepWithMultipleCommentsThenDirective() {
+        // Step followed by multiple comments then directive should not be flagged
+        val psiFile = myFixture.addFileToProject("test_comment2.scenario", """
+            scenario: test
+              then: verify response
+                # first comment
+                # second comment
+                assert status 200
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "Step with multiple comments then directive should not be flagged",
+            problems.isEmpty()
+        )
+    }
+
+    fun testNoProblemsForStepWithBlankLinesThenDirective() {
+        // Step followed by blank lines then directive should not be flagged
+        val psiFile = myFixture.addFileToProject("test_blank.scenario", """
+            scenario: test
+              then: verify response
+            
+                assert status 200
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "Step with blank lines then directive should not be flagged",
+            problems.isEmpty()
+        )
+    }
+
+    fun testProblemForStepWithOnlyComments() {
+        // Step followed by only comments (no directive) should be flagged
+        val psiFile = myFixture.addFileToProject("test_onlycomments.scenario", """
+            scenario: test
+              then: I expect something
+                # just a comment
+                # another comment
+              when: next step
+                call GET /api
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        val undefinedStepProblems = problems.filter {
+            it.descriptionTemplate.contains("has no matching @Step definition")
+        }
+        assertTrue(
+            "Step with only comments should be flagged",
+            undefinedStepProblems.isNotEmpty()
+        )
+    }
+
     // ========== Non-BerryCrush Files Tests ==========
 
     fun testIgnoresNonBerryCrushFiles() {

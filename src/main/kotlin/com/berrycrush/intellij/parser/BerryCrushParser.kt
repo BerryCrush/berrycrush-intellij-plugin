@@ -142,6 +142,10 @@ class BerryCrushParser : PsiParser {
             }
         }
         skipNewlines(builder)
+
+        // Parse optional parameter block (same format as include parameters)
+        parseIncludeParameters(builder)
+
         marker.done(BerryCrushElementTypes.CALL_DIRECTIVE)
     }
 

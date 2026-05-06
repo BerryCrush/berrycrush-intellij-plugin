@@ -32,8 +32,8 @@ class UndefinedStepInspection : BerryCrushInspection() {
             if (stepMatch != null) {
                 val stepText = extractStepText(stepMatch.groupValues[2])
 
-                // Check if next line has a directive
-                val hasDirective = i + 1 < lines.size && DIRECTIVE_PATTERN.matches(lines[i + 1].trim())
+                // Check if a directive exists after this step (skipping comments and blank lines)
+                val hasDirective = hasDirectiveAfterStep(lines, i)
 
                 if (!hasDirective && stepText.isNotBlank()) {
                     // Check if step matches any @Step annotation
@@ -58,6 +58,24 @@ class UndefinedStepInspection : BerryCrushInspection() {
             }
             i++
         }
+    }
+
+    /**
+     * Check if a directive exists after the step, skipping comments and blank lines.
+     * Returns false if a non-directive, non-comment, non-blank line is found first.
+     */
+    private fun hasDirectiveAfterStep(lines: List<String>, stepIndex: Int): Boolean {
+        var i = stepIndex + 1
+        while (i < lines.size) {
+            val trimmed = lines[i].trim()
+            when {
+                trimmed.isEmpty() -> i++
+                trimmed.startsWith("#") -> i++
+                DIRECTIVE_PATTERN.matches(trimmed) -> return true
+                else -> return false
+            }
+        }
+        return false
     }
 
     /**

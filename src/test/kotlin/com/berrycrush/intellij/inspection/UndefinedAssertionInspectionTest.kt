@@ -135,6 +135,180 @@ class UndefinedAssertionInspectionTest : BerryCrushTestCase() {
         assertTrue("Should have at least one fix", fixes?.isNotEmpty() == true)
     }
 
+    // ========== Built-in Assertion Tests ==========
+
+    fun testBuiltInStatusAssertionNotFlagged() {
+        val psiFile = myFixture.addFileToProject("builtin1.scenario", """
+            scenario: test
+              then: verify
+                assert status 200
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "Built-in status assertion should not be flagged",
+            problems.isEmpty()
+        )
+    }
+
+    fun testBuiltInStatusCodeAssertionNotFlagged() {
+        val psiFile = myFixture.addFileToProject("builtin2.scenario", """
+            scenario: test
+              then: verify
+                assert statusCode 404
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "Built-in statusCode assertion should not be flagged",
+            problems.isEmpty()
+        )
+    }
+
+    fun testBuiltInContainsAssertionNotFlagged() {
+        val psiFile = myFixture.addFileToProject("builtin3.scenario", """
+            scenario: test
+              then: verify
+                assert contains "hello"
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "Built-in contains assertion should not be flagged",
+            problems.isEmpty()
+        )
+    }
+
+    fun testBuiltInNotContainsAssertionNotFlagged() {
+        val psiFile = myFixture.addFileToProject("builtin4.scenario", """
+            scenario: test
+              then: verify
+                assert not contains "error"
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "Built-in not contains assertion should not be flagged",
+            problems.isEmpty()
+        )
+    }
+
+    fun testBuiltInJsonPathAssertionNotFlagged() {
+        val psiFile = myFixture.addFileToProject("builtin5.scenario", """
+            scenario: test
+              then: verify
+                assert $.name equals "John"
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "Built-in JSONPath equals assertion should not be flagged",
+            problems.isEmpty()
+        )
+    }
+
+    fun testBuiltInJsonPathShorthandAssertionNotFlagged() {
+        val psiFile = myFixture.addFileToProject("builtin6.scenario", """
+            scenario: test
+              then: verify
+                assert $.id = 123
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "Built-in JSONPath shorthand assertion should not be flagged",
+            problems.isEmpty()
+        )
+    }
+
+    fun testBuiltInHeaderAssertionNotFlagged() {
+        val psiFile = myFixture.addFileToProject("builtin7.scenario", """
+            scenario: test
+              then: verify
+                assert header Content-Type
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "Built-in header assertion should not be flagged",
+            problems.isEmpty()
+        )
+    }
+
+    fun testBuiltInHeaderValueAssertionNotFlagged() {
+        val psiFile = myFixture.addFileToProject("builtin8.scenario", """
+            scenario: test
+              then: verify
+                assert header Content-Type = "application/json"
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "Built-in header value assertion should not be flagged",
+            problems.isEmpty()
+        )
+    }
+
+    fun testBuiltInResponseTimeAssertionNotFlagged() {
+        val psiFile = myFixture.addFileToProject("builtin9.scenario", """
+            scenario: test
+              then: verify
+                assert responseTime 1000
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "Built-in responseTime assertion should not be flagged",
+            problems.isEmpty()
+        )
+    }
+
+    fun testBuiltInSchemaAssertionNotFlagged() {
+        val psiFile = myFixture.addFileToProject("builtin10.scenario", """
+            scenario: test
+              then: verify
+                assert schema
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "Built-in schema assertion should not be flagged",
+            problems.isEmpty()
+        )
+    }
+
+    fun testBuiltInJsonPathNotExistsAssertionNotFlagged() {
+        val psiFile = myFixture.addFileToProject("builtin11.scenario", """
+            scenario: test
+              then: verify
+                assert $.error not exists
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "Built-in JSONPath not exists assertion should not be flagged",
+            problems.isEmpty()
+        )
+    }
+
+    fun testCustomAssertionStillFlagged() {
+        // Custom assertions that don't match built-in patterns should still be flagged
+        val psiFile = myFixture.addFileToProject("custom1.scenario", """
+            scenario: test
+              then: verify
+                assert my custom validation
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        val undefinedAssertionProblems = problems.filter {
+            it.descriptionTemplate.contains("has no matching @Assertion definition")
+        }
+        assertTrue(
+            "Custom assertion should still be flagged",
+            undefinedAssertionProblems.isNotEmpty()
+        )
+    }
+
     // ========== Non-BerryCrush Files Tests ==========
 
     fun testIgnoresNonBerryCrushFiles() {
