@@ -1,5 +1,5 @@
 <idea-plugin>
-    <id>com.berrycrush.intellij</id>
+    <id>org.berrycrush</id>
     <name>BerryCrush</name>
     <vendor url="https://github.com/BerryCrush/berrycrush-intellij-plugin/issues">BerryCrush</vendor>
 
