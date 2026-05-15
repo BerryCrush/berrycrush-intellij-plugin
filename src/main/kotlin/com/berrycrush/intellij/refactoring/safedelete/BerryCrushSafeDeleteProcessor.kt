@@ -11,6 +11,7 @@ import com.intellij.refactoring.safeDelete.NonCodeUsageSearchInfo
 import com.intellij.refactoring.safeDelete.SafeDeleteProcessor
 import com.intellij.refactoring.safeDelete.SafeDeleteProcessorDelegate
 import com.intellij.usageView.UsageInfo
+import com.intellij.util.containers.MultiMap
 
 /**
  * Safe delete processor for BerryCrush fragment files and fragment elements.
@@ -91,8 +92,9 @@ class BerryCrushSafeDeleteProcessor : SafeDeleteProcessorDelegate {
     override fun findConflicts(
         element: PsiElement,
         allElementsToDelete: Array<out PsiElement>,
-    ): Collection<String>? {
-        val conflicts = mutableListOf<String>()
+        usages: Array<out UsageInfo>,
+        conflicts: MultiMap<PsiElement, String>,
+    ) {
         val project = element.project
 
         // Get fragment names based on element type
@@ -104,22 +106,19 @@ class BerryCrushSafeDeleteProcessor : SafeDeleteProcessorDelegate {
 
         // Find usages and report as conflicts
         fragmentNames.forEach { fragmentName ->
-            val usages = IncludeUsageIndex.findIncludeUsages(project, fragmentName)
-            if (usages.isNotEmpty()) {
-                val usageFiles = usages.mapNotNull { it.containingFile?.name }.distinct()
+            val fragmentUsages = IncludeUsageIndex.findIncludeUsages(project, fragmentName)
+            if (fragmentUsages.isNotEmpty()) {
+                val usageFiles = fragmentUsages.mapNotNull { it.containingFile?.name }.distinct()
                 val usageDescription = if (usageFiles.size <= 3) {
                     usageFiles.joinToString(", ")
                 } else {
                     "${usageFiles.take(3).joinToString(", ")} and ${usageFiles.size - 3} more"
                 }
-                conflicts.add("Fragment '$fragmentName' is included in: $usageDescription")
+                conflicts.putValue(element, "Fragment '$fragmentName' is included in: $usageDescription")
             }
         }
-
-        return if (conflicts.isEmpty()) null else conflicts
     }
 
-    @Suppress("DEPRECATION")
     override fun preprocessUsages(
         project: com.intellij.openapi.project.Project,
         usages: Array<out UsageInfo>,

@@ -1,13 +1,12 @@
 package com.berrycrush.intellij.index
 
 import com.berrycrush.intellij.language.FragmentFileType
-import com.berrycrush.intellij.language.ScenarioFileType
+import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
-import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.util.indexing.DataIndexer
 import com.intellij.util.indexing.DefaultFileTypeSpecificInputFilter
@@ -69,24 +68,24 @@ class FragmentIndex : ScalarIndexExtension<String>() {
 
         /**
          * Gets all fragment names in the project.
-         * Ensures index is up to date before querying.
+         * Returns empty collection if indexing is in progress (dumb mode).
          */
         fun getAllFragmentNames(project: Project): Collection<String> {
-            val index = FileBasedIndex.getInstance()
-            // Ensure index is up to date for accurate results
-            index.ensureUpToDate(KEY, project, GlobalSearchScope.projectScope(project))
-            return index.getAllKeys(KEY, project)
+            if (DumbService.isDumb(project)) {
+                return emptyList()
+            }
+            return FileBasedIndex.getInstance().getAllKeys(KEY, project)
         }
 
         /**
          * Gets all files containing a fragment with the given name.
-         * Ensures index is up to date before querying.
+         * Returns empty collection if indexing is in progress (dumb mode).
          */
         fun getFragmentFiles(project: Project, fragmentName: String): Collection<VirtualFile> {
-            val index = FileBasedIndex.getInstance()
-            // Ensure index is up to date for accurate results
-            index.ensureUpToDate(KEY, project, GlobalSearchScope.projectScope(project))
-            return index.getContainingFiles(
+            if (DumbService.isDumb(project)) {
+                return emptyList()
+            }
+            return FileBasedIndex.getInstance().getContainingFiles(
                 KEY,
                 fragmentName,
                 GlobalSearchScope.projectScope(project)

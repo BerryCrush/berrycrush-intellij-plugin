@@ -5,7 +5,6 @@ import com.berrycrush.intellij.reference.BerryCrushOperationReference
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
-import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.DumbService
@@ -140,7 +139,7 @@ class BerryCrushFileChangeListener : AsyncFileListener {
             val analyzer = DaemonCodeAnalyzer.getInstance(project)
 
             // Find all open scenario/fragment files and restart analysis
-            ReadAction.run<RuntimeException> {
+            ApplicationManager.getApplication().runReadAction {
                 fileEditorManager.openFiles
                     .filter { it.extension == "scenario" || it.extension == "fragment" }
                     .forEach { file ->

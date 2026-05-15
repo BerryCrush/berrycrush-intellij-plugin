@@ -8,6 +8,7 @@ import com.berrycrush.intellij.psi.BerryCrushFragmentElement
 import com.berrycrush.intellij.refactoring.BerryCrushRefactoringSupportProvider
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.usageView.UsageInfo
+import com.intellij.util.containers.MultiMap
 
 /**
  * Tests for BerryCrush safe delete functionality.
@@ -260,13 +261,14 @@ class SafeDeleteTest : BerryCrushTestCase() {
         assertNotNull(psiFile)
 
         val processor = BerryCrushSafeDeleteProcessor()
-        val conflicts = processor.findConflicts(psiFile!!, arrayOf(psiFile))
+        val conflicts = MultiMap<com.intellij.psi.PsiElement, String>()
+        processor.findConflicts(psiFile!!, arrayOf(psiFile), emptyArray(), conflicts)
 
-        assertNotNull("Should find conflicts when fragment has usages", conflicts)
-        assertTrue("Conflicts should not be empty", conflicts!!.isNotEmpty())
+        assertFalse("Should find conflicts when fragment has usages", conflicts.isEmpty)
+        val messages = conflicts.values()
         assertTrue(
             "Conflict message should mention fragment name",
-            conflicts.first().contains("conflict-fragment"),
+            messages.any { it.contains("conflict-fragment") },
         )
     }
 
@@ -280,8 +282,9 @@ class SafeDeleteTest : BerryCrushTestCase() {
         assertNotNull(psiFile)
 
         val processor = BerryCrushSafeDeleteProcessor()
-        val conflicts = processor.findConflicts(psiFile!!, arrayOf(psiFile))
+        val conflicts = MultiMap<com.intellij.psi.PsiElement, String>()
+        processor.findConflicts(psiFile!!, arrayOf(psiFile), emptyArray(), conflicts)
 
-        assertNull("Should return null when no usages exist", conflicts)
+        assertTrue("Should return empty conflicts when no usages exist", conflicts.isEmpty)
     }
 }

@@ -224,7 +224,4 @@
                 implementation="com.berrycrush.intellij.formatting.BerryCrushPostFormatProcessor"/>
     </extensions>
 
-    <actions>
-        <!-- Actions removed - native Safe Delete now works for fragments -->
-    </actions>
 </idea-plugin>
