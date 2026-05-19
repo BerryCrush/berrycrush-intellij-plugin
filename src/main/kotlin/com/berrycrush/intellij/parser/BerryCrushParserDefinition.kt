@@ -14,8 +14,11 @@ import com.berrycrush.intellij.psi.BerryCrushGenericElement
 import com.berrycrush.intellij.psi.BerryCrushIncludeElement
 import com.berrycrush.intellij.psi.BerryCrushIncludeParameterElement
 import com.berrycrush.intellij.psi.BerryCrushOperationRefElement
+import com.berrycrush.intellij.psi.BerryCrushParameterEntryElement
+import com.berrycrush.intellij.psi.BerryCrushParametersBlockElement
 import com.berrycrush.intellij.psi.BerryCrushScenarioElement
 import com.berrycrush.intellij.psi.BerryCrushStepElement
+import com.berrycrush.intellij.psi.BerryCrushVariableInterpolationElement
 import com.intellij.lang.ASTNode
 import com.intellij.lang.ParserDefinition
 import com.intellij.lang.PsiParser
@@ -60,6 +63,9 @@ class BerryCrushParserDefinition : ParserDefinition {
             BerryCrushElementTypes.OPERATION_REF -> BerryCrushOperationRefElement(node)
             BerryCrushElementTypes.FRAGMENT_REF -> BerryCrushFragmentRefElement(node)
             BerryCrushElementTypes.PARAMETER -> BerryCrushIncludeParameterElement(node)
+            BerryCrushElementTypes.PARAMETERS_BLOCK -> BerryCrushParametersBlockElement(node)
+            BerryCrushElementTypes.PARAMETER_ENTRY -> BerryCrushParameterEntryElement(node)
+            BerryCrushElementTypes.VARIABLE_INTERPOLATION -> BerryCrushVariableInterpolationElement(node)
             else -> BerryCrushGenericElement(node)
         }
     }

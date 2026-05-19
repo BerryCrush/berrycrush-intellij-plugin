@@ -34,6 +34,10 @@ class BerryCrushSyntaxHighlighter : SyntaxHighlighterBase() {
         private val BRACES_KEYS = arrayOf(BerryCrushHighlightingColors.BRACES)
         private val PIPE_KEYS = arrayOf(BerryCrushHighlightingColors.PIPE)
         private val BAD_CHARACTER_KEYS = arrayOf(BerryCrushHighlightingColors.BAD_CHARACTER)
+        private val VARIABLE_INTERPOLATION_KEYS = arrayOf(BerryCrushHighlightingColors.VARIABLE_INTERPOLATION)
+        private val VARIABLE_INTERPOLATION_PREFIX_KEYS = arrayOf(
+            BerryCrushHighlightingColors.VARIABLE_INTERPOLATION_PREFIX
+        )
 
         private val TOKEN_HIGHLIGHT_MAP: Map<IElementType, Array<TextAttributesKey>> = buildMap {
             // Block keywords
@@ -108,6 +112,10 @@ class BerryCrushSyntaxHighlighter : SyntaxHighlighterBase() {
             put(BerryCrushTokenTypes.RBRACKET, BRACES_KEYS)
             put(BerryCrushTokenTypes.PIPE, PIPE_KEYS)
             put(BerryCrushTokenTypes.BAD_CHARACTER, BAD_CHARACTER_KEYS)
+
+            // Variable interpolation tokens
+            put(BerryCrushTokenTypes.VARIABLE_INTERPOLATION, VARIABLE_INTERPOLATION_KEYS)
+            put(BerryCrushTokenTypes.VARIABLE_INTERPOLATION_PREFIX, VARIABLE_INTERPOLATION_PREFIX_KEYS)
         }
     }
 }

@@ -2,6 +2,8 @@ package com.berrycrush.intellij.completion
 
 import com.berrycrush.intellij.language.BerryCrushLanguage
 import com.berrycrush.intellij.psi.BerryCrushIncludeElement
+import com.berrycrush.intellij.psi.BerryCrushParametersBlockElement
+import com.berrycrush.intellij.psi.BerryCrushScenarioElement
 import com.berrycrush.intellij.reference.BerryCrushFragmentReference
 import com.intellij.codeInsight.completion.CompletionContributor
 import com.intellij.codeInsight.completion.CompletionParameters
@@ -46,6 +48,25 @@ class BerryCrushCompletionProvider : CompletionProvider<CompletionParameters>() 
         val text = position.containingFile.text
         val offset = parameters.offset
 
+        // Check if we're typing a variable interpolation ${...}
+        if (isInVariableInterpolation(text, offset)) {
+            addVariableInterpolationCompletions(position.containingFile, result)
+            return
+        }
+
+        // Check if we're inside a scenario/feature parameters block
+        val parametersBlock = PsiTreeUtil.getParentOfType(position, BerryCrushParametersBlockElement::class.java)
+        if (parametersBlock != null) {
+            addScenarioParameterCompletions(result)
+            return
+        }
+
+        // Check if we're in position to add a parameters block
+        val scenarioElement = PsiTreeUtil.getParentOfType(position, BerryCrushScenarioElement::class.java)
+        if (scenarioElement != null && isInParametersBlockStartPosition(text, offset, scenarioElement)) {
+            addParametersBlockKeyword(result)
+        }
+
         // Check if we're inside an include directive's parameter block
         val includeElement = PsiTreeUtil.getParentOfType(position, BerryCrushIncludeElement::class.java)
         if (includeElement != null && isInParameterBlockPosition(text, offset, includeElement)) {
@@ -79,6 +100,107 @@ class BerryCrushCompletionProvider : CompletionProvider<CompletionParameters>() 
             else -> {
                 addAllKeywords(result)
             }
+        }
+    }
+
+    /**
+     * Check if cursor is inside a variable interpolation: ${...}
+     */
+    private fun isInVariableInterpolation(text: String, offset: Int): Boolean {
+        // Look backwards for ${
+        var pos = offset - 1
+        while (pos >= 1) {
+            if (text[pos] == '}') return false // Already closed
+            if (text[pos - 1] == '$' && text[pos] == '{') return true
+            if (text[pos] == '\n') return false // Don't cross lines
+            pos--
+        }
+        return false
+    }
+
+    /**
+     * Add completions for variable interpolation prefixes and known variables.
+     */
+    private fun addVariableInterpolationCompletions(file: PsiFile, result: CompletionResultSet) {
+        // Add prefix suggestions
+        VARIABLE_PREFIXES.forEach { (prefix, description) ->
+            result.addElement(
+                LookupElementBuilder.create(prefix)
+                    .withIcon(AllIcons.Nodes.Variable)
+                    .withTypeText(description)
+            )
+        }
+
+        // Add extracted variables from the file (context variables)
+        val extractedVars = extractExtractedVariables(file)
+        extractedVars.forEach { varName ->
+            result.addElement(
+                LookupElementBuilder.create(varName)
+                    .withIcon(AllIcons.Nodes.Variable)
+                    .withTypeText("context variable")
+            )
+            result.addElement(
+                LookupElementBuilder.create("context.$varName")
+                    .withIcon(AllIcons.Nodes.Variable)
+                    .withTypeText("context variable")
+            )
+        }
+    }
+
+    /**
+     * Extract variable names from extract directives in the file.
+     */
+    private fun extractExtractedVariables(file: PsiFile): Set<String> {
+        val text = file.text
+        // Pattern: extract varName = ...
+        val pattern = Regex("""extract\s+(\w+)\s*=""")
+        return pattern.findAll(text)
+            .map { it.groupValues[1] }
+            .toSet()
+    }
+
+    /**
+     * Check if the cursor is in position to add a parameters: block.
+     */
+    private fun isInParametersBlockStartPosition(
+        text: String,
+        offset: Int,
+        scenarioElement: BerryCrushScenarioElement
+    ): Boolean {
+        // Check if we're on the line after scenario:
+        val scenarioTextOffset = scenarioElement.textRange.startOffset
+        val scenarioFirstLine = text.indexOf('\n', scenarioTextOffset)
+        if (scenarioFirstLine == -1 || offset <= scenarioFirstLine) return false
+
+        // Check indentation
+        val lineStart = findLineStart(text, offset)
+        val indent = countIndent(text.substring(lineStart, offset))
+        return indent >= 1 // Should be indented under scenario
+    }
+
+    /**
+     * Add parameters: keyword completion.
+     */
+    private fun addParametersBlockKeyword(result: CompletionResultSet) {
+        result.addElement(
+            LookupElementBuilder.create("parameters:")
+                .withIcon(AllIcons.Nodes.Property)
+                .withTypeText("parameters block")
+                .withBoldness(true)
+        )
+    }
+
+    /**
+     * Add known parameter name completions for scenario/feature parameters blocks.
+     */
+    private fun addScenarioParameterCompletions(result: CompletionResultSet) {
+        KNOWN_PARAMETERS.forEach { (paramName, description) ->
+            result.addElement(
+                LookupElementBuilder.create("$paramName: ")
+                    .withIcon(AllIcons.Nodes.Property)
+                    .withTypeText(description)
+                    .withPresentableText(paramName)
+            )
         }
     }
 
@@ -230,6 +352,35 @@ class BerryCrushCompletionProvider : CompletionProvider<CompletionParameters>() 
             "responseTime " to "response time limit",
             "exists" to "value exists",
             "not " to "negation",
+        )
+
+        /**
+         * Known parameter names for scenario/feature parameters blocks.
+         */
+        private val KNOWN_PARAMETERS = listOf(
+            "timeout" to "request timeout in milliseconds",
+            "baseUrl" to "base URL for API calls",
+            "environment" to "execution environment",
+            "shareVariablesAcrossScenarios" to "share extracted variables",
+            "logRequests" to "log HTTP requests",
+            "logResponses" to "log HTTP responses",
+            "strictSchemaValidation" to "strict JSON schema validation",
+            "followRedirects" to "follow HTTP redirects",
+            "multiTestSequentialCount" to "sequential test count",
+            "multiTestConcurrentCount" to "concurrent test count",
+            "autoAssertions.enabled" to "enable auto assertions",
+            "autoAssertions.statusCode" to "auto assert status code",
+            "autoAssertions.contentType" to "auto assert content type",
+            "autoAssertions.schema" to "auto assert schema",
+        )
+
+        /**
+         * Variable interpolation prefixes.
+         */
+        private val VARIABLE_PREFIXES = listOf(
+            "env." to "environment variable",
+            "context." to "context variable",
+            "param." to "parameter reference",
         )
     }
 }

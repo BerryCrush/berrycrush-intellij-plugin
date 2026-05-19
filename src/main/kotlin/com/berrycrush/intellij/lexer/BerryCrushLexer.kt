@@ -162,8 +162,13 @@ class BerryCrushLexer : LexerBase() {
             return scanNumber()
         }
 
-        // Handle JSON path
+        // Handle JSON path or variable interpolation
         if (c == '$') {
+            // Check if it's variable interpolation ${...}
+            if (position + 1 < bufferEnd && buffer[position + 1] == '{') {
+                return scanVariableInterpolation()
+            }
+            // Otherwise it's a JSON path $...
             return scanJsonPath()
         }
 
@@ -336,6 +341,48 @@ class BerryCrushLexer : LexerBase() {
             position++
         }
         return BerryCrushTokenTypes.JSON_PATH
+    }
+
+    /**
+     * Scans a variable interpolation: ${env.VAR}, ${context.var}, ${param.name}, or ${varName}.
+     * Returns VARIABLE_INTERPOLATION_PREFIX if it has a known prefix (env., context., param.),
+     * otherwise returns VARIABLE_INTERPOLATION.
+     */
+    private fun scanVariableInterpolation(): IElementType {
+        position += 2 // Skip '${'
+
+        // Check for prefix (env., context., param.)
+        val hasPrefix = when {
+            matchesAt("env.") -> {
+                position += 4
+                true
+            }
+            matchesAt("context.") -> {
+                position += 8
+                true
+            }
+            matchesAt("param.") -> {
+                position += 6
+                true
+            }
+            else -> false
+        }
+
+        // Scan the variable name until closing brace
+        while (position < bufferEnd && buffer[position] != '}') {
+            position++
+        }
+
+        // Consume the closing brace if present
+        if (position < bufferEnd && buffer[position] == '}') {
+            position++
+        }
+
+        return if (hasPrefix) {
+            BerryCrushTokenTypes.VARIABLE_INTERPOLATION_PREFIX
+        } else {
+            BerryCrushTokenTypes.VARIABLE_INTERPOLATION
+        }
     }
 
     private fun scanIdentifierOrText(): IElementType {

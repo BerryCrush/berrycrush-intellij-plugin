@@ -19,6 +19,30 @@ abstract class BerryCrushPsiElement(node: ASTNode) : ASTWrapperPsiElement(node) 
     override fun getReferences(): Array<PsiReference> {
         return ReferenceProvidersRegistry.getReferencesFromProviders(this)
     }
+
+    companion object {
+        /**
+         * Extract parameter name from a "key: value" formatted string.
+         */
+        @JvmStatic
+        fun extractParamName(text: String): String? {
+            val colonIndex = text.indexOf(':')
+            return if (colonIndex > 0) text.substring(0, colonIndex).trim() else null
+        }
+
+        /**
+         * Extract parameter value from a "key: value" formatted string.
+         */
+        @JvmStatic
+        fun extractParamValue(text: String): String? {
+            val colonIndex = text.indexOf(':')
+            return if (colonIndex >= 0 && colonIndex < text.length - 1) {
+                text.substring(colonIndex + 1).trim()
+            } else {
+                null
+            }
+        }
+    }
 }
 
 /**
@@ -235,25 +259,13 @@ class BerryCrushIncludeParameterElement(node: ASTNode) : BerryCrushPsiElement(no
      * The parameter name (key before the colon).
      */
     val parameterName: String?
-        get() {
-            val text = node.text.trim()
-            val colonIndex = text.indexOf(':')
-            return if (colonIndex > 0) text.substring(0, colonIndex).trim() else null
-        }
+        get() = extractParamName(node.text.trim())
 
     /**
      * The parameter value (after the colon).
      */
     val parameterValue: String?
-        get() {
-            val text = node.text.trim()
-            val colonIndex = text.indexOf(':')
-            return if (colonIndex >= 0 && colonIndex < text.length - 1) {
-                text.substring(colonIndex + 1).trim()
-            } else {
-                null
-            }
-        }
+        get() = extractParamValue(node.text.trim())
 
     override fun getName(): String? = parameterName
 
@@ -266,3 +278,114 @@ class BerryCrushIncludeParameterElement(node: ASTNode) : BerryCrushPsiElement(no
  * Generic element for unspecified element types.
  */
 class BerryCrushGenericElement(node: ASTNode) : BerryCrushPsiElement(node)
+
+/**
+ * Parameters block element: `parameters:\n  key: value\n  key2: value2`
+ * Used in scenario and feature blocks.
+ */
+class BerryCrushParametersBlockElement(node: ASTNode) : BerryCrushPsiElement(node) {
+    /**
+     * Get all parameter entries in this block.
+     */
+    val entries: List<BerryCrushParameterEntryElement>
+        get() = findChildrenByClass(BerryCrushParameterEntryElement::class.java).toList()
+
+    /**
+     * Get parameter names defined in this block.
+     */
+    val parameterNames: Set<String>
+        get() = entries.mapNotNull { it.parameterName }.toSet()
+
+    /**
+     * Get a parameter value by name.
+     */
+    fun getParameterValue(name: String): String? {
+        return entries.firstOrNull { it.parameterName == name }?.parameterValue
+    }
+}
+
+/**
+ * Single parameter entry element: `key: value`
+ * Used inside a parameters block.
+ */
+class BerryCrushParameterEntryElement(node: ASTNode) : BerryCrushPsiElement(node), PsiNameIdentifierOwner {
+    /**
+     * The parameter name (key before the colon).
+     */
+    val parameterName: String?
+        get() = extractParamName(node.text.trim())
+
+    /**
+     * The parameter value (after the colon).
+     */
+    val parameterValue: String?
+        get() = extractParamValue(node.text.trim())
+
+    /**
+     * Get variable interpolations referenced in the value.
+     */
+    val variableInterpolations: List<BerryCrushVariableInterpolationElement>
+        get() = findChildrenByClass(BerryCrushVariableInterpolationElement::class.java).toList()
+
+    override fun getName(): String? = parameterName
+
+    override fun setName(name: String): PsiElement = this
+
+    override fun getNameIdentifier(): PsiElement? = null
+}
+
+/**
+ * Variable interpolation element: ${env.VAR}, ${context.var}, ${param.name}, or ${varName}.
+ */
+class BerryCrushVariableInterpolationElement(node: ASTNode) : BerryCrushPsiElement(node), PsiNameIdentifierOwner {
+    /**
+     * The type of variable reference.
+     */
+    enum class RefType { ENV, CONTEXT, PARAM, SHORTHAND }
+
+    /**
+     * Get the reference type based on prefix.
+     */
+    val refType: RefType
+        get() {
+            val text = node.text
+            return when {
+                text.startsWith("\${env.") -> RefType.ENV
+                text.startsWith("\${context.") -> RefType.CONTEXT
+                text.startsWith("\${param.") -> RefType.PARAM
+                else -> RefType.SHORTHAND
+            }
+        }
+
+    /**
+     * Get the variable name without prefix.
+     */
+    val variableName: String?
+        get() {
+            val text = node.text
+            if (!text.startsWith("\${") || !text.endsWith("}")) return null
+            val inner = text.removePrefix("\${").removeSuffix("}")
+            return when {
+                inner.startsWith("env.") -> inner.removePrefix("env.")
+                inner.startsWith("context.") -> inner.removePrefix("context.")
+                inner.startsWith("param.") -> inner.removePrefix("param.")
+                else -> inner
+            }
+        }
+
+    /**
+     * Get the full reference text including prefix.
+     */
+    val fullReference: String?
+        get() {
+            val text = node.text
+            if (!text.startsWith("\${") || !text.endsWith("}")) return null
+            return text.removePrefix("\${").removeSuffix("}")
+        }
+
+    override fun getName(): String? = variableName
+
+    override fun setName(name: String): PsiElement = this
+
+    override fun getNameIdentifier(): PsiElement = this
+}

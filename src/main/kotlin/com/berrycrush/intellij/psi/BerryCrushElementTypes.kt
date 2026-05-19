@@ -73,6 +73,17 @@ object BerryCrushElementTypes {
 
     @JvmField
     val PARAMETER = BerryCrushPsiElementType("PARAMETER")
+
+    // Parameters block elements for scenario/feature parameters
+    @JvmField
+    val PARAMETERS_BLOCK = BerryCrushPsiElementType("PARAMETERS_BLOCK")
+
+    @JvmField
+    val PARAMETER_ENTRY = BerryCrushPsiElementType("PARAMETER_ENTRY")
+
+    // Variable interpolation element: ${env.VAR}, ${context.var}, ${param.name}, ${varName}
+    @JvmField
+    val VARIABLE_INTERPOLATION = BerryCrushPsiElementType("VARIABLE_INTERPOLATION")
 }
 
 /**
