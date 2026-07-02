@@ -115,6 +115,20 @@ object BerryCrushHighlightingColors {
         DefaultLanguageHighlighterColors.INSTANCE_FIELD
     )
 
+    // Variable interpolation: ${env.VAR}, ${context.var}, ${param.name}, ${varName}
+    @JvmField
+    val VARIABLE_INTERPOLATION: TextAttributesKey = createTextAttributesKey(
+        "BERRYCRUSH_VARIABLE_INTERPOLATION",
+        DefaultLanguageHighlighterColors.LOCAL_VARIABLE
+    )
+
+    // Variable interpolation with prefix: ${env.VAR}, ${context.var}, ${param.name}
+    @JvmField
+    val VARIABLE_INTERPOLATION_PREFIX: TextAttributesKey = createTextAttributesKey(
+        "BERRYCRUSH_VARIABLE_INTERPOLATION_PREFIX",
+        DefaultLanguageHighlighterColors.STATIC_FIELD
+    )
+
     // Bad character
     @JvmField
     val BAD_CHARACTER: TextAttributesKey = createTextAttributesKey(

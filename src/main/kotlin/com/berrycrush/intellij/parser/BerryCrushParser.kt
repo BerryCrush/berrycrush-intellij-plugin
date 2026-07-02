@@ -67,6 +67,10 @@ class BerryCrushParser : PsiParser {
         val marker = builder.mark()
         builder.advanceLexer()
         skipToEndOfLine(builder)
+
+        // Parse optional parameters block after feature name
+        tryParseParametersBlock(builder)
+
         marker.done(BerryCrushElementTypes.FEATURE)
     }
 
@@ -74,6 +78,10 @@ class BerryCrushParser : PsiParser {
         val marker = builder.mark()
         builder.advanceLexer()
         skipToEndOfLine(builder)
+
+        // Parse optional parameters block after scenario name
+        tryParseParametersBlock(builder)
+
         marker.done(BerryCrushElementTypes.SCENARIO)
     }
 
@@ -81,7 +89,113 @@ class BerryCrushParser : PsiParser {
         val marker = builder.mark()
         builder.advanceLexer()
         skipToEndOfLine(builder)
+
+        // Parse optional parameters block after outline name
+        tryParseParametersBlock(builder)
+
         marker.done(BerryCrushElementTypes.OUTLINE)
+    }
+
+    /**
+     * Try to parse an optional parameters block.
+     * Format: `  parameters:\n    key: value\n    key2: value2`
+     */
+    private fun tryParseParametersBlock(builder: PsiBuilder) {
+        // Check for INDENT followed by PARAMETERS keyword
+        if (builder.tokenType != BerryCrushTokenTypes.INDENT) return
+
+        // Look ahead to check if next non-whitespace is PARAMETERS
+        val marker = builder.mark()
+        builder.advanceLexer() // consume INDENT
+
+        // Skip whitespace
+        while (builder.tokenType == BerryCrushTokenTypes.WHITE_SPACE) {
+            builder.advanceLexer()
+        }
+
+        if (builder.tokenType != BerryCrushTokenTypes.PARAMETERS) {
+            // Not a parameters block, rollback
+            marker.rollbackTo()
+            return
+        }
+
+        // It's a parameters block
+        val blockMarker = builder.mark()
+
+        builder.advanceLexer() // consume PARAMETERS
+        skipToEndOfLine(builder)
+
+        // Parse parameter entries
+        while (builder.tokenType == BerryCrushTokenTypes.INDENT) {
+            if (!tryParseParameterEntry(builder)) {
+                break
+            }
+        }
+
+        blockMarker.done(BerryCrushElementTypes.PARAMETERS_BLOCK)
+        marker.drop()
+    }
+
+    /**
+     * Try to parse a single parameter entry: `  key: value`
+     * Returns true if successfully parsed.
+     */
+    private fun tryParseParameterEntry(builder: PsiBuilder): Boolean {
+        val entryMarker = builder.mark()
+
+        builder.advanceLexer() // consume INDENT
+
+        // Skip whitespace
+        while (builder.tokenType == BerryCrushTokenTypes.WHITE_SPACE) {
+            builder.advanceLexer()
+        }
+
+        // Check for parameter name
+        if (builder.tokenType != BerryCrushTokenTypes.IDENTIFIER &&
+            builder.tokenType != BerryCrushTokenTypes.TEXT
+        ) {
+            entryMarker.rollbackTo()
+            return false
+        }
+
+        builder.advanceLexer() // consume parameter name
+
+        // Skip whitespace before colon
+        while (builder.tokenType == BerryCrushTokenTypes.WHITE_SPACE) {
+            builder.advanceLexer()
+        }
+
+        // Expect colon
+        if (builder.tokenType != BerryCrushTokenTypes.COLON) {
+            entryMarker.rollbackTo()
+            return false
+        }
+
+        builder.advanceLexer() // consume colon
+
+        // Parse the value (may contain variable interpolations)
+        parseParameterValue(builder)
+
+        skipToEndOfLine(builder)
+        entryMarker.done(BerryCrushElementTypes.PARAMETER_ENTRY)
+        return true
+    }
+
+    /**
+     * Parse parameter value which may contain variable interpolations.
+     */
+    private fun parseParameterValue(builder: PsiBuilder) {
+        while (!builder.eof() && builder.tokenType != BerryCrushTokenTypes.NEWLINE) {
+            if (builder.tokenType == BerryCrushTokenTypes.VARIABLE_INTERPOLATION ||
+                builder.tokenType == BerryCrushTokenTypes.VARIABLE_INTERPOLATION_PREFIX
+            ) {
+                val marker = builder.mark()
+                builder.advanceLexer()
+                marker.done(BerryCrushElementTypes.VARIABLE_INTERPOLATION)
+            } else {
+                builder.advanceLexer()
+            }
+        }
     }
 
     private fun parseFragment(builder: PsiBuilder) {

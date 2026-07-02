@@ -262,6 +262,55 @@ class BerryCrushLexerTest {
         assertNotContains(tokens, BerryCrushTokenTypes.THEN, "THEN should not be tokenized")
     }
 
+    // ========== Variable Interpolation Tests ==========
+
+    @Test
+    fun `test lexer tokenizes variable interpolation shorthand`() {
+        val tokens = tokenize("baseUrl: \${myVar}")
+        assertContains(tokens, BerryCrushTokenTypes.VARIABLE_INTERPOLATION)
+    }
+
+    @Test
+    fun `test lexer tokenizes env variable interpolation`() {
+        val tokens = tokenize("baseUrl: \${env.API_URL}")
+        assertContains(tokens, BerryCrushTokenTypes.VARIABLE_INTERPOLATION_PREFIX)
+    }
+
+    @Test
+    fun `test lexer tokenizes context variable interpolation`() {
+        val tokens = tokenize("userId: \${context.currentUserId}")
+        assertContains(tokens, BerryCrushTokenTypes.VARIABLE_INTERPOLATION_PREFIX)
+    }
+
+    @Test
+    fun `test lexer tokenizes param variable interpolation`() {
+        val tokens = tokenize("timeout: \${param.defaultTimeout}")
+        assertContains(tokens, BerryCrushTokenTypes.VARIABLE_INTERPOLATION_PREFIX)
+    }
+
+    @Test
+    fun `test lexer distinguishes json path from variable interpolation`() {
+        val tokens = tokenize("extract id from \$.data.id")
+        assertContains(tokens, BerryCrushTokenTypes.JSON_PATH)
+        assertNotContains(tokens, BerryCrushTokenTypes.VARIABLE_INTERPOLATION)
+    }
+
+    @Test
+    fun `test lexer tokenizes parameters block with variable interpolation`() {
+        val input = """
+            scenario: test
+              parameters:
+                baseUrl: ${"$"}{env.API_URL}
+                timeout: 5000
+        """.trimIndent()
+        val tokens = tokenize(input)
+
+        assertContains(tokens, BerryCrushTokenTypes.SCENARIO)
+        assertContains(tokens, BerryCrushTokenTypes.PARAMETERS)
+        assertContains(tokens, BerryCrushTokenTypes.VARIABLE_INTERPOLATION_PREFIX)
+        assertContains(tokens, BerryCrushTokenTypes.NUMBER)
+    }
+
     // --- Helper functions ---
 
     private fun tokenize(text: String): List<Pair<IElementType?, String>> {

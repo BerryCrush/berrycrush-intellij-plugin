@@ -2,7 +2,11 @@ package com.berrycrush.intellij.parser
 
 import com.berrycrush.intellij.BerryCrushTestCase
 import com.berrycrush.intellij.psi.BerryCrushFragmentElement
+import com.berrycrush.intellij.psi.BerryCrushParameterEntryElement
+import com.berrycrush.intellij.psi.BerryCrushParametersBlockElement
+import com.berrycrush.intellij.psi.BerryCrushScenarioElement
 import com.berrycrush.intellij.psi.BerryCrushStepElement
+import com.berrycrush.intellij.psi.BerryCrushVariableInterpolationElement
 import com.intellij.psi.util.PsiTreeUtil
 
 /**
@@ -64,5 +68,71 @@ class BerryCrushParserTest : BerryCrushTestCase() {
 
         assertEquals("First fragment should have 1 step", 1, firstSteps.size)
         assertEquals("Second fragment should have 1 step", 1, secondSteps.size)
+    }
+
+    // ========== Parameters Block Tests ==========
+
+    fun testScenarioWithParametersBlock() {
+        val file = createScenarioFile("params", """
+            scenario: test with parameters
+              parameters:
+                timeout: 5000
+                baseUrl: https://api.example.com
+              given the setup
+        """.trimIndent())
+
+        val psiFile = psiManager.findFile(file)
+        assertNotNull("PSI file should be created", psiFile)
+
+        // Find scenario element
+        val scenarios = PsiTreeUtil.findChildrenOfType(psiFile, BerryCrushScenarioElement::class.java)
+        assertEquals("Should find 1 scenario", 1, scenarios.size)
+
+        // Find parameters block
+        val paramsBlocks = PsiTreeUtil.findChildrenOfType(psiFile, BerryCrushParametersBlockElement::class.java)
+        assertEquals("Should find 1 parameters block", 1, paramsBlocks.size)
+
+        // Check parameter entries
+        val paramsBlock = paramsBlocks.first()
+        val entries = paramsBlock.entries
+        assertEquals("Parameters block should have 2 entries", 2, entries.size)
+        assertTrue("Should have timeout parameter", paramsBlock.parameterNames.contains("timeout"))
+        assertTrue("Should have baseUrl parameter", paramsBlock.parameterNames.contains("baseUrl"))
+    }
+
+    fun testParameterEntryParsing() {
+        val file = createScenarioFile("entry", """
+            scenario: test
+              parameters:
+                myParam: myValue
+        """.trimIndent())
+
+        val psiFile = psiManager.findFile(file)
+        assertNotNull(psiFile)
+
+        val entries = PsiTreeUtil.findChildrenOfType(psiFile, BerryCrushParameterEntryElement::class.java)
+        assertEquals("Should find 1 parameter entry", 1, entries.size)
+
+        val entry = entries.first()
+        assertEquals("myParam", entry.parameterName)
+        assertEquals("myValue", entry.parameterValue)
+    }
+
+    fun testVariableInterpolationInParameterValue() {
+        val file = createScenarioFile("interp", """
+            scenario: test
+              parameters:
+                baseUrl: ${"$"}{env.API_URL}
+        """.trimIndent())
+
+        val psiFile = psiManager.findFile(file)
+        assertNotNull(psiFile)
+
+        val varInterps = PsiTreeUtil.findChildrenOfType(psiFile, BerryCrushVariableInterpolationElement::class.java)
+        assertEquals("Should find 1 variable interpolation", 1, varInterps.size)
+
+        val varInterp = varInterps.first()
+        assertEquals("API_URL", varInterp.variableName)
+        assertEquals(BerryCrushVariableInterpolationElement.RefType.ENV, varInterp.refType)
     }
 }

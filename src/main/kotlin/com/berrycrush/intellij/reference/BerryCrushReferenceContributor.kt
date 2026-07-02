@@ -1,7 +1,9 @@
 package com.berrycrush.intellij.reference
 
 import com.berrycrush.intellij.language.BerryCrushLanguage
+import com.berrycrush.intellij.lexer.BerryCrushTokenTypes
 import com.berrycrush.intellij.psi.BerryCrushElementTypes
+import com.berrycrush.intellij.psi.BerryCrushVariableInterpolationElement
 import com.intellij.openapi.util.TextRange
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.psi.PsiElement
@@ -53,6 +55,40 @@ class BerryCrushLeafReferenceProvider : PsiReferenceProvider() {
                         element,
                         TextRange(1, text.length), // Skip the ^
                         operationId
+                    )
+                )
+            }
+        }
+
+        // Check if this is a variable interpolation (${...})
+        if (text.startsWith("\${") && text.endsWith("}")) {
+            val refType = when {
+                text.startsWith("\${env.") -> BerryCrushVariableInterpolationElement.RefType.ENV
+                text.startsWith("\${context.") -> BerryCrushVariableInterpolationElement.RefType.CONTEXT
+                text.startsWith("\${param.") -> BerryCrushVariableInterpolationElement.RefType.PARAM
+                else -> BerryCrushVariableInterpolationElement.RefType.SHORTHAND
+            }
+            val inner = text.removePrefix("\${").removeSuffix("}")
+            val variableName = when {
+                inner.startsWith("env.") -> inner.removePrefix("env.")
+                inner.startsWith("context.") -> inner.removePrefix("context.")
+                inner.startsWith("param.") -> inner.removePrefix("param.")
+                else -> inner
+            }
+            if (variableName.isNotEmpty()) {
+                // Calculate the text range for the variable name part
+                val prefixLength = when (refType) {
+                    BerryCrushVariableInterpolationElement.RefType.ENV -> 6 // ${env.
+                    BerryCrushVariableInterpolationElement.RefType.CONTEXT -> 10 // ${context.
+                    BerryCrushVariableInterpolationElement.RefType.PARAM -> 8 // ${param.
+                    BerryCrushVariableInterpolationElement.RefType.SHORTHAND -> 2 // ${
+                }
+                return arrayOf(
+                    BerryCrushVariableInterpolationReference(
+                        element,
+                        TextRange(prefixLength, text.length - 1), // Variable name part
+                        variableName,
+                        refType
                     )
                 )
             }

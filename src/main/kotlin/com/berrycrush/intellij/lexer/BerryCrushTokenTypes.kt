@@ -67,6 +67,10 @@ object BerryCrushTokenTypes {
     @JvmField val VARIABLE = BerryCrushElementType("VARIABLE")
     @JvmField val JSON_PATH = BerryCrushElementType("JSON_PATH")
 
+    // Variable interpolation tokens: ${env.VAR}, ${context.var}, ${param.name}, ${varName}
+    @JvmField val VARIABLE_INTERPOLATION = BerryCrushElementType("VARIABLE_INTERPOLATION")
+    @JvmField val VARIABLE_INTERPOLATION_PREFIX = BerryCrushElementType("VARIABLE_INTERPOLATION_PREFIX")
+
     // Syntax elements
     @JvmField val COLON = BerryCrushElementType("COLON")
     @JvmField val PIPE = BerryCrushElementType("PIPE")
@@ -134,6 +138,9 @@ object BerryCrushTokenTypes {
 
     @JvmField
     val IDENTIFIERS = TokenSet.create(IDENTIFIER, OPERATION_REF, TAG, VARIABLE, TEXT)
+
+    @JvmField
+    val VARIABLE_INTERPOLATIONS = TokenSet.create(VARIABLE_INTERPOLATION, VARIABLE_INTERPOLATION_PREFIX)
 }
 
 /**
