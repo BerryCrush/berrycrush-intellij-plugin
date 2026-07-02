@@ -27,6 +27,17 @@ Click the green play button (▶) that appears next to:
 1. Right-click on a test class or method
 2. Select **Run 'ClassName'** or **Run 'methodName()'**
 
+### From Scenario Files (.scenario)
+
+1. Right-click a `.scenario` file in Project view or editor tab
+2. Use IntelliJ standard **Run** / **Debug** actions (including **More Run/Debug**)
+3. The created run configuration is named `BerryCrush: <file-name>.scenario`
+4. Execution applies `-DberryCrush.scenarioFile=<file-name>.scenario` filtering
+
+If multiple BerryCrush test classes exist, standard Run/Debug prompts you to choose the target class.
+If no discoverable test class exists, the plugin attempts `berryCrush.defaultTestClass` fallback.
+If fallback is unresolved, a warning is shown and execution does not start.
+
 ### From Keyboard
 
 | Action | Mac | Windows/Linux |
