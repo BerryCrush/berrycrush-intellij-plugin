@@ -141,6 +141,8 @@
         <!-- BerryCrush Run Configuration -->
         <!-- Extends JUnit with file:// URL navigation for scenario files -->
         <configurationType implementation="com.berrycrush.intellij.run.BerryCrushConfigurationType"/>
+        <runConfigurationProducer implementation="com.berrycrush.intellij.run.BerryCrushScenarioFileConfigurationProducer"
+                                  order="first"/>
         <runConfigurationProducer implementation="com.berrycrush.intellij.run.BerryCrushConfigurationProducer"
                                   order="first"/>
 

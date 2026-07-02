@@ -3,28 +3,21 @@ package com.berrycrush.intellij.run
 import com.berrycrush.intellij.language.ScenarioFileType
 import com.berrycrush.intellij.psi.BerryCrushFeatureElement
 import com.berrycrush.intellij.psi.BerryCrushScenarioElement
-import com.intellij.execution.ExecutionManager
 import com.intellij.execution.Executor
 import com.intellij.execution.ProgramRunnerUtil
-import com.intellij.execution.RunManager
 import com.intellij.execution.executors.DefaultDebugExecutor
 import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.execution.junit.JUnitConfiguration
 import com.intellij.execution.lineMarker.RunLineMarkerContributor
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder
 import com.intellij.icons.AllIcons
-import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
-import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElement
-import com.intellij.psi.search.GlobalSearchScope
-import com.intellij.psi.search.searches.AnnotatedElementsSearch
 import com.intellij.psi.util.PsiTreeUtil
 import javax.swing.Icon
 
@@ -153,31 +146,22 @@ private class RunScenarioAction(
     private val keywordType: String
 ) : AnAction(text, "Run $keywordType: $scenarioName", icon), DumbAware {
 
-    companion object {
-        // BerryCrush test classes are annotated with @Suite + @BerryCrushConfiguration
-        // or with @BerryCrushScenarios
-        private val BERRYCRUSH_ANNOTATIONS = listOf(
-            "org.berrycrush.junit.BerryCrushScenarios",
-            "org.berrycrush.junit.BerryCrushConfiguration"
-        )
-    }
-
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
+        val fallbackClass = System.getProperty(BerryCrushScenarioExecutionSupport.DEFAULT_TEST_CLASS_PROPERTY)
 
         // Find all BerryCrush test classes
-        val testClasses = findBerryCrushTestClasses(project)
+        val testClasses = BerryCrushScenarioExecutionSupport.findBerryCrushTestClasses(project)
 
         when {
             testClasses.isEmpty() -> {
-                // Show notification that no test class was found
-                com.intellij.openapi.ui.Messages.showWarningDialog(
-                    project,
-                    "No BerryCrush test class found.\n\n" +
-                        "Create a test class with @Suite and @BerryCrushConfiguration annotations " +
-                        "that includes this scenario file.",
-                    "No Test Class Found"
-                )
+                val fallback = BerryCrushScenarioExecutionSupport.resolveTestClass(project, null, fallbackClass)
+                if (fallback != null) {
+                    runWithTestClass(project, fallback)
+                    return
+                }
+
+                BerryCrushScenarioExecutionSupport.showNoTestClassWarning(project)
             }
             testClasses.size == 1 -> {
                 // Run with the single test class
@@ -185,89 +169,30 @@ private class RunScenarioAction(
             }
             else -> {
                 // Show popup to let user choose
-                showTestClassChooser(project, testClasses, e)
+                BerryCrushScenarioExecutionSupport.showTestClassChooser(
+                    project = project,
+                    candidates = testClasses,
+                    preferredModule = null,
+                    onSelected = { selectedClass -> runWithTestClass(project, selectedClass) },
+                )
             }
-        }
-    }
-
-    private fun showTestClassChooser(project: Project, testClasses: List<PsiClass>, e: AnActionEvent) {
-        val popup = com.intellij.openapi.ui.popup.JBPopupFactory.getInstance()
-            .createPopupChooserBuilder(testClasses)
-            .setTitle("Select Test Class")
-            .setItemChosenCallback { selectedClass ->
-                runWithTestClass(project, selectedClass)
-            }
-            .setRenderer(object : com.intellij.ui.ColoredListCellRenderer<PsiClass>() {
-                override fun customizeCellRenderer(
-                    list: javax.swing.JList<out PsiClass>,
-                    value: PsiClass?,
-                    index: Int,
-                    selected: Boolean,
-                    hasFocus: Boolean
-                ) {
-                    if (value != null) {
-                        icon = com.intellij.icons.AllIcons.Nodes.Class
-                        append(value.name ?: "Unknown")
-                        value.qualifiedName?.let { qn ->
-                            val packageName = qn.substringBeforeLast('.', "")
-                            if (packageName.isNotEmpty()) {
-                                append(" ($packageName)", com.intellij.ui.SimpleTextAttributes.GRAYED_ATTRIBUTES)
-                            }
-                        }
-                    }
-                }
-            })
-            .createPopup()
-
-        // Show popup at the mouse location or in the center
-        val dataContext = e.dataContext
-        val component = dataContext.getData(com.intellij.openapi.actionSystem.PlatformDataKeys.CONTEXT_COMPONENT)
-        if (component != null) {
-            popup.showUnderneathOf(component)
-        } else {
-            popup.showInFocusCenter()
         }
     }
 
     private fun runWithTestClass(project: Project, testClass: PsiClass) {
-        // Get the registered BerryCrush configuration type
-        val configType = com.intellij.execution.configurations.ConfigurationTypeUtil
-            .findConfigurationType(BerryCrushConfigurationType::class.java)
-        val factory = configType.configurationFactories[0]
-
-        val runManager = RunManager.getInstance(project)
         val configName = "BerryCrush: $scenarioName"
-        var settings = runManager.findConfigurationByName(configName)
+        val config = BerryCrushScenarioExecutionSupport.createOrUpdateConfiguration(project, configName) ?: return
+        val module = BerryCrushScenarioExecutionSupport.resolveModuleForClass(project, testClass)
 
-        if (settings == null) {
-            settings = runManager.createConfiguration(configName, factory)
-            runManager.addConfiguration(settings)
-        }
+        BerryCrushScenarioExecutionSupport.configureForClassRun(
+            configuration = config,
+            testClass = testClass,
+            module = module,
+            configName = configName,
+            vmOptions = buildVmOptions(),
+        )
 
-        val config = settings.configuration as? BerryCrushRunConfiguration ?: return
-
-        // Configure to run the test class
-        config.persistentData.TEST_OBJECT = JUnitConfiguration.TEST_CLASS
-        config.persistentData.MAIN_CLASS_NAME = testClass.qualifiedName
-
-        // Set the module from the test class's containing file
-        val containingFile = testClass.containingFile
-        if (containingFile != null) {
-            val projectFileIndex = com.intellij.openapi.roots.ProjectRootManager.getInstance(project).fileIndex
-            val virtualFile = containingFile.virtualFile
-            if (virtualFile != null) {
-                val module = projectFileIndex.getModuleForFile(virtualFile)
-                if (module != null) {
-                    config.setModule(module)
-                }
-            }
-        }
-
-        // Add VM options for scenario filtering
-        val vmOptions = buildVmOptions()
-        config.vmParameters = vmOptions
-
-        runManager.selectedConfiguration = settings
+        val settings = com.intellij.execution.RunManager.getInstance(project).selectedConfiguration ?: return
 
         // Run the configuration
         val environment = ExecutionEnvironmentBuilder
@@ -278,44 +203,10 @@ private class RunScenarioAction(
     }
 
     private fun buildVmOptions(): String {
-        val options = mutableListOf<String>()
-
-        // Add scenario file filter (quote if contains spaces)
-        options.add(buildVmOption("berryCrush.scenarioFile", scenarioFile))
-
-        // Add scenario/feature name filter based on keyword type
-        when (keywordType) {
-            "Scenario", "Outline" -> options.add(buildVmOption("berryCrush.scenarioName", scenarioName))
-            "Feature" -> options.add(buildVmOption("berryCrush.featureName", scenarioName))
-        }
-
-        return options.joinToString(" ")
-    }
-
-    /**
-     * Builds a VM option with proper quoting for values that contain spaces.
-     */
-    private fun buildVmOption(key: String, value: String): String {
-        return if (value.contains(' ') || value.contains('\t')) {
-            "-D$key=\"$value\""
-        } else {
-            "-D$key=$value"
-        }
-    }
-
-    private fun findBerryCrushTestClasses(project: Project): List<PsiClass> {
-        val scope = GlobalSearchScope.projectScope(project)
-        val psiFacade = JavaPsiFacade.getInstance(project)
-        val result = mutableSetOf<PsiClass>()
-
-        // Search for classes with each BerryCrush annotation
-        for (annotationFqn in BERRYCRUSH_ANNOTATIONS) {
-            val annotation = psiFacade.findClass(annotationFqn, scope) ?: continue
-            AnnotatedElementsSearch.searchPsiClasses(annotation, scope).forEach { psiClass ->
-                result.add(psiClass)
-            }
-        }
-
-        return result.toList().sortedBy { it.qualifiedName }
+        return BerryCrushScenarioExecutionSupport.buildVmOptions(
+            scenarioFile = scenarioFile,
+            scenarioName = scenarioName,
+            keywordType = keywordType,
+        )
     }
 }

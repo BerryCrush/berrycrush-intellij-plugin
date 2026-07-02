@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Initial release features
+- Scenario file context-menu Run/Debug support with standard IntelliJ execution actions
+
+### Changed
+- Unified scenario execution support between context-menu and gutter run paths
 
 ## [1.0.0] - TBD
 
