@@ -2,25 +2,17 @@ package com.berrycrush.intellij.navigation
 
 import com.berrycrush.intellij.BerryCrushIcons
 import com.berrycrush.intellij.index.IncludeUsageIndex
-import com.berrycrush.intellij.psi.BerryCrushAssertElement
-import com.berrycrush.intellij.psi.BerryCrushFragmentElement
-import com.berrycrush.intellij.psi.BerryCrushFragmentRefElement
-import com.berrycrush.intellij.psi.BerryCrushIncludeElement
-import com.berrycrush.intellij.psi.BerryCrushOperationRefElement
-import com.berrycrush.intellij.psi.BerryCrushStepElement
 import com.berrycrush.intellij.reference.BerryCrushFragmentReference
 import com.berrycrush.intellij.reference.BerryCrushOperationReference
 import com.berrycrush.intellij.reference.BerryCrushStepReference
 import com.berrycrush.intellij.reference.BerryCrushAssertionReference
 import com.intellij.codeInsight.daemon.LineMarkerInfo
 import com.intellij.codeInsight.daemon.LineMarkerProvider
-import com.intellij.codeInsight.daemon.RelatedItemLineMarkerInfo
 import com.intellij.codeInsight.navigation.NavigationGutterIconBuilder
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.editor.markup.GutterIconRenderer
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElement
-import com.intellij.psi.util.PsiTreeUtil
 
 /**
  * Provides gutter icons for BerryCrush navigation.
@@ -174,37 +166,6 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
         // PSI-based markers (BerryCrushFragmentElement, etc.) are disabled
         // because the parser doesn't reliably create these types and
         // text-based detection in getLineMarkerInfo() handles all cases
-    }
-
-    @Suppress("UnusedPrivateMember")
-    private fun collectNavigationMarkers(
-        element: PsiElement,
-        result: MutableCollection<in LineMarkerInfo<*>>
-    ) {
-        // DISABLED: PSI-based markers are handled in getLineMarkerInfo()
-        // This method is kept for reference but not called
-    }
-
-    /**
-     * Fallback for elements that aren't proper PSI types.
-     * Only triggers on leaf elements to avoid duplicate markers.
-     */
-    @Suppress("UnusedParameter", "UnusedPrivateMember")
-    private fun collectTextBasedMarkers(
-        element: PsiElement,
-        result: MutableCollection<in RelatedItemLineMarkerInfo<*>>
-    ) {
-        // Text-based markers are now handled in getLineMarkerInfo() for better performance
-        // This method is kept for PSI-based markers only (which are handled in collectNavigationMarkers)
-        // No action needed here - avoids duplicate markers
-    }
-
-    private fun isStepKeyword(text: String): Boolean {
-        return text == "given" ||
-               text == "when" ||
-               text == "then" ||
-               text == "and" ||
-               text == "but"
     }
 
     /**
