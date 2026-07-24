@@ -187,6 +187,30 @@ The plugin provides extension points for customization:
 
 ## Data Flow
 
+### Formatting Flow
+
+Formatting is a two-stage pipeline:
+
+```
+Reformat Code
+    -> BerryCrushFormattingModelBuilder / BerryCrushBlock (token spacing + indent hints)
+    -> BerryCrushPostFormatProcessor (structural indentation + table alignment)
+```
+
+`BerryCrushPostFormatProcessor` is the source of truth for final structural indentation because
+BerryCrush PSI is largely flat for many constructs.
+
+Core structural rules:
+- Top-level blocks (`feature`, `fragment`, standalone `scenario`, standalone `outline`) are root-aligned.
+- Steps (`given/when/then/and/but`) are indented one level under `scenario`/`outline`/`background`.
+- Directives (`call`, `assert`, `extract`, `include`, `webhook`) are one level under steps.
+- Directive payload keys (`id`, `body`, `port`, `hook`, etc.) are one level under directives.
+- Nested map payloads increase indentation by one level per map depth.
+- `examples:` is outline-scoped and table rows are one level under `examples:`.
+
+Regression coverage for these rules is in:
+- `src/test/kotlin/com/berrycrush/intellij/formatting/BerryCrushFormattingTest.kt`
+
 ### Completion Flow
 
 ```
@@ -316,4 +340,10 @@ class MyTest : BasePlatformTestCase() {
         // Test logic
     }
 }
+```
+
+For formatter changes, always run targeted regression tests first:
+
+```bash
+./gradlew test --tests "com.berrycrush.intellij.formatting.BerryCrushFormattingTest"
 ```

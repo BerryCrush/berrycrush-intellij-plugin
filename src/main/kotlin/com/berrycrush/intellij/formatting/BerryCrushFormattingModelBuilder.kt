@@ -24,7 +24,7 @@ class BerryCrushFormattingModelBuilder : FormattingModelBuilder {
         val settings = formattingContext.codeStyleSettings
         
         // Get indent size (default to 2)
-        val indentSize = settings.getIndentSize(BerryCrushLanguage.associatedFileType) ?: 2
+        val indentSize = settings.getIndentSize(BerryCrushLanguage.associatedFileType)
         
         val spacingBuilder = createSpacingBuilder(settings)
         

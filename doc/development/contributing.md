@@ -137,6 +137,27 @@ class MyFeatureTest : BasePlatformTestCase() {
 }
 ```
 
+### Formatter Changes
+
+When changing formatter behavior, follow this sequence:
+1. Add/adjust regression tests in `src/test/kotlin/com/berrycrush/intellij/formatting/BerryCrushFormattingTest.kt`.
+2. Implement the fix in `src/main/kotlin/com/berrycrush/intellij/formatting/BerryCrushPostFormatProcessor.kt`.
+3. Keep `src/main/kotlin/com/berrycrush/intellij/formatting/BerryCrushBlock.kt` indent hints compatible.
+
+Structural formatter expectations:
+- Keep standalone `scenario:`/`outline:` root-aligned.
+- Keep directive payload fields nested under directives.
+- Keep nested map indentation stable and idempotent.
+- Keep `examples:` under `outline:` with table rows nested under `examples:`.
+
+Verification commands:
+
+```bash
+./gradlew test --tests "com.berrycrush.intellij.formatting.BerryCrushFormattingTest"
+./gradlew test
+./gradlew check
+```
+
 ### Test Data Files
 
 Place test data in `src/test/testData/`:
