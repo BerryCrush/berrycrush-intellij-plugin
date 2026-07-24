@@ -7,6 +7,7 @@ import com.berrycrush.intellij.util.ModuleScopeResolver
 import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.PsiFile
+import com.intellij.psi.tree.IElementType
 
 /**
  * Inspection that detects undefined assertion references.
@@ -29,6 +30,7 @@ class UndefinedAssertionInspection : BerryCrushInspection() {
             lexer.start(line)
             lexer.skipWhiteSpace()
             if (lexer.tokenType == BerryCrushTokenTypes.ASSERT) {
+                lexer.advance()
                 lexer.skipWhiteSpace()
                 if (!lexer.isBuiltInAssertion()) {
                     val assertionText = line.trim().removePrefix("assert").trim()
@@ -62,7 +64,8 @@ private fun BerryCrushLexer.isBuiltInAssertion(): Boolean {
 }
 
 private fun BerryCrushLexer.skipWhiteSpace() {
-    while (tokenType != null && tokenType == BerryCrushTokenTypes.WHITE_SPACE) advance()
+    fun IElementType?.shouldSkip() = tokenType != null && this == BerryCrushTokenTypes.WHITE_SPACE || this == BerryCrushTokenTypes.INDENT
+    while (tokenType.shouldSkip()) advance()
 }
 
 private fun BerryCrushLexer.checkAssertionCondition(negated: Boolean = false): Boolean {

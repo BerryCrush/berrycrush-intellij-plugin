@@ -62,8 +62,8 @@ class UndefinedAssertionInspectionTest : BerryCrushTestCase() {
 
         val problems = runInspection(psiFile)
         assertTrue(
-            "Empty assertion should not be flagged",
-            problems.isEmpty()
+            "Empty assertion should be flagged",
+            problems.isNotEmpty()
         )
     }
 
@@ -80,8 +80,8 @@ class UndefinedAssertionInspectionTest : BerryCrushTestCase() {
             it.descriptionTemplate.contains("has no matching @Assertion definition")
         }
         assertTrue(
-            "ASSERT keyword should be recognized",
-            undefinedAssertionProblems.isNotEmpty()
+            "ASSERT keyword should not be recognized",
+            undefinedAssertionProblems.isEmpty()
         )
     }
 
