@@ -1,7 +1,6 @@
 package com.berrycrush.intellij.inspection
 
 import com.berrycrush.intellij.psi.BerryCrushParameterEntryElement
-import com.berrycrush.intellij.psi.BerryCrushVariableInterpolationElement
 import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.PsiFile

@@ -1,5 +1,7 @@
 package com.berrycrush.intellij.inspection
 
+import com.berrycrush.intellij.lexer.BerryCrushLexer
+import com.berrycrush.intellij.lexer.BerryCrushTokenTypes
 import com.berrycrush.intellij.reference.BerryCrushAssertionReference
 import com.berrycrush.intellij.util.ModuleScopeResolver
 import com.intellij.codeInspection.ProblemHighlightType
@@ -13,7 +15,6 @@ import com.intellij.psi.PsiFile
  * annotated method in the project.
  */
 class UndefinedAssertionInspection : BerryCrushInspection() {
-
     override fun getDisplayName(): String = "Undefined assertion"
     override fun getShortName(): String = "BerryCrushUndefinedAssertion"
     override fun getGroupDisplayName(): String = "BerryCrush"
@@ -23,12 +24,14 @@ class UndefinedAssertionInspection : BerryCrushInspection() {
         val project = file.project
         val scope = ModuleScopeResolver.getModuleDependencyScope(file)
         val lines = file.text.lines()
-
+        val lexer = BerryCrushLexer()
         lines.forEachIndexed { lineIndex, line ->
-            ASSERT_PATTERN.find(line)?.let { match ->
-                val assertionText = match.groupValues[1].trim()
-
-                if (assertionText.isNotBlank() && !isBuiltInAssertion(assertionText)) {
+            lexer.start(line)
+            lexer.skipWhiteSpace()
+            if (lexer.tokenType == BerryCrushTokenTypes.ASSERT) {
+                lexer.skipWhiteSpace()
+                if (!lexer.isBuiltInAssertion()) {
+                    val assertionText = line.trim().removePrefix("assert").trim()
                     val matchingMethods = BerryCrushAssertionReference.findMatchingAssertionMethodsInScope(
                         project,
                         assertionText,
@@ -36,7 +39,7 @@ class UndefinedAssertionInspection : BerryCrushInspection() {
                     )
 
                     if (matchingMethods.isEmpty()) {
-                        findElementAtLine(file, lineIndex, match.range.first)?.let { element ->
+                        findElementAtLine(file, lineIndex, 0)?.let { element ->
                             holder.registerProblem(
                                 element,
                                 "Assertion '$assertionText' has no matching @Assertion definition",
@@ -49,36 +52,121 @@ class UndefinedAssertionInspection : BerryCrushInspection() {
             }
         }
     }
+}
 
-    /**
-     * Check if the assertion text matches a built-in assertion pattern.
-     */
-    private fun isBuiltInAssertion(text: String): Boolean {
-        return BUILT_IN_PATTERNS.any { it.matches(text) }
+/**
+ * Check if the assertion text matches a built-in assertion pattern.
+ */
+private fun BerryCrushLexer.isBuiltInAssertion(): Boolean {
+    return checkAssertionCondition()
+}
+
+private fun BerryCrushLexer.skipWhiteSpace() {
+    while (tokenType != null && tokenType == BerryCrushTokenTypes.WHITE_SPACE) advance()
+}
+
+private fun BerryCrushLexer.checkAssertionCondition(negated: Boolean = false): Boolean {
+    skipWhiteSpace()
+    // check
+    return when (tokenType) {
+        BerryCrushTokenTypes.NOT -> if (!negated) {
+            advance() // skip not
+            checkAssertionCondition(true)
+        } else {
+            // not not is not allowed
+            false
+        }
+        BerryCrushTokenTypes.STATUS -> checkStatusAssertion()
+        BerryCrushTokenTypes.VARIABLE -> checkVariableAssertion()
+        BerryCrushTokenTypes.JSON_PATH -> checkJsonPathAssertion()
+        BerryCrushTokenTypes.HEADER -> checkHeaderAssertion()
+        BerryCrushTokenTypes.CONTAINS -> checkSimpleCondition()
+        BerryCrushTokenTypes.RESPONSE_TIME -> checkSimpleCondition()
+        BerryCrushTokenTypes.SCHEMA -> checkSchemaAssertion()
+        else -> false
     }
+}
 
-    companion object {
-        // Matches: assert <assertion text>
-        private val ASSERT_PATTERN = Regex(
-            """^\s*assert\s+(.+)$""",
-            RegexOption.IGNORE_CASE
-        )
+// status(Code) 2xx thing
+private fun BerryCrushLexer.checkStatusAssertion(): Boolean {
+    fun String.isStatusCode() = Regex("\\dxx").matches(this)
+    advance() // skip status
+    skipWhiteSpace()
+    val type = tokenType
+    val value = tokenText
+    skipWhiteSpace()
+    return tokenType != null && (type == BerryCrushTokenTypes.NUMBER || (type == BerryCrushTokenTypes.STRING && value.isStatusCode()))
+}
 
-        // Built-in assertion patterns (from scenario-syntax.rst)
-        private val BUILT_IN_PATTERNS = listOf(
-            // status <code> or statusCode <code>
-            Regex("""^status(Code)?\s+(\d+|\dxx)$""", RegexOption.IGNORE_CASE),
-            // contains "<text>" or not contains "<text>"
-            Regex("""^(not\s+)?contains\s+.+$""", RegexOption.IGNORE_CASE),
-            // JSONPath assertions: $.path equals/=/matches/notEmpty/size/exists/not equals/not exists
-            Regex("""^\$[^\s]+\s+(equals|=|matches|notEmpty|size|exists)\s*.*$""", RegexOption.IGNORE_CASE),
-            Regex("""^\$[^\s]+\s+not\s+(equals|exists)\s*.*$""", RegexOption.IGNORE_CASE),
-            // header <name> or header <name> = "<value>" or header <name>: "<value>"
-            Regex("""^header\s+\S+.*$""", RegexOption.IGNORE_CASE),
-            // responseTime <ms>
-            Regex("""^responseTime\s+\d+$""", RegexOption.IGNORE_CASE),
-            // schema (with optional path)
-            Regex("""^schema(\s+.+)?$""", RegexOption.IGNORE_CASE),
-        )
+// {{variable}} op [value]
+private fun BerryCrushLexer.checkVariableAssertion() = checkOperator(true)
+
+// $.json op [value]
+private fun BerryCrushLexer.checkJsonPathAssertion() = checkOperator()
+
+// Http-Header [[:=] value]
+private fun BerryCrushLexer.checkHeaderAssertion(): Boolean {
+    advance() // skip header
+    skipWhiteSpace()
+    // header name is required
+    if (tokenType != BerryCrushTokenTypes.TEXT) return false
+    advance() // skip header name
+    skipWhiteSpace()
+    return when (tokenType) {
+        BerryCrushTokenTypes.COLON,
+        BerryCrushTokenTypes.EQUALS -> checkValue()
+        null -> true
+        else -> false
     }
+}
+
+private fun BerryCrushLexer.checkSimpleCondition(negated: Boolean = false): Boolean {
+    advance()
+    return if (!negated && tokenType == BerryCrushTokenTypes.NOT) {
+        checkSimpleCondition(true)
+    } else {
+        checkValue()
+    }
+}
+
+private fun BerryCrushLexer.checkSchemaAssertion(): Boolean {
+    advance()
+    return !checkValue()
+}
+
+private fun BerryCrushLexer.checkOperator(negated: Boolean = false): Boolean {
+    advance()
+    skipWhiteSpace()
+    return when (tokenType) {
+        BerryCrushTokenTypes.NOT -> !negated && checkOperator(true)
+        BerryCrushTokenTypes.EQUALS,
+        BerryCrushTokenTypes.NOT_EQUALS,
+        BerryCrushTokenTypes.GREATER_OR_EQUAL,
+        BerryCrushTokenTypes.GREATER_THAN,
+        BerryCrushTokenTypes.LESS_OR_EQUAL,
+        BerryCrushTokenTypes.LESS_THAN,
+        BerryCrushTokenTypes.MATCHES,
+        BerryCrushTokenTypes.STARTS_WITH,
+        BerryCrushTokenTypes.IN,
+        BerryCrushTokenTypes.CONTAINS,
+        BerryCrushTokenTypes.SIZE,
+        BerryCrushTokenTypes.HAS_SIZE,
+        BerryCrushTokenTypes.ARRAY_SIZE -> {
+            advance()
+            checkValue()
+        }
+
+        BerryCrushTokenTypes.EXISTS,
+        BerryCrushTokenTypes.EMPTY,
+        BerryCrushTokenTypes.NOT_EMPTY -> {
+            advance()
+            !checkValue()
+        }
+        else -> false
+    }
+}
+
+fun BerryCrushLexer.checkValue(): Boolean {
+    skipWhiteSpace()
+    return tokenType != null
 }

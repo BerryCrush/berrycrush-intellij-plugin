@@ -18,7 +18,7 @@ class BerryCrushLexer : LexerBase() {
     private var lineStart: Boolean = true
 
     companion object {
-        private val BLOCK_KEYWORDS = mapOf(
+        private val KEYWORDS = mapOf(
             "feature:" to BerryCrushTokenTypes.FEATURE,
             "scenario:" to BerryCrushTokenTypes.SCENARIO,
             "outline:" to BerryCrushTokenTypes.OUTLINE,
@@ -26,53 +26,48 @@ class BerryCrushLexer : LexerBase() {
             "parameters:" to BerryCrushTokenTypes.PARAMETERS,
             "background:" to BerryCrushTokenTypes.BACKGROUND,
             "examples:" to BerryCrushTokenTypes.EXAMPLES,
-        )
-
-        private val STEP_KEYWORDS = mapOf(
-            "given " to BerryCrushTokenTypes.GIVEN,
-            "given:" to BerryCrushTokenTypes.GIVEN,
-            "when " to BerryCrushTokenTypes.WHEN,
-            "when:" to BerryCrushTokenTypes.WHEN,
-            "then " to BerryCrushTokenTypes.THEN,
-            "then:" to BerryCrushTokenTypes.THEN,
-            "and " to BerryCrushTokenTypes.AND,
-            "and:" to BerryCrushTokenTypes.AND,
-            "but " to BerryCrushTokenTypes.BUT,
-            "but:" to BerryCrushTokenTypes.BUT,
-        )
-
-        private val DIRECTIVES = mapOf(
-            "call " to BerryCrushTokenTypes.CALL,
-            "assert " to BerryCrushTokenTypes.ASSERT,
-            "extract " to BerryCrushTokenTypes.EXTRACT,
-            "include " to BerryCrushTokenTypes.INCLUDE,
+            "given" to BerryCrushTokenTypes.GIVEN,
+            "when" to BerryCrushTokenTypes.WHEN,
+            "then" to BerryCrushTokenTypes.THEN,
+            "and" to BerryCrushTokenTypes.AND,
+            "but" to BerryCrushTokenTypes.BUT,
+            "call" to BerryCrushTokenTypes.CALL,
+            "webhook:" to BerryCrushTokenTypes.WEBHOOK,
+            "assert" to BerryCrushTokenTypes.ASSERT,
+            "extract" to BerryCrushTokenTypes.EXTRACT,
+            "include" to BerryCrushTokenTypes.INCLUDE,
             "body:" to BerryCrushTokenTypes.BODY,
-            "if " to BerryCrushTokenTypes.IF,
-            "else if " to BerryCrushTokenTypes.ELSE,
+            "bodyFile:" to BerryCrushTokenTypes.BODY,
+            "if" to BerryCrushTokenTypes.IF,
             "else" to BerryCrushTokenTypes.ELSE,
-            "fail " to BerryCrushTokenTypes.FAIL,
-        )
-
-        private val ASSERTION_KEYWORDS = mapOf(
-            "status " to BerryCrushTokenTypes.STATUS,
-            "header " to BerryCrushTokenTypes.HEADER,
-            "contains " to BerryCrushTokenTypes.CONTAINS,
+            "fail" to BerryCrushTokenTypes.FAIL,
+            "status" to BerryCrushTokenTypes.STATUS,
+            "statusCode" to BerryCrushTokenTypes.STATUS,
+            "header" to BerryCrushTokenTypes.HEADER,
+            "contains" to BerryCrushTokenTypes.CONTAINS,
+            "bodyContains" to BerryCrushTokenTypes.CONTAINS,
             "schema" to BerryCrushTokenTypes.SCHEMA,
-            "responseTime " to BerryCrushTokenTypes.RESPONSE_TIME,
+            "responseTime" to BerryCrushTokenTypes.RESPONSE_TIME,
             "exists" to BerryCrushTokenTypes.EXISTS,
-            "not " to BerryCrushTokenTypes.NOT,
-        )
-
-        private val OPERATORS = mapOf(
-            "==" to BerryCrushTokenTypes.EQUALS,
+            "not" to BerryCrushTokenTypes.NOT,
+            "=" to BerryCrushTokenTypes.EQUALS,
+            "equals" to BerryCrushTokenTypes.EQUALS,
             "!=" to BerryCrushTokenTypes.NOT_EQUALS,
             ">=" to BerryCrushTokenTypes.GREATER_OR_EQUAL,
             "<=" to BerryCrushTokenTypes.LESS_OR_EQUAL,
             ">" to BerryCrushTokenTypes.GREATER_THAN,
+            "greaterThan" to BerryCrushTokenTypes.GREATER_THAN,
             "<" to BerryCrushTokenTypes.LESS_THAN,
+            "lessThan" to BerryCrushTokenTypes.LESS_THAN,
             "matches " to BerryCrushTokenTypes.MATCHES,
             "startsWith " to BerryCrushTokenTypes.STARTS_WITH,
             "endsWith " to BerryCrushTokenTypes.ENDS_WITH,
+            "in" to BerryCrushTokenTypes.IN,
+            "size" to BerryCrushTokenTypes.SIZE,
+            "hasSize" to BerryCrushTokenTypes.HAS_SIZE,
+            "arraySize" to BerryCrushTokenTypes.ARRAY_SIZE,
+            "empty" to BerryCrushTokenTypes.EMPTY,
+            "notEmpty" to BerryCrushTokenTypes.NOT_EMPTY,
         )
     }
 
@@ -107,151 +102,78 @@ class BerryCrushLexer : LexerBase() {
 
     private fun computeNextToken(): IElementType? {
         if (position >= bufferEnd) return null
-
         val c = buffer[position]
+        return when {
+            c == '\n' || c == '\r' -> scanNewline(c)
+            c == '#' -> scanComment()
+            c == ' ' && lineStart -> scanIndent()
+            (c == '"' || c == '\'') && checkString(c)  -> scanString(c)
+            c.isWhitespace() -> scanWhitespace()
+            else -> {
+                lineStart = false
+                when {
+                    c == '@' -> scanTag()
+                    c == '^' -> scanOperationRef()
+                    c == '{' && peek() == '{' -> scanVariable()
+                    c.isDigit() || (c == '-' && peek()?.isDigit() == true) -> scanNumber()
+                    c == '$' -> scanJsonPath()
+                    c == ':' -> { position++; BerryCrushTokenTypes.COLON }
+                    c == '|' -> { position++; BerryCrushTokenTypes.PIPE }
+                    c == '.' -> { position++; BerryCrushTokenTypes.DOT }
+                    c == ',' -> { position++; BerryCrushTokenTypes.COMMA }
+                    c == '(' -> { position++; BerryCrushTokenTypes.LPAREN }
+                    c == ')' -> { position++; BerryCrushTokenTypes.RPAREN }
+                    c == '[' -> { position++; BerryCrushTokenTypes.LBRACKET }
+                    c == ']' -> { position++; BerryCrushTokenTypes.RBRACKET }
+                    c == '{' -> { position++; BerryCrushTokenTypes.LBRACE }
+                    c == '}' -> { position++; BerryCrushTokenTypes.RBRACE }
+                    else -> {
+                        tryMatchKeyword() ?: scanIdentifierOrText()
+                    }
+                }
+            }
+        }
+    }
 
-        // Handle newlines
-        if (c == '\n' || c == '\r') {
+    private fun scanNewline(c: Char): BerryCrushElementType {
+        position++
+        if (c == '\r' && position < bufferEnd && buffer[position] == '\n') {
             position++
-            if (c == '\r' && position < bufferEnd && buffer[position] == '\n') {
-                position++
-            }
-            lineStart = true
-            return BerryCrushTokenTypes.NEWLINE
         }
+        lineStart = true
+        return BerryCrushTokenTypes.NEWLINE
+    }
 
-        // Handle comments
-        if (c == '#') {
-            return scanComment()
-        }
-
-        // Handle whitespace at line start (indentation)
-        if (lineStart && c == ' ') {
-            return scanIndent()
-        }
-
-        // Handle whitespace
-        if (c.isWhitespace()) {
-            return scanWhitespace()
-        }
-
-        lineStart = false
-
-        // Handle tags
-        if (c == '@') {
-            return scanTag()
-        }
-
-        // Handle operation references
-        if (c == '^') {
-            return scanOperationRef()
-        }
-
-        // Handle variables
-        if (c == '{' && position + 1 < bufferEnd && buffer[position + 1] == '{') {
-            return scanVariable()
-        }
-
-        // Handle strings
-        if (c == '"' || c == '\'') {
-            return scanString(c)
-        }
-
-        // Handle numbers
-        if (c.isDigit() || (c == '-' && position + 1 < bufferEnd && buffer[position + 1].isDigit())) {
-            return scanNumber()
-        }
-
-        // Handle JSON path or variable interpolation
-        if (c == '$') {
-            // Check if it's variable interpolation ${...}
-            if (position + 1 < bufferEnd && buffer[position + 1] == '{') {
-                return scanVariableInterpolation()
-            }
-            // Otherwise it's a JSON path $...
-            return scanJsonPath()
-        }
-
-        // Handle single-character syntax
-        when (c) {
-            ':' -> { position++; return BerryCrushTokenTypes.COLON }
-            '|' -> { position++; return BerryCrushTokenTypes.PIPE }
-            '.' -> { position++; return BerryCrushTokenTypes.DOT }
-            ',' -> { position++; return BerryCrushTokenTypes.COMMA }
-            '(' -> { position++; return BerryCrushTokenTypes.LPAREN }
-            ')' -> { position++; return BerryCrushTokenTypes.RPAREN }
-            '[' -> { position++; return BerryCrushTokenTypes.LBRACKET }
-            ']' -> { position++; return BerryCrushTokenTypes.RBRACKET }
-            '{' -> { position++; return BerryCrushTokenTypes.LBRACE }
-            '}' -> { position++; return BerryCrushTokenTypes.RBRACE }
-        }
-
-        // Try to match operators
-        for ((keyword, token) in OPERATORS) {
-            if (matchesAt(keyword)) {
-                position += keyword.length
-                return token
-            }
-        }
-
-        // Try to match keywords
-        val keywordToken = tryMatchKeyword()
-        if (keywordToken != null) {
-            return keywordToken
-        }
-
-        // Handle identifiers and text
-        return scanIdentifierOrText()
+    private fun Map<String, BerryCrushElementType>.findKeyword(): IElementType? = entries.find {
+        matchesAt(it.key) && isTokenBoundary(position + it.key.length)
+    }?.let {
+        position += it.key.length
+        it.value
     }
 
     private fun tryMatchKeyword(): IElementType? {
         // Try block keywords (strict lowercase per BerryCrush DSL spec)
-        for ((keyword, token) in BLOCK_KEYWORDS) {
-            if (matchesAt(keyword)) {
-                position += keyword.length
-                return token
-            }
-        }
+        return KEYWORDS.findKeyword()
+            ?: tryJsonLiterals()
+    }
 
-        // Try step keywords (strict lowercase per BerryCrush DSL spec)
-        for ((keyword, token) in STEP_KEYWORDS) {
-            if (matchesAt(keyword)) {
-                position += keyword.length
-                return token
-            }
-        }
-
-        // Try directives (strict lowercase matching)
-        for ((keyword, token) in DIRECTIVES) {
-            if (matchesAt(keyword)) {
-                position += keyword.length
-                return token
-            }
-        }
-
-        // Try assertion keywords (strict lowercase matching)
-        for ((keyword, token) in ASSERTION_KEYWORDS) {
-            if (matchesAt(keyword)) {
-                position += keyword.length
-                return token
-            }
-        }
-
+    private fun tryJsonLiterals(): IElementType? {
         // Boolean literals are case-insensitive (JSON convention)
-        if (matchesAtCaseInsensitive("true") && !isIdentifierChar(position + 4)) {
-            position += 4
-            return BerryCrushTokenTypes.BOOLEAN
+        return when {
+            matchesAt("true") && !isIdentifierChar(position + 4) -> {
+                position += 4
+                BerryCrushTokenTypes.BOOLEAN
+            }
+            matchesAt("false") && !isIdentifierChar(position + 5) -> {
+                position += 5
+                BerryCrushTokenTypes.BOOLEAN
+            }
+            matchesAt("null") && !isIdentifierChar(position + 4) -> {
+                position += 4
+                BerryCrushTokenTypes.NULL
+            }
+            else -> null
         }
-        if (matchesAtCaseInsensitive("false") && !isIdentifierChar(position + 5)) {
-            position += 5
-            return BerryCrushTokenTypes.BOOLEAN
-        }
-        if (matchesAtCaseInsensitive("null") && !isIdentifierChar(position + 4)) {
-            position += 4
-            return BerryCrushTokenTypes.NULL
-        }
-
-        return null
     }
 
     private fun scanComment(): IElementType {
@@ -278,7 +200,7 @@ class BerryCrushLexer : LexerBase() {
 
     private fun scanTag(): IElementType {
         position++ // Skip '@'
-        while (position < bufferEnd && isTagChar(buffer[position])) {
+        while (position < bufferEnd && buffer[position].isTagChar()) {
             position++
         }
         return BerryCrushTokenTypes.TAG
@@ -286,7 +208,7 @@ class BerryCrushLexer : LexerBase() {
 
     private fun scanOperationRef(): IElementType {
         position++ // Skip '^'
-        while (position < bufferEnd && isIdentifierChar(buffer[position])) {
+        while (position < bufferEnd && buffer[position].isIdentifierChar()) {
             position++
         }
         return BerryCrushTokenTypes.OPERATION_REF
@@ -302,6 +224,15 @@ class BerryCrushLexer : LexerBase() {
             position++
         }
         return BerryCrushTokenTypes.VARIABLE
+    }
+
+    private fun checkString(quote: Char): Boolean {
+        for (i in (position + 1) until bufferEnd) {
+            if (buffer[i] == quote) {
+                return true
+            }
+        }
+        return false
     }
 
     private fun scanString(quote: Char): IElementType {
@@ -337,56 +268,14 @@ class BerryCrushLexer : LexerBase() {
 
     private fun scanJsonPath(): IElementType {
         position++ // Skip '$'
-        while (position < bufferEnd && isJsonPathChar(buffer[position])) {
+        while (position < bufferEnd && buffer[position].isJsonPathChar()) {
             position++
         }
         return BerryCrushTokenTypes.JSON_PATH
     }
 
-    /**
-     * Scans a variable interpolation: ${env.VAR}, ${context.var}, ${param.name}, or ${varName}.
-     * Returns VARIABLE_INTERPOLATION_PREFIX if it has a known prefix (env., context., param.),
-     * otherwise returns VARIABLE_INTERPOLATION.
-     */
-    private fun scanVariableInterpolation(): IElementType {
-        position += 2 // Skip '${'
-
-        // Check for prefix (env., context., param.)
-        val hasPrefix = when {
-            matchesAt("env.") -> {
-                position += 4
-                true
-            }
-            matchesAt("context.") -> {
-                position += 8
-                true
-            }
-            matchesAt("param.") -> {
-                position += 6
-                true
-            }
-            else -> false
-        }
-
-        // Scan the variable name until closing brace
-        while (position < bufferEnd && buffer[position] != '}') {
-            position++
-        }
-
-        // Consume the closing brace if present
-        if (position < bufferEnd && buffer[position] == '}') {
-            position++
-        }
-
-        return if (hasPrefix) {
-            BerryCrushTokenTypes.VARIABLE_INTERPOLATION_PREFIX
-        } else {
-            BerryCrushTokenTypes.VARIABLE_INTERPOLATION
-        }
-    }
-
     private fun scanIdentifierOrText(): IElementType {
-        while (position < bufferEnd && !isTokenBoundary(buffer[position])) {
+        while (position < bufferEnd && !buffer[position].isTokenBoundary()) {
             position++
         }
         return if (tokenStart == position) {
@@ -405,26 +294,18 @@ class BerryCrushLexer : LexerBase() {
         return true
     }
 
-    private fun matchesAtCaseInsensitive(str: String): Boolean {
-        if (position + str.length > bufferEnd) return false
-        for (i in str.indices) {
-            if (buffer[position + i].lowercaseChar() != str[i].lowercaseChar()) return false
-        }
-        return true
-    }
-
     private fun isIdentifierChar(pos: Int): Boolean =
         pos < bufferEnd && (buffer[pos].isLetterOrDigit() || buffer[pos] == '_' || buffer[pos] == '-')
 
-    private fun isIdentifierChar(c: Char): Boolean =
-        c.isLetterOrDigit() || c == '_' || c == '-'
+    private fun isTokenBoundary(pos: Int): Boolean  = pos >= bufferEnd || buffer[pos].isTokenBoundary()
 
-    private fun isTagChar(c: Char): Boolean =
-        c.isLetterOrDigit() || c == '_' || c == '-'
-
-    private fun isJsonPathChar(c: Char): Boolean =
-        c.isLetterOrDigit() || c == '.' || c == '[' || c == ']' || c == '*' || c == '@' || c == '_'
-
-    private fun isTokenBoundary(c: Char): Boolean =
-        c.isWhitespace() || c in ":#@^|,()[]{}\"'"
+    private fun peek(n: Int = 1) = if (position + n < bufferEnd) buffer[position + n] else null
 }
+
+private fun Char.isIdentifierChar(): Boolean = isLetterOrDigit() || this == '_' || this == '-'
+
+private fun Char.isTagChar(): Boolean = isLetterOrDigit() || this == '_' || this == '-'
+
+private fun Char.isJsonPathChar(): Boolean = isLetterOrDigit() || this in ".[]*@_()"
+
+private fun Char.isTokenBoundary(): Boolean = isWhitespace() || this in ":#@^|,()[]{}\"'"

@@ -186,12 +186,10 @@ class BerryCrushParser : PsiParser {
      */
     private fun parseParameterValue(builder: PsiBuilder) {
         while (!builder.eof() && builder.tokenType != BerryCrushTokenTypes.NEWLINE) {
-            if (builder.tokenType == BerryCrushTokenTypes.VARIABLE_INTERPOLATION ||
-                builder.tokenType == BerryCrushTokenTypes.VARIABLE_INTERPOLATION_PREFIX
-            ) {
+            if (builder.tokenType == BerryCrushTokenTypes.VARIABLE) {
                 val marker = builder.mark()
                 builder.advanceLexer()
-                marker.done(BerryCrushElementTypes.VARIABLE_INTERPOLATION)
+                marker.done(BerryCrushElementTypes.VARIABLE_REF)
             } else {
                 builder.advanceLexer()
             }

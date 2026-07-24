@@ -150,7 +150,7 @@ class BerryCrushFeatureElement(node: ASTNode) : BerryCrushPsiElement(node), PsiN
     val featureName: String?
         get() {
             val text = node.text
-            val match = Regex("""[Ff]eature:\s*(.+)""").find(text.lines().first())
+            val match = Regex("""feature:\s*(.+)""").find(text.lines().first())
             return match?.groupValues?.get(1)?.trim()
         }
 
@@ -321,71 +321,9 @@ class BerryCrushParameterEntryElement(node: ASTNode) : BerryCrushPsiElement(node
     val parameterValue: String?
         get() = extractParamValue(node.text.trim())
 
-    /**
-     * Get variable interpolations referenced in the value.
-     */
-    val variableInterpolations: List<BerryCrushVariableInterpolationElement>
-        get() = findChildrenByClass(BerryCrushVariableInterpolationElement::class.java).toList()
-
     override fun getName(): String? = parameterName
 
     override fun setName(name: String): PsiElement = this
 
     override fun getNameIdentifier(): PsiElement? = null
-}
-
-/**
- * Variable interpolation element: ${env.VAR}, ${context.var}, ${param.name}, or ${varName}.
- */
-class BerryCrushVariableInterpolationElement(node: ASTNode) : BerryCrushPsiElement(node), PsiNameIdentifierOwner {
-    /**
-     * The type of variable reference.
-     */
-    enum class RefType { ENV, CONTEXT, PARAM, SHORTHAND }
-
-    /**
-     * Get the reference type based on prefix.
-     */
-    val refType: RefType
-        get() {
-            val text = node.text
-            return when {
-                text.startsWith("\${env.") -> RefType.ENV
-                text.startsWith("\${context.") -> RefType.CONTEXT
-                text.startsWith("\${param.") -> RefType.PARAM
-                else -> RefType.SHORTHAND
-            }
-        }
-
-    /**
-     * Get the variable name without prefix.
-     */
-    val variableName: String?
-        get() {
-            val text = node.text
-            if (!text.startsWith("\${") || !text.endsWith("}")) return null
-            val inner = text.removePrefix("\${").removeSuffix("}")
-            return when {
-                inner.startsWith("env.") -> inner.removePrefix("env.")
-                inner.startsWith("context.") -> inner.removePrefix("context.")
-                inner.startsWith("param.") -> inner.removePrefix("param.")
-                else -> inner
-            }
-        }
-
-    /**
-     * Get the full reference text including prefix.
-     */
-    val fullReference: String?
-        get() {
-            val text = node.text
-            if (!text.startsWith("\${") || !text.endsWith("}")) return null
-            return text.removePrefix("\${").removeSuffix("}")
-        }
-
-    override fun getName(): String? = variableName
-
-    override fun setName(name: String): PsiElement = this
-
-    override fun getNameIdentifier(): PsiElement = this
 }

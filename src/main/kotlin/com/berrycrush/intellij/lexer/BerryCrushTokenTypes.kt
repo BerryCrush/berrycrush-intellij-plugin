@@ -26,6 +26,7 @@ object BerryCrushTokenTypes {
 
     // Directives
     @JvmField val CALL = BerryCrushElementType("CALL")
+    @JvmField val WEBHOOK = BerryCrushElementType("WEBHOOK")
     @JvmField val ASSERT = BerryCrushElementType("ASSERT")
     @JvmField val EXTRACT = BerryCrushElementType("EXTRACT")
     @JvmField val INCLUDE = BerryCrushElementType("INCLUDE")
@@ -53,6 +54,12 @@ object BerryCrushTokenTypes {
     @JvmField val MATCHES = BerryCrushElementType("MATCHES")
     @JvmField val STARTS_WITH = BerryCrushElementType("STARTS_WITH")
     @JvmField val ENDS_WITH = BerryCrushElementType("ENDS_WITH")
+    @JvmField val IN = BerryCrushElementType("IN")
+    @JvmField val SIZE = BerryCrushElementType("SIZE")
+    @JvmField val HAS_SIZE = BerryCrushElementType("HAS_SIZE")
+    @JvmField val ARRAY_SIZE = BerryCrushElementType("ARRAY_SIZE")
+    @JvmField val EMPTY = BerryCrushElementType("EMPTY")
+    @JvmField val NOT_EMPTY = BerryCrushElementType("NOT_EMPTY")
 
     // Literals
     @JvmField val STRING = BerryCrushElementType("STRING")
@@ -66,10 +73,6 @@ object BerryCrushTokenTypes {
     @JvmField val TAG = BerryCrushElementType("TAG")
     @JvmField val VARIABLE = BerryCrushElementType("VARIABLE")
     @JvmField val JSON_PATH = BerryCrushElementType("JSON_PATH")
-
-    // Variable interpolation tokens: ${env.VAR}, ${context.var}, ${param.name}, ${varName}
-    @JvmField val VARIABLE_INTERPOLATION = BerryCrushElementType("VARIABLE_INTERPOLATION")
-    @JvmField val VARIABLE_INTERPOLATION_PREFIX = BerryCrushElementType("VARIABLE_INTERPOLATION_PREFIX")
 
     // Syntax elements
     @JvmField val COLON = BerryCrushElementType("COLON")
@@ -138,9 +141,6 @@ object BerryCrushTokenTypes {
 
     @JvmField
     val IDENTIFIERS = TokenSet.create(IDENTIFIER, OPERATION_REF, TAG, VARIABLE, TEXT)
-
-    @JvmField
-    val VARIABLE_INTERPOLATIONS = TokenSet.create(VARIABLE_INTERPOLATION, VARIABLE_INTERPOLATION_PREFIX)
 }
 
 /**
