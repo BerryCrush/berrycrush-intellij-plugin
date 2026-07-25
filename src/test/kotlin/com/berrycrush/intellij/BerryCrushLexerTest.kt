@@ -1,11 +1,11 @@
 package com.berrycrush.intellij
 
+import com.berrycrush.intellij.lexer.BerryCrushElementType
 import com.berrycrush.intellij.lexer.BerryCrushLexer
 import com.berrycrush.intellij.lexer.BerryCrushTokenTypes
 import com.intellij.psi.tree.IElementType
-import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
+import org.junit.jupiter.api.Test
 
 /**
  * Unit tests for BerryCrush lexer.
@@ -71,7 +71,7 @@ class BerryCrushLexerTest {
 
     @Test
     fun `test lexer tokenizes JSON path`() {
-        val tokens = tokenize("extract userId from $.data.id")
+        val tokens = tokenize("extract $.data.id => userId")
         assertContains(tokens, BerryCrushTokenTypes.EXTRACT)
         assertContains(tokens, BerryCrushTokenTypes.JSON_PATH)
     }
@@ -134,13 +134,15 @@ class BerryCrushLexerTest {
     @Test
     fun `test lexer tokenizes conditional keywords`() {
         val input = """
-            if status == 200
-            else if status == 404
+            if status = 200
+            else if status = 404
             else
         """.trimIndent()
         val tokens = tokenize(input)
         assertContains(tokens, BerryCrushTokenTypes.IF)
         assertContains(tokens, BerryCrushTokenTypes.ELSE)
+        assertContains(tokens, BerryCrushTokenTypes.EQUALS)
+        assertContains(tokens, BerryCrushTokenTypes.STATUS)
     }
 
     @Test
@@ -161,7 +163,8 @@ class BerryCrushLexerTest {
                 then response is successful
                     assert status 200
                     assert header Content-Type contains application/json
-                    extract userId from $.id
+                    assert $.id equals 1 
+                    extract userId => $.id
         """.trimIndent()
 
         val tokens = tokenize(scenario)
@@ -174,10 +177,12 @@ class BerryCrushLexerTest {
         assertContains(tokens, BerryCrushTokenTypes.TEXT)
         assertContains(tokens, BerryCrushTokenTypes.THEN)
         assertContains(tokens, BerryCrushTokenTypes.ASSERT)
+        assertContains(tokens, BerryCrushTokenTypes.CONTAINS)
         assertContains(tokens, BerryCrushTokenTypes.STATUS)
         assertContains(tokens, BerryCrushTokenTypes.NUMBER)
         assertContains(tokens, BerryCrushTokenTypes.EXTRACT)
         assertContains(tokens, BerryCrushTokenTypes.JSON_PATH)
+        assertContains(tokens, BerryCrushTokenTypes.EQUALS)
     }
 
     @Test
@@ -207,6 +212,28 @@ class BerryCrushLexerTest {
         assertContains(tokens, BerryCrushTokenTypes.NEWLINE, "Should have newline tokens")
         assertContains(tokens, BerryCrushTokenTypes.GIVEN, "given should be tokenized")
         assertContains(tokens, BerryCrushTokenTypes.WHEN, "when should be tokenized")
+    }
+
+    @Test
+    fun `test lexer additional operator support`() {
+        fun check(input: String, expected: BerryCrushElementType) {
+            val tokens = tokenize(input)
+            assertEquals(expected, tokens[0].first)
+            assertEquals(input, tokens[0].second)
+        }
+        check("equals", BerryCrushTokenTypes.EQUALS)
+        check("=", BerryCrushTokenTypes.EQUALS)
+        check("greaterThan", BerryCrushTokenTypes.GREATER_THAN)
+        check("lessThan", BerryCrushTokenTypes.LESS_THAN)
+        check(">=", BerryCrushTokenTypes.GREATER_OR_EQUAL)
+        check("<=", BerryCrushTokenTypes.LESS_OR_EQUAL)
+        check("in", BerryCrushTokenTypes.IN)
+        check("size", BerryCrushTokenTypes.SIZE)
+        check("hasSize", BerryCrushTokenTypes.HAS_SIZE)
+        check("arraySize", BerryCrushTokenTypes.ARRAY_SIZE)
+        check("empty", BerryCrushTokenTypes.EMPTY)
+        check("notEmpty", BerryCrushTokenTypes.NOT_EMPTY)
+        check("webhook:", BerryCrushTokenTypes.WEBHOOK)
     }
 
     // ========== Strict Lowercase Keyword Tests ==========
@@ -262,53 +289,10 @@ class BerryCrushLexerTest {
         assertNotContains(tokens, BerryCrushTokenTypes.THEN, "THEN should not be tokenized")
     }
 
-    // ========== Variable Interpolation Tests ==========
-
-    @Test
-    fun `test lexer tokenizes variable interpolation shorthand`() {
-        val tokens = tokenize("baseUrl: \${myVar}")
-        assertContains(tokens, BerryCrushTokenTypes.VARIABLE_INTERPOLATION)
-    }
-
-    @Test
-    fun `test lexer tokenizes env variable interpolation`() {
-        val tokens = tokenize("baseUrl: \${env.API_URL}")
-        assertContains(tokens, BerryCrushTokenTypes.VARIABLE_INTERPOLATION_PREFIX)
-    }
-
-    @Test
-    fun `test lexer tokenizes context variable interpolation`() {
-        val tokens = tokenize("userId: \${context.currentUserId}")
-        assertContains(tokens, BerryCrushTokenTypes.VARIABLE_INTERPOLATION_PREFIX)
-    }
-
-    @Test
-    fun `test lexer tokenizes param variable interpolation`() {
-        val tokens = tokenize("timeout: \${param.defaultTimeout}")
-        assertContains(tokens, BerryCrushTokenTypes.VARIABLE_INTERPOLATION_PREFIX)
-    }
-
     @Test
     fun `test lexer distinguishes json path from variable interpolation`() {
         val tokens = tokenize("extract id from \$.data.id")
         assertContains(tokens, BerryCrushTokenTypes.JSON_PATH)
-        assertNotContains(tokens, BerryCrushTokenTypes.VARIABLE_INTERPOLATION)
-    }
-
-    @Test
-    fun `test lexer tokenizes parameters block with variable interpolation`() {
-        val input = """
-            scenario: test
-              parameters:
-                baseUrl: ${"$"}{env.API_URL}
-                timeout: 5000
-        """.trimIndent()
-        val tokens = tokenize(input)
-
-        assertContains(tokens, BerryCrushTokenTypes.SCENARIO)
-        assertContains(tokens, BerryCrushTokenTypes.PARAMETERS)
-        assertContains(tokens, BerryCrushTokenTypes.VARIABLE_INTERPOLATION_PREFIX)
-        assertContains(tokens, BerryCrushTokenTypes.NUMBER)
     }
 
     // --- Helper functions ---

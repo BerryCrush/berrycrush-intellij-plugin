@@ -48,7 +48,7 @@ class BerryCrushCompletionProvider : CompletionProvider<CompletionParameters>() 
         val text = position.containingFile.text
         val offset = parameters.offset
 
-        // Check if we're typing a variable interpolation ${...}
+        // Check if we're typing a variable interpolation {{...}}
         if (isInVariableInterpolation(text, offset)) {
             addVariableInterpolationCompletions(position.containingFile, result)
             return
@@ -104,14 +104,14 @@ class BerryCrushCompletionProvider : CompletionProvider<CompletionParameters>() 
     }
 
     /**
-     * Check if cursor is inside a variable interpolation: ${...}
+     * Check if cursor is inside a variable interpolation: {{...}}
      */
     private fun isInVariableInterpolation(text: String, offset: Int): Boolean {
-        // Look backwards for ${
+        // Look backwards for {{
         var pos = offset - 1
         while (pos >= 1) {
             if (text[pos] == '}') return false // Already closed
-            if (text[pos - 1] == '$' && text[pos] == '{') return true
+            if (text[pos - 1] == '{' && text[pos] == '{') return true
             if (text[pos] == '\n') return false // Don't cross lines
             pos--
         }
@@ -136,11 +136,6 @@ class BerryCrushCompletionProvider : CompletionProvider<CompletionParameters>() 
         extractedVars.forEach { varName ->
             result.addElement(
                 LookupElementBuilder.create(varName)
-                    .withIcon(AllIcons.Nodes.Variable)
-                    .withTypeText("context variable")
-            )
-            result.addElement(
-                LookupElementBuilder.create("context.$varName")
                     .withIcon(AllIcons.Nodes.Variable)
                     .withTypeText("context variable")
             )
@@ -378,8 +373,6 @@ class BerryCrushCompletionProvider : CompletionProvider<CompletionParameters>() 
          * Variable interpolation prefixes.
          */
         private val VARIABLE_PREFIXES = listOf(
-            "env." to "environment variable",
-            "context." to "context variable",
             "param." to "parameter reference",
         )
     }

@@ -6,7 +6,6 @@ import com.berrycrush.intellij.psi.BerryCrushParameterEntryElement
 import com.berrycrush.intellij.psi.BerryCrushParametersBlockElement
 import com.berrycrush.intellij.psi.BerryCrushScenarioElement
 import com.berrycrush.intellij.psi.BerryCrushStepElement
-import com.berrycrush.intellij.psi.BerryCrushVariableInterpolationElement
 import com.intellij.psi.util.PsiTreeUtil
 
 /**
@@ -116,23 +115,5 @@ class BerryCrushParserTest : BerryCrushTestCase() {
         val entry = entries.first()
         assertEquals("myParam", entry.parameterName)
         assertEquals("myValue", entry.parameterValue)
-    }
-
-    fun testVariableInterpolationInParameterValue() {
-        val file = createScenarioFile("interp", """
-            scenario: test
-              parameters:
-                baseUrl: ${"$"}{env.API_URL}
-        """.trimIndent())
-
-        val psiFile = psiManager.findFile(file)
-        assertNotNull(psiFile)
-
-        val varInterps = PsiTreeUtil.findChildrenOfType(psiFile, BerryCrushVariableInterpolationElement::class.java)
-        assertEquals("Should find 1 variable interpolation", 1, varInterps.size)
-
-        val varInterp = varInterps.first()
-        assertEquals("API_URL", varInterp.variableName)
-        assertEquals(BerryCrushVariableInterpolationElement.RefType.ENV, varInterp.refType)
     }
 }

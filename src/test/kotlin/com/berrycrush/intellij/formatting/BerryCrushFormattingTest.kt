@@ -12,19 +12,23 @@ import com.intellij.psi.codeStyle.CodeStyleManager
  */
 class BerryCrushFormattingTest : BerryCrushTestCase() {
 
+    private fun applyFormatting(input: String, fileExtension: String = "scenario"): String {
+        myFixture.configureByText("test.$fileExtension", input)
+
+        WriteCommandAction.runWriteCommandAction(project) {
+            CodeStyleManager.getInstance(project)
+                .reformatText(myFixture.file, 0, myFixture.editor.document.textLength)
+        }
+
+        return myFixture.editor.document.text
+    }
+
     /**
      * Helper function to test formatting.
      * Configures file with input, runs reformat, and checks result.
      */
     private fun doFormattingTest(input: String, expected: String, fileExtension: String = "scenario") {
-        myFixture.configureByText("test.$fileExtension", input)
-        
-        WriteCommandAction.runWriteCommandAction(project) {
-            CodeStyleManager.getInstance(project)
-                .reformatText(myFixture.file, 0, myFixture.editor.document.textLength)
-        }
-        
-        val actual = myFixture.editor.document.text
+        val actual = applyFormatting(input, fileExtension)
         
         // Debug output for test failures
         if (actual != expected) {
@@ -42,6 +46,14 @@ class BerryCrushFormattingTest : BerryCrushTestCase() {
             expected,
             actual
         )
+    }
+
+    private fun doIdempotencyTest(input: String, expected: String, fileExtension: String = "scenario") {
+        val firstPass = applyFormatting(input, fileExtension)
+        assertEquals("First pass result mismatch", expected, firstPass)
+
+        val secondPass = applyFormatting(firstPass, fileExtension)
+        assertEquals("Formatting must be idempotent", firstPass, secondPass)
     }
 
     // === Root Level Elements ===
@@ -260,6 +272,180 @@ class BerryCrushFormattingTest : BerryCrushTestCase() {
         val input = "scenario:   Test    with    spaces"
         val expected = "scenario: Test with spaces"
         
+        doFormattingTest(input, expected)
+    }
+
+        // === Structural Indentation Regression Tests ===
+
+        fun testFeatureAndStandaloneScenarioSeparation() {
+                val input = listOf(
+                        "feature: test feature",
+                        "  scenario: test scenario",
+                        "    given test step",
+                        "      call ^getUserById",
+                        "    then assert",
+                        "      assert status 2xx",
+                        "",
+                        "scenario: other scenario",
+                        "  parameters:",
+                        "    custom:",
+                        "      key: value",
+                        "  given call with body",
+                        "    call ^postUser",
+                        "    id: value",
+                        "    body:",
+                        "      name: test",
+                ).joinToString("\n")
+
+                val expected = listOf(
+                        "feature: test feature",
+                        "  scenario: test scenario",
+                        "    given test step",
+                        "      call ^getUserById",
+                        "    then assert",
+                        "      assert status 2xx",
+                        "",
+                        "scenario: other scenario",
+                        "  parameters:",
+                        "    custom:",
+                        "      key: value",
+                        "  given call with body",
+                        "    call ^postUser",
+                        "      id: value",
+                        "      body:",
+                        "        name: test",
+                ).joinToString("\n")
+
+                doFormattingTest(input, expected)
+        }
+
+        fun testNestedParametersIndentation() {
+                val input = listOf(
+                        "scenario: nested parameters",
+                        "parameters:",
+                        "retry:",
+                        "maxAttempts: 3",
+                        "delay: 500ms",
+                ).joinToString("\n")
+
+                val expected = listOf(
+                        "scenario: nested parameters",
+                        "  parameters:",
+                        "    retry:",
+                        "      maxAttempts: 3",
+                        "      delay: 500ms",
+                ).joinToString("\n")
+
+                doFormattingTest(input, expected)
+        }
+
+        fun testCallPayloadIndentation() {
+                val input = listOf(
+                        "scenario: call payload",
+                        "given create user",
+                        "call ^postUser",
+                        "id: value",
+                        "body:",
+                        "name: test",
+                ).joinToString("\n")
+
+                val expected = listOf(
+                        "scenario: call payload",
+                        "  given create user",
+                        "    call ^postUser",
+                        "      id: value",
+                        "      body:",
+                        "        name: test",
+                ).joinToString("\n")
+
+                doFormattingTest(input, expected)
+        }
+
+        fun testWebhookPayloadIndentation() {
+                val input = listOf(
+                        "scenario: Player move triggers webhook callback",
+                        "given: Webhook server is listening for move status",
+                        "webhook: gameEvents",
+                        "port: 0",
+                        "hook: statusCallback",
+                ).joinToString("\n")
+
+                val expected = listOf(
+                        "scenario: Player move triggers webhook callback",
+                        "  given: Webhook server is listening for move status",
+                        "    webhook: gameEvents",
+                        "      port: 0",
+                        "      hook: statusCallback",
+                ).joinToString("\n")
+
+                doFormattingTest(input, expected)
+        }
+
+        fun testOutlineExamplesIndentation() {
+                val input = listOf(
+                        "outline: outline name",
+                        "given prerequisite",
+                        "when {{label1}} is {{label2}}",
+                        "examples:",
+                        "| label1 | label2 |",
+                        "| value1 | value2 |",
+                ).joinToString("\n")
+
+                val expected = listOf(
+                        "outline: outline name",
+                        "  given prerequisite",
+                        "  when {{label1}} is {{label2}}",
+                        "  examples:",
+                        "    | label1 | label2 |",
+                        "    | value1 | value2 |",
+                ).joinToString("\n")
+
+                doFormattingTest(input, expected)
+        }
+
+        fun testFormattingIdempotency() {
+                val input = listOf(
+                        "scenario: idempotent formatting",
+                        "given call webhook",
+                        "webhook: gameEvents",
+                        "port: 0",
+                        "hook: callback",
+                ).joinToString("\n")
+
+                val expected = listOf(
+                        "scenario: idempotent formatting",
+                        "  given call webhook",
+                        "    webhook: gameEvents",
+                        "      port: 0",
+                        "      hook: callback",
+                ).joinToString("\n")
+
+                doIdempotencyTest(input, expected)
+        }
+
+    fun testDetachedMultiLineCommentsStayAtRootLevel() {
+        val input = listOf(
+            "feature: bla",
+            "  scenario: in feature",
+            "    given end",
+            "#-- comment 1",
+            "#-- comment 2",
+            "#-- comment 3",
+            "",
+            "scenario: bla",
+        ).joinToString("\n")
+
+        val expected = listOf(
+            "feature: bla",
+            "  scenario: in feature",
+            "    given end",
+            "#-- comment 1",
+            "#-- comment 2",
+            "#-- comment 3",
+            "",
+            "scenario: bla",
+        ).joinToString("\n")
+
         doFormattingTest(input, expected)
     }
 }

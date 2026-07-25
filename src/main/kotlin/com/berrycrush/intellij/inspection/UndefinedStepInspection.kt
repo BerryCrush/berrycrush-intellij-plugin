@@ -93,15 +93,9 @@ class UndefinedStepInspection : BerryCrushInspection() {
 
     companion object {
         // Matches: given/when/then/and/but followed by text (with optional : suffix)
-        private val STEP_PATTERN = Regex(
-            """^\s*(given|when|then|and|but):?\s*(.*)$""",
-            RegexOption.IGNORE_CASE
-        )
+        private val STEP_PATTERN = Regex("""^\s*(given|when|then|and|but):?\s*(.*)$""")
 
         // Matches directive lines: call, assert, extract, include
-        private val DIRECTIVE_PATTERN = Regex(
-            """^(call|assert|extract|include)\s+.*""",
-            RegexOption.IGNORE_CASE
-        )
+        private val DIRECTIVE_PATTERN = Regex("""^(call|assert|extract|include|webhook:)\s+.*""")
     }
 }

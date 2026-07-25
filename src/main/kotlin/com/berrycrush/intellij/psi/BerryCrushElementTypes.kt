@@ -80,10 +80,6 @@ object BerryCrushElementTypes {
 
     @JvmField
     val PARAMETER_ENTRY = BerryCrushPsiElementType("PARAMETER_ENTRY")
-
-    // Variable interpolation element: ${env.VAR}, ${context.var}, ${param.name}, ${varName}
-    @JvmField
-    val VARIABLE_INTERPOLATION = BerryCrushPsiElementType("VARIABLE_INTERPOLATION")
 }
 
 /**

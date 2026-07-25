@@ -227,7 +227,7 @@ class BerryCrushCompletionContributorTest : BerryCrushTestCase() {
         myFixture.configureByText("var-interp.scenario", """
             scenario: Test
               parameters:
-                baseUrl: ${'$'}{e<caret>
+                baseUrl: {{e<caret>
         """.trimIndent())
 
         val completions = myFixture.completeBasic()

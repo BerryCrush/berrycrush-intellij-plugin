@@ -27,7 +27,7 @@ feature: Pet Store API
   scenario: list all pets
     parameters:
       timeout: 5000
-      baseUrl: ${"$"}{env.API_BASE_URL}
+      baseUrl: {{env.API_BASE_URL}}
     when I request the list of pets
       call ^listPets
       assert status 200
@@ -40,7 +40,7 @@ feature: Pet Store API
   scenario: create pet with parameters
     parameters:
       shareVariablesAcrossScenarios: true
-      userId: ${"$"}{context.currentUser}
+      userId: {{context.currentUser}}
     when I create a custom pet
       include create_pet
         name: "Fluffy"
@@ -50,7 +50,7 @@ feature: Pet Store API
 
   outline: create pet with name
     parameters:
-      petName: ${"$"}{param.name}
+      petName: {{param.name}}
     when I create a pet named "{{name}}"
       call ^createPet
         body:
@@ -107,14 +107,6 @@ fragment: create_pet
             AttributesDescriptor("Braces", BerryCrushHighlightingColors.BRACES),
             AttributesDescriptor("Pipe", BerryCrushHighlightingColors.PIPE),
             AttributesDescriptor("Parameter keys", BerryCrushHighlightingColors.PARAMETER_KEY),
-            AttributesDescriptor(
-                "Variable interpolation",
-                BerryCrushHighlightingColors.VARIABLE_INTERPOLATION
-            ),
-            AttributesDescriptor(
-                "Variable interpolation (prefixed)",
-                BerryCrushHighlightingColors.VARIABLE_INTERPOLATION_PREFIX
-            ),
             AttributesDescriptor("Bad character", BerryCrushHighlightingColors.BAD_CHARACTER),
         )
     }

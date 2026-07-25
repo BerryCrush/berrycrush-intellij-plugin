@@ -28,9 +28,10 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
         
         // Directives
         private val DIRECTIVES = setOf(
-            "call", "assert", "extract", "include", "if", "else",
-            "body:", "bodyfile", "bodyfile:", "parameters:"
+            "call", "assert", "extract", "include", "if", "else", "webhook", "bodyfile"
         )
+
+        private val ROOT_BLOCK_PREFIXES = setOf("feature:", "fragment:", "scenario:", "outline:")
     }
 
     override fun processElement(source: PsiElement, settings: CodeStyleSettings): PsiElement {
@@ -68,12 +69,16 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
         val result = mutableListOf<String>()
         
         var context = FormattingContext()
-        var tableLines = mutableListOf<String>()
+        val tableLines = mutableListOf<String>()
         var tableIndent = 0
         var inTable = false
+        var inDetachedRootCommentBlock = false
         
-        for (line in lines) {
+        for ((index, line) in lines.withIndex()) {
             val trimmed = line.trim()
+            val leadingSpaces = line.indexOfFirst { !it.isWhitespace() }.let {
+                if (it == -1) 0 else it
+            }
             
             // Handle empty lines
             if (trimmed.isEmpty()) {
@@ -84,6 +89,8 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
                     inTable = false
                 }
                 result.add("")
+                inDetachedRootCommentBlock = false
+                context = context.copy(previousLineBlank = true)
                 continue
             }
             
@@ -103,9 +110,32 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
                 tableLines.clear()
                 inTable = false
             }
+
+            // Detached comments before root blocks should stay at root indentation.
+            if (trimmed.startsWith("#")) {
+                val nextStructural = lines
+                    .drop(index + 1)
+                    .firstOrNull {
+                        val nextTrimmed = it.trim()
+                        nextTrimmed.isNotEmpty() && !nextTrimmed.startsWith("#")
+                    }
+                val nextTrimmed = nextStructural?.trim().orEmpty()
+                val nextIsRootBlock = ROOT_BLOCK_PREFIXES.any { nextTrimmed.lowercase().startsWith(it) }
+                val shouldRootIndent = nextIsRootBlock &&
+                    (inDetachedRootCommentBlock || context.previousLineBlank || !context.inDirective)
+
+                if (shouldRootIndent) {
+                    result.add(formatLine(trimmed, 0))
+                    inDetachedRootCommentBlock = true
+                    context = context.copy(currentIndent = 0, previousLineBlank = false)
+                    continue
+                }
+            } else {
+                inDetachedRootCommentBlock = false
+            }
             
             // Calculate indent and update context
-            val (indent, newContext) = calculateIndentAndContext(trimmed, context)
+            val (indent, newContext) = calculateIndentAndContext(trimmed, leadingSpaces, context)
             context = newContext
             
             // Format the line with proper indent and spacing
@@ -128,164 +158,278 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
      */
     @Suppress("CyclomaticComplexMethod")
     private fun calculateIndentAndContext(
-        trimmed: String, 
-        context: FormattingContext
+        trimmed: String,
+        leadingSpaces: Int,
+        context: FormattingContext,
     ): Pair<Int, FormattingContext> {
         val lower = trimmed.lowercase()
         val firstWord = lower.split(Regex("\\s+|:")).firstOrNull() ?: ""
+        val isTopLevelByInput = leadingSpaces == 0
+
+        val resetForRoot = getRootContext(isTopLevelByInput, lower, context)
         
         return when {
             // Feature/fragment at root level
-            lower.startsWith("feature:") || lower.startsWith("fragment:") -> {
-                val newContext = context.copy(
-                    inFeature = lower.startsWith("feature:"),
-                    inFragment = lower.startsWith("fragment:"),
-                    inScenario = false,
-                    inBackground = false,
-                    inStep = false,
-                    inExamples = false,
-                    currentIndent = 0
-                )
-                0 to newContext
-            }
-            
+            lower.startsWith("feature:") || lower.startsWith("fragment:") -> featureContext(resetForRoot, lower)
             // Scenario/outline
-            lower.startsWith("scenario:") || lower.startsWith("outline:") -> {
-                val indent = if (context.inFeature) INDENT_SIZE else 0
-                val newContext = context.copy(
-                    inScenario = true,
-                    inBackground = false,
-                    inStep = false,
-                    inExamples = false,
-                    currentIndent = indent
-                )
-                indent to newContext
-            }
-            
+            lower.startsWith("scenario:") || lower.startsWith("outline:") -> scenarioContext(lower, resetForRoot, isTopLevelByInput)
             // Background
-            lower.startsWith("background:") -> {
-                val indent = if (context.inFeature) INDENT_SIZE else 0
-                val newContext = context.copy(
-                    inBackground = true,
-                    inScenario = false,
-                    inStep = false,
-                    inExamples = false,
-                    currentIndent = indent
-                )
-                indent to newContext
-            }
-            
-            // Examples - at same level as steps in scenario
-            lower.startsWith("examples:") -> {
-                val indent = when {
-                    context.inFeature && context.inScenario -> INDENT_SIZE * 2
-                    context.inScenario -> INDENT_SIZE
-                    else -> 0  // Standalone examples at root level
-                }
-                val newContext = context.copy(
-                    inExamples = true,
-                    inStep = false,
-                    currentIndent = indent
-                )
-                indent to newContext
-            }
-            
+            lower.startsWith("background:") -> backgroundContext(resetForRoot)
+            // Examples - valid under outline. If found outside, keep deterministic indentation.
+            lower.startsWith("examples:") -> examplesContext(resetForRoot)
+            // Parameters block opener
+            lower.startsWith("parameters:") -> parametersContext(resetForRoot)
             // Tags (@ at start)
             lower.startsWith("@") -> {
-                val indent = if (context.inFeature && !context.inScenario && !context.inBackground) {
+                val indent = if (resetForRoot.inFeature && !resetForRoot.inScenario && !resetForRoot.inBackground) {
                     INDENT_SIZE
                 } else {
-                    context.currentIndent
+                    resetForRoot.currentIndent
                 }
-                indent to context
+                indent to resetForRoot
             }
             
             // Comments
-            lower.startsWith("#") -> {
-                context.currentIndent to context
-            }
+            lower.startsWith("#") -> resetForRoot.currentIndent to resetForRoot
             
             // Step keywords
-            firstWord in STEP_KEYWORDS -> {
-                val baseIndent = when {
-                    context.inFeature && (context.inScenario || context.inBackground) -> INDENT_SIZE * 2
-                    context.inFragment -> INDENT_SIZE
-                    context.inScenario || context.inBackground -> INDENT_SIZE
-                    else -> 0
-                }
-                val newContext = context.copy(
-                    inStep = true,
-                    inDirective = false,
-                    inExamples = false,
-                    currentIndent = baseIndent
-                )
-                baseIndent to newContext
-            }
-            
+            firstWord in STEP_KEYWORDS -> stepContext(resetForRoot)
             // Directives (call, assert, include, etc.)
             // Multiple directives at the same level should have the same indentation
-            isDirective(lower) -> {
-                // If already at directive level, stay there
-                val indent = if (context.inDirective) {
-                    context.directiveIndent
-                } else {
-                    // Calculate directive level based on hierarchy
-                    when {
-                        // Under a step - directive level (one deeper than step)
-                        context.inStep -> context.currentIndent + INDENT_SIZE
-                        // Directly under fragment - step level
-                        context.inFragment -> INDENT_SIZE
-                        // Directly under feature+scenario/background - step level
-                        context.inFeature && (context.inScenario || context.inBackground) -> INDENT_SIZE * 2
-                        // Directly under standalone scenario/background - step level
-                        context.inScenario || context.inBackground -> INDENT_SIZE
-                        else -> INDENT_SIZE
-                    }
-                }
-                val newContext = context.copy(
-                    inDirective = true,
-                    currentIndent = indent,
-                    directiveIndent = indent
-                )
-                indent to newContext
-            }
+            isDirective(lower) -> directiveContext(resetForRoot)
             
-            // Parameters (key: value lines after a directive)
-            isParameter(trimmed) -> {
-                val indent = if (context.inDirective) {
-                    context.directiveIndent + INDENT_SIZE
-                } else {
-                    context.currentIndent + INDENT_SIZE
-                }
-                indent to context.copy(currentIndent = indent)
-            }
+            // Map entries (key: value and key:)
+            isMapEntry(trimmed) -> mapEntryContext(resetForRoot, trimmed)
             
             // Body content (triple quotes or JSON)
             lower.startsWith("'''") || lower.startsWith("\"\"\"") || 
             lower.startsWith("{") || lower.startsWith("}") -> {
-                (context.currentIndent + INDENT_SIZE) to context
+                (resetForRoot.currentIndent + INDENT_SIZE) to resetForRoot.copy(previousLineBlank = false)
             }
             
             // Default - maintain context indent
             else -> {
-                context.currentIndent to context
+                resetForRoot.currentIndent to resetForRoot.copy(previousLineBlank = false)
             }
         }
     }
-    
+
+    private fun mapEntryContext(
+        resetForRoot: FormattingContext,
+        trimmed: String
+    ): Pair<Int, FormattingContext> {
+        val parentIndent = when {
+            resetForRoot.mapIndentStack.isNotEmpty() -> resetForRoot.mapIndentStack.last()
+            resetForRoot.inDirective -> resetForRoot.directiveIndent
+            resetForRoot.inParametersBlock -> resetForRoot.currentIndent
+            else -> resetForRoot.currentIndent
+        }
+        val indent = parentIndent + INDENT_SIZE
+        val hasValue = hasInlineValue(trimmed)
+        val nextStack = if (hasValue) {
+            resetForRoot.mapIndentStack
+        } else {
+            resetForRoot.mapIndentStack + indent
+        }
+        return indent to resetForRoot.copy(
+            currentIndent = indent,
+            mapIndentStack = nextStack,
+            previousLineBlank = false,
+        )
+    }
+
+    private fun directiveContext(resetForRoot: FormattingContext): Pair<Int, FormattingContext> {
+        // If already at directive level, stay there
+        val indent = if (resetForRoot.inDirective) {
+            resetForRoot.directiveIndent
+        } else {
+            // Calculate directive level based on hierarchy
+            when {
+                // Under a step - directive level (one deeper than step)
+                resetForRoot.inStep -> resetForRoot.currentIndent + INDENT_SIZE
+                // Directly under fragment - step level
+                resetForRoot.inFragment -> INDENT_SIZE
+                // Directly under standalone scenario/background - step level
+                resetForRoot.inScenario || resetForRoot.inBackground -> resetForRoot.containerIndent + INDENT_SIZE
+                else -> INDENT_SIZE
+            }
+        }
+        val newContext = resetForRoot.copy(
+            inDirective = true,
+            inParametersBlock = false,
+            mapIndentStack = emptyList(),
+            currentIndent = indent,
+            directiveIndent = indent,
+            previousLineBlank = false,
+        )
+        return indent to newContext
+    }
+
+    private fun stepContext(resetForRoot: FormattingContext): Pair<Int, FormattingContext> {
+        val baseIndent = when {
+            resetForRoot.inScenario || resetForRoot.inBackground -> resetForRoot.containerIndent + INDENT_SIZE
+            resetForRoot.inFragment -> INDENT_SIZE
+            else -> 0
+        }
+        val newContext = resetForRoot.copy(
+            inStep = true,
+            inDirective = false,
+            inExamples = false,
+            inParametersBlock = false,
+            mapIndentStack = emptyList(),
+            currentIndent = baseIndent,
+            directiveIndent = 0,
+            previousLineBlank = false,
+        )
+        return baseIndent to newContext
+    }
+
+    private fun parametersContext(resetForRoot: FormattingContext): Pair<Int, FormattingContext> {
+        val indent = when {
+            resetForRoot.inScenario || resetForRoot.inBackground -> resetForRoot.containerIndent + INDENT_SIZE
+            resetForRoot.inFeature -> INDENT_SIZE
+            else -> resetForRoot.currentIndent
+        }
+        val newContext = resetForRoot.copy(
+            inParametersBlock = true,
+            inDirective = false,
+            inExamples = false,
+            mapIndentStack = emptyList(),
+            currentIndent = indent,
+            previousLineBlank = false,
+        )
+        return indent to newContext
+    }
+
+    private fun examplesContext(resetForRoot: FormattingContext): Pair<Int, FormattingContext> {
+        val indent = when {
+            resetForRoot.inScenario && resetForRoot.inOutline -> resetForRoot.containerIndent + INDENT_SIZE
+            resetForRoot.inScenario -> resetForRoot.containerIndent + INDENT_SIZE
+            else -> 0
+        }
+        val newContext = resetForRoot.copy(
+            inExamples = true,
+            inStep = false,
+            inDirective = false,
+            inParametersBlock = false,
+            mapIndentStack = emptyList(),
+            currentIndent = indent,
+            previousLineBlank = false,
+        )
+        return indent to newContext
+    }
+
+    private fun backgroundContext(resetForRoot: FormattingContext): Pair<Int, FormattingContext> {
+        val indent = if (resetForRoot.inFeature) INDENT_SIZE else 0
+        val newContext = resetForRoot.copy(
+            inBackground = true,
+            inScenario = false,
+            inOutline = false,
+            inStep = false,
+            inDirective = false,
+            inExamples = false,
+            inParametersBlock = false,
+            mapIndentStack = emptyList(),
+            currentIndent = indent,
+            containerIndent = indent,
+            directiveIndent = 0,
+            previousLineBlank = false,
+        )
+        return indent to newContext
+    }
+
+    private fun scenarioContext(
+        lower: String,
+        resetForRoot: FormattingContext,
+        isTopLevelByInput: Boolean
+    ): Pair<Int, FormattingContext> {
+        val isOutline = lower.startsWith("outline:")
+        val nestedUnderFeature =
+            resetForRoot.inFeature && !isTopLevelByInput && !resetForRoot.previousLineBlank
+        val indent = if (nestedUnderFeature) INDENT_SIZE else 0
+        val newContext = resetForRoot.copy(
+            inFeature = nestedUnderFeature,
+            inScenario = true,
+            inOutline = isOutline,
+            inBackground = false,
+            inStep = false,
+            inDirective = false,
+            inExamples = false,
+            inParametersBlock = false,
+            mapIndentStack = emptyList(),
+            currentIndent = indent,
+            containerIndent = indent,
+            directiveIndent = 0,
+            previousLineBlank = false,
+        )
+        return indent to newContext
+    }
+
+    private fun featureContext(
+        resetForRoot: FormattingContext,
+        lower: String
+    ) =  0 to resetForRoot.copy(
+        inFeature = lower.startsWith("feature:"),
+        inFragment = lower.startsWith("fragment:"),
+        inScenario = false,
+        inOutline = false,
+        inBackground = false,
+        inStep = false,
+        inDirective = false,
+        inExamples = false,
+        inParametersBlock = false,
+        mapIndentStack = emptyList(),
+        currentIndent = 0,
+        containerIndent = 0,
+        directiveIndent = 0,
+    )
+
+    private fun getRootContext(
+        isTopLevelByInput: Boolean,
+        lower: String,
+        context: FormattingContext
+    ): FormattingContext = if (isTopLevelByInput && ROOT_BLOCK_PREFIXES.any { lower.startsWith(it) }) {
+        context.copy(
+            inFeature = false,
+            inFragment = false,
+            inScenario = false,
+            inOutline = false,
+            inBackground = false,
+            inStep = false,
+            inDirective = false,
+            inExamples = false,
+            inParametersBlock = false,
+            mapIndentStack = emptyList(),
+            currentIndent = 0,
+            containerIndent = 0,
+            directiveIndent = 0,
+        )
+    } else {
+        context
+    }
+
     /**
      * Check if the line starts with a directive keyword.
      */
     private fun isDirective(lower: String): Boolean {
-        return DIRECTIVES.any { lower.startsWith(it) }
+        return DIRECTIVES.any { directive ->
+            lower == "$directive:" || lower.startsWith("$directive ") || lower.startsWith("$directive:")
+        }
     }
     
     /**
-     * Check if the line is a parameter (word followed by colon and value).
+     * Check if the line is a map entry (`key:` or `key: value`).
      */
-    private fun isParameter(trimmed: String): Boolean {
-        // Parameter pattern: identifier: value
-        return trimmed.matches(Regex("^[a-zA-Z_][a-zA-Z0-9_]*:\\s*.+"))
+    private fun isMapEntry(trimmed: String): Boolean =
+        trimmed.matches(Regex("^[a-zA-Z_][a-zA-Z0-9_]*:\\s*.*$"))
+
+    /**
+     * Check whether a map entry contains a value on the same line.
+     */
+    private fun hasInlineValue(trimmed: String): Boolean {
+        val colonIndex = trimmed.indexOf(':')
+        if (colonIndex < 0 || colonIndex == trimmed.lastIndex) return false
+        return trimmed.substring(colonIndex + 1).trim().isNotEmpty()
     }
     
     /**
@@ -332,7 +476,7 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
                 quoteChar = c
                 result.append(c)
                 prevWasSpace = false
-            } else if (c == quoteChar && inQuote) {
+            } else if (c == quoteChar) {
                 inQuote = false
                 quoteChar = null
                 result.append(c)
@@ -429,11 +573,16 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
         val inFeature: Boolean = false,
         val inFragment: Boolean = false,
         val inScenario: Boolean = false,
+        val inOutline: Boolean = false,
         val inBackground: Boolean = false,
         val inStep: Boolean = false,
         val inDirective: Boolean = false,
         val inExamples: Boolean = false,
+        val inParametersBlock: Boolean = false,
         val currentIndent: Int = 0,
-        val directiveIndent: Int = 0
+        val containerIndent: Int = 0,
+        val directiveIndent: Int = 0,
+        val mapIndentStack: List<Int> = emptyList(),
+        val previousLineBlank: Boolean = false,
     )
 }

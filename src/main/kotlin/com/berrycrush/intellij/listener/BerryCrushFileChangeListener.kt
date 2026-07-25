@@ -85,17 +85,8 @@ class BerryCrushFileChangeListener : AsyncFileListener {
 
     private fun checkOpenAPIContent(file: VirtualFile, relaxedCheck: Boolean): Boolean = runCatching {
         // Try to read file content directly first (works in tests)
-        val content = file.inputStream?.bufferedReader()?.use { it.readText() }
-        if (content != null) {
-            return@runCatching BerryCrushOperationReference.isOpenAPISpec(content, relaxedLengthCheck = relaxedCheck)
-        }
-        
-        // Fall back to PSI-based check
-        ProjectManager.getInstance().openProjects.filter{ !it.isDisposed }.any { project ->
-            val psiManager = PsiManager.getInstance(project)
-            val psiFile = psiManager.findFile(file)
-            psiFile != null && BerryCrushOperationReference.isOpenAPISpec(psiFile)
-        }
+        val content = file.inputStream.bufferedReader().use { it.readText() }
+        BerryCrushOperationReference.isOpenAPISpec(content, relaxedLengthCheck = relaxedCheck)
     }.onFailure { e ->
         LOG.debug("Could not check OpenAPI spec content", e)
     }.getOrElse { false }
