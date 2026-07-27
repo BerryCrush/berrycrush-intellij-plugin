@@ -2,6 +2,8 @@
 
 The BerryCrush plugin provides rich syntax highlighting for `.scenario` and `.fragment` files.
 
+Runtime editor highlighting is powered by annotator rules, while preserving the same color categories documented below.
+
 ## File Types
 
 ### Scenario Files (`.scenario`)

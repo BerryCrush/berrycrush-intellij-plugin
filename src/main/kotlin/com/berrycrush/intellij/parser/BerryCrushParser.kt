@@ -13,6 +13,7 @@ import com.intellij.psi.tree.IElementType
  *
  * Creates PSI elements for navigation support (Cmd+Click).
  */
+@Suppress("TooManyFunctions")
 class BerryCrushParser : PsiParser {
 
     override fun parse(root: IElementType, builder: PsiBuilder): ASTNode {
@@ -240,11 +241,7 @@ class BerryCrushParser : PsiParser {
         skipToEndOfLine(builder)
 
         // Parse parameter entries
-        while (builder.tokenType == BerryCrushTokenTypes.INDENT) {
-            if (!tryParseParameterEntry(builder, indent)) {
-                break
-            }
-        }
+        parseIndentedEntries(builder, indent, ::tryParseParameterEntry)
 
         blockMarker.done(BerryCrushElementTypes.PARAMETERS_BLOCK)
         marker.drop()
@@ -254,66 +251,27 @@ class BerryCrushParser : PsiParser {
      * Try to parse a single parameter entry: `  key: value`
      * Returns true if successfully parsed.
      */
-    private fun tryParseParameterEntry(builder: PsiBuilder, parentIndent: Int): Boolean {
-        val indent = currentLineIndent(builder)
-        if (indent <= parentIndent) {
-            return false
-        }
-
-        val entryMarker = builder.mark()
-
-        consumeLineIndent(builder)
-
-        // Skip whitespace
-        while (builder.tokenType == BerryCrushTokenTypes.WHITE_SPACE) {
-            builder.advanceLexer()
-        }
-
-        // Check for parameter name
-        if (builder.tokenType != BerryCrushTokenTypes.IDENTIFIER &&
-            builder.tokenType != BerryCrushTokenTypes.TEXT
-        ) {
-            entryMarker.rollbackTo()
-            return false
-        }
-
-        builder.advanceLexer() // consume parameter name
-
-        // Skip whitespace before colon
-        while (builder.tokenType == BerryCrushTokenTypes.WHITE_SPACE) {
-            builder.advanceLexer()
-        }
-
-        // Expect colon
-        if (builder.tokenType != BerryCrushTokenTypes.COLON) {
-            entryMarker.rollbackTo()
-            return false
-        }
-
-        builder.advanceLexer() // consume colon
-
-        // Parse the value (may contain variable interpolations)
-        parseParameterValue(builder)
-
-        skipToEndOfLine(builder)
-        while (tryParseParameterEntry(builder, indent)) {
-            // Parse nested entries recursively
-        }
-        entryMarker.done(BerryCrushElementTypes.PARAMETER_ENTRY)
-        return true
-    }
+    private fun tryParseParameterEntry(builder: PsiBuilder, parentIndent: Int): Boolean = tryParseParameterLike(
+        builder,
+        parentIndent,
+        BerryCrushElementTypes.PARAMETER_ENTRY,
+        allowBody = false
+    )
 
     /**
      * Parse parameter value which may contain variable interpolations.
      */
     private fun parseParameterValue(builder: PsiBuilder) {
         while (!builder.eof() && builder.tokenType != BerryCrushTokenTypes.NEWLINE) {
-            if (builder.tokenType == BerryCrushTokenTypes.VARIABLE) {
-                val marker = builder.mark()
-                builder.advanceLexer()
-                marker.done(BerryCrushElementTypes.VARIABLE_REF)
-            } else {
-                builder.advanceLexer()
+            when (builder.tokenType) {
+                BerryCrushTokenTypes.VARIABLE -> {
+                    val marker = builder.mark()
+                    builder.advanceLexer()
+                    marker.done(BerryCrushElementTypes.VARIABLE_REF)
+                }
+                else -> {
+                    builder.advanceLexer()
+                }
             }
         }
     }
@@ -419,83 +377,95 @@ class BerryCrushParser : PsiParser {
         marker.done(BerryCrushElementTypes.INCLUDE_DIRECTIVE)
     }
 
+    private fun parseIndentedEntries(builder: PsiBuilder, parentIndent: Int, parseEntry: (PsiBuilder, Int) -> Boolean) {
+        while (builder.tokenType == BerryCrushTokenTypes.INDENT && parseEntry(builder, parentIndent)) {
+            // continue
+        }
+    }
     /**
      * Parse parameter block for include directive.
      * Parameters are indented key: value pairs following the include line.
      */
-    private fun parseIncludeParameters(builder: PsiBuilder, parentIndent: Int) {
-        // Parse parameters while they exist
-        while (builder.tokenType == BerryCrushTokenTypes.INDENT && tryParseParameter(builder, parentIndent)) {
-            // Continue parsing parameters
-        }
-    }
+    private fun parseIncludeParameters(builder: PsiBuilder, parentIndent: Int) =
+        parseIndentedEntries(builder, parentIndent, ::tryParseParameter)
 
     /**
      * Try to parse a single parameter entry.
      * Returns true if a parameter was successfully parsed, false otherwise.
      */
-    private fun tryParseParameter(builder: PsiBuilder, parentIndent: Int): Boolean {
+    private fun tryParseParameter(builder: PsiBuilder, parentIndent: Int): Boolean = tryParseParameterLike(
+        builder,
+        parentIndent,
+        BerryCrushElementTypes.PARAMETER,
+        allowBody = true
+    )
+
+    private fun tryParseParameterLike(
+        builder: PsiBuilder,
+        parentIndent: Int,
+        elementType: BerryCrushPsiElementType,
+        allowBody: Boolean,
+    ): Boolean {
         val indent = currentLineIndent(builder)
         if (indent <= parentIndent) {
             return false
         }
 
-        val paramMarker = builder.mark()
+        val marker = builder.mark()
         consumeLineIndent(builder)
 
-        // Skip whitespace after indent
-        while (builder.tokenType == BerryCrushTokenTypes.WHITE_SPACE) {
-            builder.advanceLexer()
-        }
+        val keyToken = builder.tokenType
+        when (keyToken) {
+            BerryCrushTokenTypes.IDENTIFIER,
+            BerryCrushTokenTypes.TEXT -> builder.advanceLexer()
 
-        // Check if this looks like a parameter (identifier/text followed by colon)
-        val keyTokenType = builder.tokenType
-        val hasParamName =
-            keyTokenType == BerryCrushTokenTypes.IDENTIFIER ||
-                keyTokenType == BerryCrushTokenTypes.TEXT ||
-                keyTokenType == BerryCrushTokenTypes.BODY
-
-        if (!hasParamName) {
-            paramMarker.rollbackTo()
-            return false
-        }
-
-        // Parse parameter name
-        builder.advanceLexer()
-
-        if (keyTokenType == BerryCrushTokenTypes.BODY) {
-            // BODY token already includes the trailing colon ("body:").
-            parseParameterValue(builder)
-            skipToEndOfLine(builder)
-            while (tryParseParameter(builder, indent)) {
-                // Parse nested parameter entries (e.g., body:
-                //   name: foo)
+            BerryCrushTokenTypes.BODY -> {
+                if (!allowBody) {
+                    marker.rollbackTo()
+                    return false
+                }
+                builder.advanceLexer()
             }
-            paramMarker.done(BerryCrushElementTypes.PARAMETER)
-            return true
+
+            else -> {
+                marker.rollbackTo()
+                return false
+            }
         }
 
-        // Skip whitespace before colon
-        while (builder.tokenType == BerryCrushTokenTypes.WHITE_SPACE) {
-            builder.advanceLexer()
+        when (keyToken) {
+            BerryCrushTokenTypes.BODY -> {
+                // BODY token already includes the trailing colon ("body:")
+                parseParameterValue(builder)
+            }
+
+            else -> {
+                while (builder.tokenType == BerryCrushTokenTypes.WHITE_SPACE) {
+                    builder.advanceLexer()
+                }
+
+                if (builder.tokenType != BerryCrushTokenTypes.COLON) {
+                    marker.rollbackTo()
+                    return false
+                }
+
+                builder.advanceLexer() // consume ':'
+                parseParameterValue(builder)
+            }
         }
 
-        // Look for colon
-        if (builder.tokenType != BerryCrushTokenTypes.COLON) {
-            paramMarker.rollbackTo()
-            return false
-        }
-
-        builder.advanceLexer() // consume colon
-
-        // Parse the rest of the line as parameter value
-        parseParameterValue(builder)
         skipToEndOfLine(builder)
-        while (tryParseParameter(builder, indent)) {
-            // Parse nested parameter entries (e.g., body:
-            //   name: foo)
+
+        parseIndentedEntries(builder, indent) { b, childIndent ->
+            tryParseParameterLike(
+                b,
+                childIndent,
+                elementType,
+                allowBody,
+            )
         }
-        paramMarker.done(BerryCrushElementTypes.PARAMETER)
+
+        marker.done(elementType)
         return true
     }
 

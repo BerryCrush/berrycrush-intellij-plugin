@@ -158,6 +158,26 @@ Verification commands:
 ./gradlew check
 ```
 
+### Highlighting Changes
+
+When changing syntax highlighting behavior, follow this sequence:
+1. Add/adjust regression tests in `src/test/kotlin/com/berrycrush/intellij/highlighting/BerryCrushAnnotatorTest.kt`.
+2. Keep token mapping behavior stable in `src/main/kotlin/com/berrycrush/intellij/highlighting/BerryCrushTokenHighlighting.kt`.
+3. Implement context-aware behavior in `src/main/kotlin/com/berrycrush/intellij/highlighting/BerryCrushAnnotator.kt`.
+
+Narrative highlighting expectation:
+- On `feature:` / `scenario:` / `outline:` and step (`given/when/then/and/but`) lines, highlight only the keyword prefix.
+- Leave trailing description text uncolored by BerryCrush syntax keys.
+- Preserve include-parameter key highlighting.
+
+Verification commands:
+
+```bash
+./gradlew test --tests "com.berrycrush.intellij.highlighting.BerryCrushAnnotatorTest"
+./gradlew test --tests "com.berrycrush.intellij.BerryCrushHighlighterTest"
+./gradlew test
+```
+
 ### Test Data Files
 
 Place test data in `src/test/testData/`:

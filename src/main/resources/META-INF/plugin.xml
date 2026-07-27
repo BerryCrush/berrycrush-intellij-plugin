@@ -79,9 +79,6 @@
                                implementationClass="com.berrycrush.intellij.parser.BerryCrushParserDefinition"/>
 
         <!-- Syntax Highlighting -->
-        <lang.syntaxHighlighterFactory language="BerryCrush"
-                                       implementationClass="com.berrycrush.intellij.highlighting.BerryCrushSyntaxHighlighterFactory"/>
-
         <colorSettingsPage implementation="com.berrycrush.intellij.highlighting.BerryCrushColorSettingsPage"/>
 
         <!-- Annotator for context-aware highlighting -->

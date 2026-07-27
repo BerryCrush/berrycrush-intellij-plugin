@@ -1,7 +1,6 @@
 package com.berrycrush.intellij.highlighting
 
 import com.berrycrush.intellij.lexer.BerryCrushLexer
-import com.berrycrush.intellij.lexer.BerryCrushTokenTypes
 import com.intellij.lexer.Lexer
 import com.intellij.openapi.editor.colors.TextAttributesKey
 import com.intellij.openapi.fileTypes.SyntaxHighlighterBase
@@ -15,105 +14,5 @@ class BerryCrushSyntaxHighlighter : SyntaxHighlighterBase() {
     override fun getHighlightingLexer(): Lexer = BerryCrushLexer()
 
     override fun getTokenHighlights(tokenType: IElementType?): Array<TextAttributesKey> =
-        tokenType?.let { TOKEN_HIGHLIGHT_MAP[it] } ?: EMPTY_KEYS
-
-    companion object {
-        private val EMPTY_KEYS = emptyArray<TextAttributesKey>()
-        private val BLOCK_KEYWORD_KEYS = arrayOf(BerryCrushHighlightingColors.BLOCK_KEYWORD)
-        private val STEP_KEYWORD_KEYS = arrayOf(BerryCrushHighlightingColors.STEP_KEYWORD)
-        private val DIRECTIVE_KEYS = arrayOf(BerryCrushHighlightingColors.DIRECTIVE)
-        private val ASSERTION_KEYWORD_KEYS = arrayOf(BerryCrushHighlightingColors.ASSERTION_KEYWORD)
-        private val OPERATOR_KEYS = arrayOf(BerryCrushHighlightingColors.OPERATOR)
-        private val TAG_KEYS = arrayOf(BerryCrushHighlightingColors.TAG)
-        private val OPERATION_REF_KEYS = arrayOf(BerryCrushHighlightingColors.OPERATION_REF)
-        private val VARIABLE_KEYS = arrayOf(BerryCrushHighlightingColors.VARIABLE)
-        private val JSON_PATH_KEYS = arrayOf(BerryCrushHighlightingColors.JSON_PATH)
-        private val STRING_KEYS = arrayOf(BerryCrushHighlightingColors.STRING)
-        private val NUMBER_KEYS = arrayOf(BerryCrushHighlightingColors.NUMBER)
-        private val COMMENT_KEYS = arrayOf(BerryCrushHighlightingColors.COMMENT)
-        private val BRACES_KEYS = arrayOf(BerryCrushHighlightingColors.BRACES)
-        private val PIPE_KEYS = arrayOf(BerryCrushHighlightingColors.PIPE)
-        private val BAD_CHARACTER_KEYS = arrayOf(BerryCrushHighlightingColors.BAD_CHARACTER)
-
-        private val TOKEN_HIGHLIGHT_MAP: Map<IElementType, Array<TextAttributesKey>> = buildMap {
-            // Block keywords
-            listOf(
-                BerryCrushTokenTypes.FEATURE,
-                BerryCrushTokenTypes.SCENARIO,
-                BerryCrushTokenTypes.OUTLINE,
-                BerryCrushTokenTypes.FRAGMENT,
-                BerryCrushTokenTypes.PARAMETERS,
-                BerryCrushTokenTypes.BACKGROUND,
-                BerryCrushTokenTypes.EXAMPLES
-            ).forEach { put(it, BLOCK_KEYWORD_KEYS) }
-
-            // Step keywords
-            listOf(
-                BerryCrushTokenTypes.GIVEN,
-                BerryCrushTokenTypes.WHEN,
-                BerryCrushTokenTypes.THEN,
-                BerryCrushTokenTypes.AND,
-                BerryCrushTokenTypes.BUT
-            ).forEach { put(it, STEP_KEYWORD_KEYS) }
-
-            // Directives
-            listOf(
-                BerryCrushTokenTypes.CALL,
-                BerryCrushTokenTypes.WEBHOOK,
-                BerryCrushTokenTypes.ASSERT,
-                BerryCrushTokenTypes.EXTRACT,
-                BerryCrushTokenTypes.INCLUDE,
-                BerryCrushTokenTypes.BODY,
-                BerryCrushTokenTypes.IF,
-                BerryCrushTokenTypes.ELSE,
-                BerryCrushTokenTypes.FAIL
-            ).forEach { put(it, DIRECTIVE_KEYS) }
-
-            // Assertion keywords
-            listOf(
-                BerryCrushTokenTypes.STATUS,
-                BerryCrushTokenTypes.HEADER,
-                BerryCrushTokenTypes.CONTAINS,
-                BerryCrushTokenTypes.SCHEMA,
-                BerryCrushTokenTypes.RESPONSE_TIME,
-                BerryCrushTokenTypes.EXISTS,
-                BerryCrushTokenTypes.NOT,
-                BerryCrushTokenTypes.IN,
-                BerryCrushTokenTypes.HAS_SIZE,
-                BerryCrushTokenTypes.ARRAY_SIZE,
-                BerryCrushTokenTypes.EMPTY,
-                BerryCrushTokenTypes.NOT_EMPTY,
-            ).forEach { put(it, ASSERTION_KEYWORD_KEYS) }
-
-            // Operators
-            listOf(
-                BerryCrushTokenTypes.EQUALS,
-                BerryCrushTokenTypes.NOT_EQUALS,
-                BerryCrushTokenTypes.GREATER_THAN,
-                BerryCrushTokenTypes.LESS_THAN,
-                BerryCrushTokenTypes.GREATER_OR_EQUAL,
-                BerryCrushTokenTypes.LESS_OR_EQUAL,
-                BerryCrushTokenTypes.MATCHES,
-                BerryCrushTokenTypes.STARTS_WITH,
-                BerryCrushTokenTypes.ENDS_WITH
-            ).forEach { put(it, OPERATOR_KEYS) }
-
-            // Single mappings
-            put(BerryCrushTokenTypes.TAG, TAG_KEYS)
-            put(BerryCrushTokenTypes.OPERATION_REF, OPERATION_REF_KEYS)
-            put(BerryCrushTokenTypes.VARIABLE, VARIABLE_KEYS)
-            put(BerryCrushTokenTypes.JSON_PATH, JSON_PATH_KEYS)
-            put(BerryCrushTokenTypes.STRING, STRING_KEYS)
-            put(BerryCrushTokenTypes.NUMBER, NUMBER_KEYS)
-            put(BerryCrushTokenTypes.BOOLEAN, NUMBER_KEYS)
-            put(BerryCrushTokenTypes.NULL, NUMBER_KEYS)
-            put(BerryCrushTokenTypes.COMMENT, COMMENT_KEYS)
-            put(BerryCrushTokenTypes.LBRACE, BRACES_KEYS)
-            put(BerryCrushTokenTypes.RBRACE, BRACES_KEYS)
-            put(BerryCrushTokenTypes.LBRACKET, BRACES_KEYS)
-            put(BerryCrushTokenTypes.RBRACKET, BRACES_KEYS)
-            put(BerryCrushTokenTypes.PIPE, PIPE_KEYS)
-            put(BerryCrushTokenTypes.BAD_CHARACTER, BAD_CHARACTER_KEYS)
-        }
-    }
+        BerryCrushTokenHighlighting.keysForToken(tokenType)
 }
