@@ -22,7 +22,7 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
 
         val scenario = PsiTreeUtil.findChildOfType(psiFile, BerryCrushScenarioElement::class.java)
         assertNotNull("Scenario element should exist", scenario)
-        assertEquals("My Test Scenario", scenario?.scenarioName)
+        assertEquals("My Test Scenario", scenario?.description)
         assertEquals("My Test Scenario", scenario?.name)
     }
 
@@ -34,7 +34,7 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
 
         val psiFile = psiManager.findFile(file)
         val scenario = PsiTreeUtil.findChildOfType(psiFile, BerryCrushScenarioElement::class.java)
-        assertEquals("Spaced Name", scenario?.scenarioName)
+        assertEquals("Spaced Name", scenario?.description)
     }
 
     fun testScenarioNameLowercase() {
@@ -46,7 +46,7 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
         val psiFile = psiManager.findFile(file)
         val scenario = PsiTreeUtil.findChildOfType(psiFile, BerryCrushScenarioElement::class.java)
         assertNotNull("Scenario with lowercase 'scenario' should be found", scenario)
-        assertEquals("lowercase scenario name", scenario?.scenarioName)
+        assertEquals("lowercase scenario name", scenario?.description)
     }
 
     // ========== BerryCrushFragmentElement Tests ==========
@@ -60,7 +60,7 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
         val psiFile = psiManager.findFile(file)
         val fragment = PsiTreeUtil.findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
         assertNotNull("Fragment element should exist", fragment)
-        assertEquals("my-fragment-name", fragment?.fragmentName)
+        assertEquals("my-fragment-name", fragment?.description)
         assertEquals("my-fragment-name", fragment?.name)
     }
 
@@ -73,7 +73,7 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
         val psiFile = psiManager.findFile(file)
         val fragment = PsiTreeUtil.findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
         assertNotNull("Fragment with lowercase 'fragment' should be found", fragment)
-        assertEquals("lowercase-fragment", fragment?.fragmentName)
+        assertEquals("lowercase-fragment", fragment?.description)
     }
 
     fun testFragmentNameWithDots() {
@@ -84,7 +84,7 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
 
         val psiFile = psiManager.findFile(file)
         val fragment = PsiTreeUtil.findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
-        assertEquals("com.example.my-fragment", fragment?.fragmentName)
+        assertEquals("com.example.my-fragment", fragment?.description)
     }
 
     // ========== BerryCrushFeatureElement Tests ==========
@@ -99,7 +99,7 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
         val psiFile = psiManager.findFile(file)
         val feature = PsiTreeUtil.findChildOfType(psiFile, BerryCrushFeatureElement::class.java)
         assertNotNull("Feature element should exist", feature)
-        assertEquals("User Authentication", feature?.featureName)
+        assertEquals("User Authentication", feature?.description)
         assertEquals("User Authentication", feature?.name)
     }
 
@@ -113,7 +113,7 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
         val psiFile = psiManager.findFile(file)
         val feature = PsiTreeUtil.findChildOfType(psiFile, BerryCrushFeatureElement::class.java)
         assertNotNull("Feature with lowercase 'feature' should be found", feature)
-        assertEquals("lowercase feature", feature?.featureName)
+        assertEquals("lowercase feature", feature?.description)
     }
 
     // ========== BerryCrushStepElement Tests ==========
@@ -204,7 +204,7 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
         val include = PsiTreeUtil.findChildOfType(psiFile, BerryCrushIncludeElement::class.java)
         assertNotNull("Include element should exist", include)
         assertEquals("my-fragment", include?.fragmentName)
-        assertEquals("my-fragment", include?.name)
+        assertEquals("my-fragment", include?.directiveName)
     }
 
     fun testIncludeFragmentNameWithCaret() {

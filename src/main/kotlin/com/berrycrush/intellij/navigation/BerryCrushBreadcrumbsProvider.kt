@@ -58,9 +58,9 @@ class BerryCrushBreadcrumbsProvider : BreadcrumbsProvider {
         }
 
         return when (semanticElement) {
-            is BerryCrushScenarioElement -> "scenario: ${semanticElement.scenarioName ?: ""}".take(40)
-            is BerryCrushFragmentElement -> "fragment: ${semanticElement.fragmentName ?: ""}".take(40)
-            is BerryCrushFeatureElement -> "feature: ${semanticElement.featureName ?: ""}".take(40)
+            is BerryCrushScenarioElement -> "scenario: ${semanticElement.description ?: ""}".take(40)
+            is BerryCrushFragmentElement -> "fragment: ${semanticElement.description ?: ""}".take(40)
+            is BerryCrushFeatureElement -> "feature: ${semanticElement.description ?: ""}".take(40)
             is BerryCrushStepElement ->
                 "${semanticElement.keyword?.lowercase() ?: ""} ${semanticElement.stepText ?: ""}".trim().take(40)
             is BerryCrushCallElement -> "call ^${semanticElement.operationId ?: ""}"
