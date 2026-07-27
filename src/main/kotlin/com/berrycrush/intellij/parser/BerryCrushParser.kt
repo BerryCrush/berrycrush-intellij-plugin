@@ -2,6 +2,7 @@ package com.berrycrush.intellij.parser
 
 import com.berrycrush.intellij.lexer.BerryCrushTokenTypes
 import com.berrycrush.intellij.psi.BerryCrushElementTypes
+import com.berrycrush.intellij.psi.BerryCrushPsiElementType
 import com.intellij.lang.ASTNode
 import com.intellij.lang.PsiBuilder
 import com.intellij.lang.PsiParser
@@ -35,6 +36,7 @@ class BerryCrushParser : PsiParser {
             BerryCrushTokenTypes.FRAGMENT -> parseFragment(builder)
             BerryCrushTokenTypes.BACKGROUND -> parseBackground(builder)
             BerryCrushTokenTypes.CALL -> parseCallDirective(builder)
+            BerryCrushTokenTypes.WEBHOOK -> parseWebhookDirective(builder)
             BerryCrushTokenTypes.INCLUDE -> parseIncludeDirective(builder)
             BerryCrushTokenTypes.OPERATION_REF -> parseOperationRef(builder)
             // Step keywords
@@ -59,8 +61,28 @@ class BerryCrushParser : PsiParser {
     private fun parseAssertDirective(builder: PsiBuilder) {
         val marker = builder.mark()
         builder.advanceLexer() // consume "assert"
-        skipToEndOfLine(builder)
+        parseAssertCondition(builder)
         marker.done(BerryCrushElementTypes.ASSERT_DIRECTIVE)
+    }
+
+    private fun parseAssertCondition(builder: PsiBuilder) {
+        fun mark(type: BerryCrushPsiElementType) {
+            val marker = builder.mark()
+            marker.done(type)
+        }
+        while (!builder.eof() && builder.tokenType != BerryCrushTokenTypes.NEWLINE) {
+            val tokenType = builder.tokenType
+            when (tokenType) {
+                BerryCrushTokenTypes.JSON_PATH -> mark(BerryCrushElementTypes.JSON_PATH)
+                BerryCrushTokenTypes.NOT -> mark(BerryCrushElementTypes.NOT) // handle not before keyword
+                in BerryCrushTokenTypes.ASSERTION_KEYWORDS -> mark(BerryCrushElementTypes.ASSERTION_OPERATION)
+                BerryCrushTokenTypes.VARIABLE -> mark(BerryCrushElementTypes.VARIABLE_REF)
+                in BerryCrushTokenTypes.TEXTS -> mark(BerryCrushElementTypes.TEXT)
+                in BerryCrushTokenTypes.OPERATORS -> mark(BerryCrushElementTypes.OPERATOR)
+                else -> mark(BerryCrushElementTypes.TEXT)
+            }
+            builder.advanceLexer()
+        }
     }
 
     private fun parseFeature(builder: PsiBuilder) {
@@ -227,6 +249,7 @@ class BerryCrushParser : PsiParser {
             BerryCrushTokenTypes.AND,
             BerryCrushTokenTypes.BUT -> parseStep(builder)
             BerryCrushTokenTypes.CALL -> parseCallDirective(builder)
+            BerryCrushTokenTypes.WEBHOOK -> parseWebhookDirective(builder)
             BerryCrushTokenTypes.INCLUDE -> parseIncludeDirective(builder)
             BerryCrushTokenTypes.ASSERT -> parseAssertDirective(builder)
             BerryCrushTokenTypes.OPERATION_REF -> parseOperationRef(builder)
@@ -259,6 +282,22 @@ class BerryCrushParser : PsiParser {
         parseIncludeParameters(builder)
 
         marker.done(BerryCrushElementTypes.CALL_DIRECTIVE)
+    }
+
+    private fun parseWebhookDirective(builder: PsiBuilder) {
+        val marker = builder.mark()
+        builder.advanceLexer() // advance webhook
+        while (!builder.eof() && !isLineEnd(builder.tokenType)) {
+            if (builder.tokenType == BerryCrushTokenTypes.TEXT) {
+                parseWebhookName(builder)
+            } else {
+                builder.advanceLexer()
+            }
+        }
+        skipNewlines(builder)
+        // Parse webhook parameter block (same format as include parameters)
+        parseIncludeParameters(builder)
+        marker.done(BerryCrushElementTypes.WEBHOOK_DIRECTIVE)
     }
 
     private fun parseIncludeDirective(builder: PsiBuilder) {
@@ -343,6 +382,12 @@ class BerryCrushParser : PsiParser {
         return true
     }
 
+    private fun parseWebhookName(builder: PsiBuilder) {
+        val marker = builder.mark()
+        builder.advanceLexer()
+        marker.done(BerryCrushElementTypes.WEBHOOK_NAME)
+    }
+
     private fun parseOperationRef(builder: PsiBuilder) {
         val marker = builder.mark()
         builder.advanceLexer()
@@ -361,6 +406,8 @@ class BerryCrushParser : PsiParser {
 
     private fun skipToEndOfLine(builder: PsiBuilder) {
         while (!builder.eof() && builder.tokenType != BerryCrushTokenTypes.NEWLINE) {
+            val marker = builder.mark()
+            marker.done(BerryCrushElementTypes.TEXT)
             builder.advanceLexer()
         }
         skipNewlines(builder)

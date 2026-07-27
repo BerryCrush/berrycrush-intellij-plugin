@@ -4,6 +4,7 @@ import com.berrycrush.intellij.language.BerryCrushLanguage
 import com.berrycrush.intellij.lexer.BerryCrushLexer
 import com.berrycrush.intellij.lexer.BerryCrushTokenTypes
 import com.berrycrush.intellij.psi.BerryCrushAssertElement
+import com.berrycrush.intellij.psi.BerryCrushAssertOperationElement
 import com.berrycrush.intellij.psi.BerryCrushCallElement
 import com.berrycrush.intellij.psi.BerryCrushElementTypes
 import com.berrycrush.intellij.psi.BerryCrushFeatureElement
@@ -13,11 +14,15 @@ import com.berrycrush.intellij.psi.BerryCrushFragmentRefElement
 import com.berrycrush.intellij.psi.BerryCrushGenericElement
 import com.berrycrush.intellij.psi.BerryCrushIncludeElement
 import com.berrycrush.intellij.psi.BerryCrushIncludeParameterElement
+import com.berrycrush.intellij.psi.BerryCrushJsonPathElement
+import com.berrycrush.intellij.psi.BerryCrushNotElement
 import com.berrycrush.intellij.psi.BerryCrushOperationRefElement
+import com.berrycrush.intellij.psi.BerryCrushOperatorElement
 import com.berrycrush.intellij.psi.BerryCrushParameterEntryElement
 import com.berrycrush.intellij.psi.BerryCrushParametersBlockElement
 import com.berrycrush.intellij.psi.BerryCrushScenarioElement
 import com.berrycrush.intellij.psi.BerryCrushStepElement
+import com.berrycrush.intellij.psi.BerryCrushVariableRefElement
 import com.intellij.lang.ASTNode
 import com.intellij.lang.ParserDefinition
 import com.intellij.lang.PsiParser
@@ -61,9 +66,14 @@ class BerryCrushParserDefinition : ParserDefinition {
             BerryCrushElementTypes.ASSERT_DIRECTIVE -> BerryCrushAssertElement(node)
             BerryCrushElementTypes.OPERATION_REF -> BerryCrushOperationRefElement(node)
             BerryCrushElementTypes.FRAGMENT_REF -> BerryCrushFragmentRefElement(node)
+            BerryCrushElementTypes.VARIABLE_REF -> BerryCrushVariableRefElement(node)
             BerryCrushElementTypes.PARAMETER -> BerryCrushIncludeParameterElement(node)
             BerryCrushElementTypes.PARAMETERS_BLOCK -> BerryCrushParametersBlockElement(node)
             BerryCrushElementTypes.PARAMETER_ENTRY -> BerryCrushParameterEntryElement(node)
+            BerryCrushElementTypes.JSON_PATH -> BerryCrushJsonPathElement(node)
+            BerryCrushElementTypes.ASSERTION_OPERATION -> BerryCrushAssertOperationElement(node)
+            BerryCrushElementTypes.NOT -> BerryCrushNotElement(node)
+            BerryCrushElementTypes.OPERATOR -> BerryCrushOperatorElement(node)
             else -> BerryCrushGenericElement(node)
         }
     }

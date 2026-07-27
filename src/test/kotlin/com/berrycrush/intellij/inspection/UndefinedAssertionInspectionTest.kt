@@ -291,6 +291,20 @@ class UndefinedAssertionInspectionTest : BerryCrushTestCase() {
         )
     }
 
+    fun testVariableComparisonShouldNotFlagged() {
+        val psiFile = myFixture.addFileToProject("builtin11.scenario", """
+            scenario: test
+              then: verify
+                assert {{var}} equals "ok"
+        """.trimIndent())
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "Built-in variable comparison assertion should not be flagged",
+            problems.isEmpty()
+        )
+    }
+
     fun testCustomAssertionStillFlagged() {
         // Custom assertions that don't match built-in patterns should still be flagged
         val psiFile = myFixture.addFileToProject("custom1.scenario", """

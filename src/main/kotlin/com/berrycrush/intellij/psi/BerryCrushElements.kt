@@ -144,6 +144,19 @@ class BerryCrushCallElement(node: ASTNode) : BerryCrushPsiElement(node) {
 }
 
 /**
+ * Variable ref `{{var}}`
+ */
+class BerryCrushVariableRefElement(node: ASTNode) : BerryCrushPsiElement(node), PsiNameIdentifierOwner {
+    val variableName by lazy {
+        node.treeNext?.text?.removePrefix("{{")?.removeSuffix("}}")
+    }
+
+    override fun getName(): String? = variableName
+    override fun setName(name: String): PsiElement = this
+    override fun getNameIdentifier(): PsiElement? = null
+}
+
+/**
  * Feature block element.
  */
 class BerryCrushFeatureElement(node: ASTNode) : BerryCrushPsiElement(node), PsiNameIdentifierOwner {
@@ -249,6 +262,25 @@ class BerryCrushAssertElement(node: ASTNode) : BerryCrushPsiElement(node) {
             val match = Regex("""^assert\s+(.+)$""").find(text)
             return match?.groupValues?.get(1)?.trim()
         }
+}
+
+class BerryCrushNotElement(node: ASTNode) : BerryCrushPsiElement(node)
+
+class BerryCrushOperatorElement(node: ASTNode) : BerryCrushPsiElement(node) {
+    val operatorType by lazy {
+        node.treeNext?.elementType
+    }
+}
+
+class BerryCrushJsonPathElement(node: ASTNode) : BerryCrushPsiElement(node) {
+    val jsonPathText = node.treeNext?.text
+}
+
+class BerryCrushAssertOperationElement(node: ASTNode) : BerryCrushPsiElement(node) {
+    val operationName = node.treeNext?.text
+    val operationType by lazy {
+        node.treeNext?.elementType
+    }
 }
 
 /**
