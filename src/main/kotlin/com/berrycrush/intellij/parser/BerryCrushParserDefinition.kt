@@ -58,9 +58,9 @@ class BerryCrushParserDefinition : ParserDefinition {
     override fun createElement(node: ASTNode): PsiElement {
         return when (node.elementType) {
             BerryCrushElementTypes.FEATURE -> BerryCrushFeatureElement(node)
-            BerryCrushElementTypes.SCENARIO,
-            BerryCrushElementTypes.OUTLINE,
-            BerryCrushElementTypes.BACKGROUND -> BerryCrushScenarioElement(node.text, node)
+            BerryCrushElementTypes.SCENARIO -> BerryCrushScenarioElement("scenario", node)
+            BerryCrushElementTypes.OUTLINE -> BerryCrushScenarioElement("outline", node)
+            BerryCrushElementTypes.BACKGROUND -> BerryCrushScenarioElement("background", node)
             BerryCrushElementTypes.FRAGMENT -> BerryCrushFragmentElement(node)
             BerryCrushElementTypes.STEP -> BerryCrushStepElement(node)
             BerryCrushElementTypes.CALL_DIRECTIVE -> BerryCrushCallElement(node)

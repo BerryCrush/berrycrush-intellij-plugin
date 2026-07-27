@@ -204,7 +204,7 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
         val include = PsiTreeUtil.findChildOfType(psiFile, BerryCrushIncludeElement::class.java)
         assertNotNull("Include element should exist", include)
         assertEquals("my-fragment", include?.fragmentName)
-        assertEquals("my-fragment", include?.directiveName)
+        assertEquals("include", include?.directiveName)
     }
 
     fun testIncludeFragmentNameWithCaret() {
@@ -308,6 +308,40 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
         val assert = PsiTreeUtil.findChildOfType(psiFile, BerryCrushAssertElement::class.java)
         assertEquals("response.body.name == \"test\"", assert?.assertionText)
     }
+
+        fun testCallPayloadHierarchyExtraction() {
+                val file = createScenarioFile("payloadHierarchy", """
+                        feature: feature description
+                            background: background description
+                                given background given description
+                                    call ^operationId
+                                        id: {{petId}}
+                                        body:
+                                            name: foo
+                                then check the value
+                                    assert status 2xx
+                """.trimIndent())
+
+                val psiFile = psiManager.findFile(file)
+                val call = PsiTreeUtil.findChildOfType(psiFile, BerryCrushCallElement::class.java)
+                assertNotNull("Call element should exist", call)
+                assertEquals("operationId", call?.operationId)
+
+                val idParam = call?.findParameter("id")
+                assertNotNull("Call should expose id parameter", idParam)
+                assertEquals("{{petId}}", idParam?.parameterValue)
+
+                val bodyParam = call?.findParameter("body")
+                assertNotNull("Call should expose body parameter", bodyParam)
+
+                val bodyName = bodyParam?.findNestedParameter("name")
+                assertNotNull("Body should expose nested name field", bodyName)
+                assertEquals("foo", bodyName?.parameterValue)
+
+                val assertDirective = PsiTreeUtil.findChildOfType(psiFile, BerryCrushAssertElement::class.java)
+                assertNotNull("Assert directive should exist", assertDirective)
+                assertEquals("status 2xx", assertDirective?.assertionText)
+        }
 
     // ========== BerryCrushFragmentRefElement Tests ==========
 

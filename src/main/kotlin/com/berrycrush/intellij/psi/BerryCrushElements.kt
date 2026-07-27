@@ -43,6 +43,9 @@ abstract class BerryCrushPsiElement(node: ASTNode) : ASTWrapperPsiElement(node) 
             }
         }
     }
+
+    protected inline fun <reified T : PsiElement> directChildrenOfType(): List<T> =
+        children.filterIsInstance<T>()
 }
 
 /**
@@ -143,6 +146,12 @@ class BerryCrushCallElement(node: ASTNode) : BerryCrushDirectiveElement("call", 
      */
     val parameterNames: Set<String>
         get() = parameters.mapNotNull { it.parameterName }.toSet()
+
+    val directParameters: List<BerryCrushIncludeParameterElement>
+        get() = directChildrenOfType()
+
+    fun findParameter(name: String): BerryCrushIncludeParameterElement? =
+        directParameters.firstOrNull { it.parameterName == name }
 }
 
 /**
@@ -174,6 +183,16 @@ abstract class BerryCrushBlockElement(node: ASTNode) : BerryCrushPsiElement(node
  */
 class BerryCrushFeatureElement(node: ASTNode) : BerryCrushBlockElement(node), PsiNameIdentifierOwner {
     override val keyword = "feature"
+
+    val blocks: List<BerryCrushScenarioElement>
+        get() = directChildrenOfType()
+
+    val backgrounds: List<BerryCrushScenarioElement>
+        get() = blocks.filter { it.keyword == "background" }
+
+    val scenarios: List<BerryCrushScenarioElement>
+        get() = blocks.filter { it.keyword == "scenario" }
+
     override fun setName(name: String): PsiElement = this
 
     override fun getNameIdentifier(): PsiElement? = null
@@ -183,6 +202,13 @@ class BerryCrushFeatureElement(node: ASTNode) : BerryCrushBlockElement(node), Ps
  * Scenario block element.
  */
 class BerryCrushScenarioElement(override val keyword: String, node: ASTNode) : BerryCrushBlockElement(node), PsiNameIdentifierOwner {
+    val steps: List<BerryCrushStepElement>
+        get() = directChildrenOfType()
+
+    val nestedScenarios: List<BerryCrushScenarioElement>
+        get() = directChildrenOfType<BerryCrushScenarioElement>()
+            .filter { it.keyword == "scenario" }
+
     override fun setName(name: String): PsiElement = this
 
     override fun getNameIdentifier(): PsiElement? = null
@@ -193,6 +219,9 @@ class BerryCrushScenarioElement(override val keyword: String, node: ASTNode) : B
  */
 class BerryCrushFragmentElement(node: ASTNode) : BerryCrushBlockElement(node), PsiNameIdentifierOwner {
     override val keyword = "fragment"
+
+    val fragmentName: String?
+        get() = description
 
     override fun setName(name: String): PsiElement = this
 
@@ -238,6 +267,12 @@ class BerryCrushStepElement(node: ASTNode) : BerryCrushPsiElement(node) {
             val prefixLength = kw.length
             return text.substring(prefixLength).trim()
         }
+
+    val callDirectives: List<BerryCrushCallElement>
+        get() = directChildrenOfType()
+
+    val assertDirectives: List<BerryCrushAssertElement>
+        get() = directChildrenOfType()
 }
 
 /**
@@ -288,6 +323,12 @@ class BerryCrushIncludeParameterElement(node: ASTNode) : BerryCrushPsiElement(no
      */
     val parameterValue: String?
         get() = extractParamValue(node.text.trim())
+
+    val nestedParameters: List<BerryCrushIncludeParameterElement>
+        get() = directChildrenOfType()
+
+    fun findNestedParameter(name: String): BerryCrushIncludeParameterElement? =
+        nestedParameters.firstOrNull { it.parameterName == name }
 
     override fun getName(): String? = parameterName
 
