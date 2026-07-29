@@ -33,12 +33,7 @@ class BerryCrushSafeDeleteProcessor : SafeDeleteProcessorDelegate {
             return true
         }
         // Handle fragment files
-        if (element is PsiFile) {
-            return element.virtualFile?.extension == FragmentFileType.EXTENSION
-        }
-        // Handle BerryCrushFile
-        return element is BerryCrushFile &&
-            element.virtualFile?.extension == FragmentFileType.EXTENSION
+        return element is PsiFile && element.virtualFile?.extension == FragmentFileType.EXTENSION
     }
 
     override fun findUsages(
@@ -50,7 +45,7 @@ class BerryCrushSafeDeleteProcessor : SafeDeleteProcessorDelegate {
 
         // Get fragment names based on element type
         val fragmentNames = when (element) {
-            is BerryCrushFragmentElement -> listOfNotNull(element.fragmentName)
+            is BerryCrushFragmentElement -> listOfNotNull(element.description)
             is PsiFile -> extractFragmentNames(element)
             else -> element.containingFile?.let { extractFragmentNames(it) } ?: emptyList()
         }
@@ -63,7 +58,7 @@ class BerryCrushSafeDeleteProcessor : SafeDeleteProcessorDelegate {
         }
 
         // For file-level deletion, also search for generic usages
-        if (element is PsiFile || element is BerryCrushFile) {
+        if (element is PsiFile) {
             SafeDeleteProcessor.findGenericElementUsages(
                 element,
                 usages,
@@ -99,7 +94,7 @@ class BerryCrushSafeDeleteProcessor : SafeDeleteProcessorDelegate {
 
         // Get fragment names based on element type
         val fragmentNames = when (element) {
-            is BerryCrushFragmentElement -> listOfNotNull(element.fragmentName)
+            is BerryCrushFragmentElement -> listOfNotNull(element.description)
             is PsiFile -> extractFragmentNames(element)
             else -> element.containingFile?.let { extractFragmentNames(it) } ?: emptyList()
         }

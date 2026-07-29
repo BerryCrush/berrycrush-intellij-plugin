@@ -167,7 +167,6 @@ class StepRegistry(private val project: Project) {
 | Extension Point | Implementation |
 |-----------------|----------------|
 | `lang.parserDefinition` | `BerryCrushParserDefinition` |
-| `lang.syntaxHighlighterFactory` | `BerryCrushHighlighterFactory` |
 | `lang.foldingBuilder` | `BerryCrushFoldingBuilder` |
 | `completion.contributor` | `BerryCrushCompletionContributor` |
 | `gotoDeclarationHandler` | `BerryCrushGotoHandler` |
@@ -175,6 +174,20 @@ class StepRegistry(private val project: Project) {
 | `refactoring.safeDeleteProcessor` | `BerryCrushSafeDeleteProcessor` |
 | `annotator` | `BerryCrushAnnotator` |
 | `localInspection` | Various inspections |
+
+### Runtime Highlighting Model
+
+Runtime editor highlighting for BerryCrush files is annotator-driven.
+
+- `BerryCrushAnnotator` applies token-level text attributes at runtime.
+- Context-aware highlights (for example include-parameter keys before `:`) are also produced by annotator logic.
+- `BerryCrushSyntaxHighlighter` remains available for color settings preview and token-to-color mapping reuse.
+
+Current rule for narrative lines:
+- On `feature:` / `scenario:` / `outline:` lines, only the keyword prefix is highlighted.
+- On `given` / `when` / `then` / `and` / `but` lines, only the step keyword prefix is highlighted.
+- Text after these prefixes is treated as narrative description and must remain uncolored by BerryCrush syntax keys.
+- Include parameter key highlighting remains active for include parameter entries.
 
 ### Provided Extension Points
 

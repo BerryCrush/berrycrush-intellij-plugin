@@ -289,9 +289,9 @@ class BerryCrushStructureViewElement(private val element: PsiElement) : Structur
 
     private fun getElementText(): String = when (element) {
         is BerryCrushFile -> element.name
-        is BerryCrushScenarioElement -> "scenario: ${element.scenarioName ?: ""}"
-        is BerryCrushFragmentElement -> "fragment: ${element.fragmentName ?: ""}"
-        is BerryCrushFeatureElement -> "feature: ${element.featureName ?: ""}"
+        is BerryCrushScenarioElement -> "scenario: ${element.description ?: ""}"
+        is BerryCrushFragmentElement -> "fragment: ${element.description ?: ""}"
+        is BerryCrushFeatureElement -> "feature: ${element.description ?: ""}"
         is BerryCrushStepElement -> "${element.keyword?.lowercase() ?: ""} ${element.stepText ?: ""}".trim().take(60)
         is BerryCrushCallElement -> "call ^${element.operationId ?: ""}"
         is BerryCrushAssertElement -> element.text.trim().takeWhile { it != '\n' }.take(60)

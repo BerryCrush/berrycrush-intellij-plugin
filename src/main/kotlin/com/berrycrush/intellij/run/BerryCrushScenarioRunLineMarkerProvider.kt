@@ -54,14 +54,15 @@ class BerryCrushScenarioRunLineMarkerProvider : RunLineMarkerContributor(), Dumb
         val (keywordType, name) = when {
             lineText.startsWith("scenario:") -> {
                 val scenarioElement = PsiTreeUtil.getParentOfType(element, BerryCrushScenarioElement::class.java)
-                "Scenario" to (scenarioElement?.scenarioName ?: extractName(lineText, "scenario:"))
+                "Scenario" to (scenarioElement?.description ?: extractName(lineText, "scenario:"))
             }
             lineText.startsWith("outline:") -> {
-                "Outline" to extractName(lineText, "outline:")
+                val scenarioElement = PsiTreeUtil.getParentOfType(element, BerryCrushScenarioElement::class.java)
+                "Outline" to (scenarioElement?.description ?: extractName(lineText, "outline:"))
             }
             lineText.startsWith("feature:") -> {
                 val featureElement = PsiTreeUtil.getParentOfType(element, BerryCrushFeatureElement::class.java)
-                "Feature" to (featureElement?.featureName ?: extractName(lineText, "feature:"))
+                "Feature" to (featureElement?.description ?: extractName(lineText, "feature:"))
             }
             else -> return null
         }

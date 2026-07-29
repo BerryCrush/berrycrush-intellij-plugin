@@ -364,7 +364,7 @@ class BerryCrushFormattingTest : BerryCrushTestCase() {
         fun testWebhookPayloadIndentation() {
                 val input = listOf(
                         "scenario: Player move triggers webhook callback",
-                        "given: Webhook server is listening for move status",
+                        "given Webhook server is listening for move status",
                         "webhook: gameEvents",
                         "port: 0",
                         "hook: statusCallback",
@@ -372,7 +372,7 @@ class BerryCrushFormattingTest : BerryCrushTestCase() {
 
                 val expected = listOf(
                         "scenario: Player move triggers webhook callback",
-                        "  given: Webhook server is listening for move status",
+                        "  given Webhook server is listening for move status",
                         "    webhook: gameEvents",
                         "      port: 0",
                         "      hook: statusCallback",

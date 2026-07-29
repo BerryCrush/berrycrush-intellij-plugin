@@ -116,13 +116,13 @@ object BerryCrushTokenTypes {
     val DIRECTIVES = TokenSet.create(CALL, ASSERT, EXTRACT, INCLUDE, BODY, IF, ELSE, FAIL)
 
     @JvmField
-    val ASSERTION_KEYWORDS = TokenSet.create(STATUS, HEADER, CONTAINS, SCHEMA, RESPONSE_TIME, EXISTS, NOT)
+    val ASSERTION_KEYWORDS = TokenSet.create(STATUS, HEADER, CONTAINS, SCHEMA, RESPONSE_TIME)
 
     @JvmField
     val OPERATORS = TokenSet.create(
         EQUALS, NOT_EQUALS, GREATER_THAN, LESS_THAN,
-        GREATER_OR_EQUAL, LESS_OR_EQUAL, MATCHES, STARTS_WITH, ENDS_WITH
-    )
+        GREATER_OR_EQUAL, LESS_OR_EQUAL, MATCHES, STARTS_WITH, ENDS_WITH, EXISTS, NOT,
+        NOT_EMPTY, IN, SIZE, HAS_SIZE, ARRAY_SIZE)
 
     @JvmField
     val LITERALS = TokenSet.create(STRING, NUMBER, BOOLEAN, NULL)
@@ -141,6 +141,9 @@ object BerryCrushTokenTypes {
 
     @JvmField
     val IDENTIFIERS = TokenSet.create(IDENTIFIER, OPERATION_REF, TAG, VARIABLE, TEXT)
+
+    @JvmField
+    val TEXTS = TokenSet.create(TEXT, WHITE_SPACE, INDENT, DEDENT)
 }
 
 /**

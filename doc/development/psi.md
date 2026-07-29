@@ -10,25 +10,36 @@ PSI is the IntelliJ Platform's way of representing code structure. It provides:
 - Modification support
 - Integration with IDE features
 
-## Element Hierarchy
+## Current Hierarchy Invariants
 
+The current parser composes hierarchical PSI for `.scenario` files using indentation as structure.
+
+- `feature` is a top-level parent for nested `background` and nested `scenario` blocks.
+- `scenario` outside `feature` remains a top-level sibling of `feature`.
+- `background` contains direct step children (`given/when/then/and/but`).
+- A step can contain nested directives such as `call`, `include`, `webhook`, and `assert`.
+- `call` can contain nested payload entries as parameters (`id`, `body`, etc.).
+- `body:` is represented as a parameter that can contain nested parameter entries.
+
+Example hierarchy used for regression tests:
+
+```text
+FILE
+├─ FEATURE("feature description")
+│  ├─ BACKGROUND("background description")
+│  │  ├─ STEP_GIVEN("background given description")
+│  │  │  └─ CALL("operationId")
+│  │  │     ├─ PARAM("id", "{{petId}}")
+│  │  │     └─ PARAM("body")
+│  │  │        └─ PARAM("name", "foo")
+│  │  └─ STEP_THEN("check the value")
+│  │     └─ ASSERT("status 2xx")
+│  └─ SCENARIO("nested scenario")
+└─ SCENARIO("standalone scenario")
 ```
-BerryCrushFile (PsiFile)
-├── BerryCrushFeatureElement
-│   └── name: String
-├── BerryCrushScenarioElement
-│   ├── name: String
-│   └── steps: List<BerryCrushStepElement>
-├── BerryCrushScenarioOutlineElement
-│   ├── name: String
-│   ├── steps: List<BerryCrushStepElement>
-│   └── examples: BerryCrushExamplesElement
-├── BerryCrushFragmentElement
-│   ├── name: String
-│   └── steps: List<BerryCrushStepElement>
-└── BerryCrushBackgroundElement
-    └── steps: List<BerryCrushStepElement>
-```
+
+Implementation note:
+- Prefer typed PSI accessors in `BerryCrushElements.kt` (for example feature blocks, scenario steps, call parameters) over ad-hoc token scans in consumers.
 
 ## Core Elements
 

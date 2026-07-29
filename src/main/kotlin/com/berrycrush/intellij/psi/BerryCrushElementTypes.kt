@@ -40,6 +40,9 @@ object BerryCrushElementTypes {
     val CALL_DIRECTIVE = BerryCrushPsiElementType("CALL_DIRECTIVE")
 
     @JvmField
+    val WEBHOOK_DIRECTIVE = BerryCrushPsiElementType("WEBHOOK_DIRECTIVE")
+
+    @JvmField
     val ASSERT_DIRECTIVE = BerryCrushPsiElementType("ASSERT_DIRECTIVE")
 
     @JvmField
@@ -61,8 +64,16 @@ object BerryCrushElementTypes {
     @JvmField
     val VARIABLE_REF = BerryCrushPsiElementType("VARIABLE_REF")
 
+    // assert elements
     @JvmField
-    val JSON_PATH_REF = BerryCrushPsiElementType("JSON_PATH_REF")
+    val JSON_PATH = BerryCrushPsiElementType("JSON_PATH")
+
+    @JvmField
+    val ASSERTION_OPERATION = BerryCrushPsiElementType("ASSERTION_OPERATION")
+
+
+    @JvmField
+    val WEBHOOK_NAME = BerryCrushPsiElementType("WEBHOOK_NAME")
 
     // Other elements
     @JvmField
@@ -80,6 +91,15 @@ object BerryCrushElementTypes {
 
     @JvmField
     val PARAMETER_ENTRY = BerryCrushPsiElementType("PARAMETER_ENTRY")
+
+    @JvmField
+    val TEXT = BerryCrushPsiElementType("TEXT")
+
+    @JvmField
+    val NOT = BerryCrushPsiElementType("NOT")
+
+    @JvmField
+    val OPERATOR = BerryCrushPsiElementType("OPERATOR")
 }
 
 /**

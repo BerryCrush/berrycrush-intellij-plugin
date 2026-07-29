@@ -2,6 +2,9 @@ package com.berrycrush.intellij.parser
 
 import com.berrycrush.intellij.BerryCrushTestCase
 import com.berrycrush.intellij.psi.BerryCrushFragmentElement
+import com.berrycrush.intellij.psi.BerryCrushFeatureElement
+import com.berrycrush.intellij.psi.BerryCrushCallElement
+import com.berrycrush.intellij.psi.BerryCrushAssertElement
 import com.berrycrush.intellij.psi.BerryCrushParameterEntryElement
 import com.berrycrush.intellij.psi.BerryCrushParametersBlockElement
 import com.berrycrush.intellij.psi.BerryCrushScenarioElement
@@ -12,6 +15,112 @@ import com.intellij.psi.util.PsiTreeUtil
  * Tests for BerryCrush parser - verifies PSI tree structure.
  */
 class BerryCrushParserTest : BerryCrushTestCase() {
+
+        fun testProvidedSamplePsiHierarchy() {
+                val file = createScenarioFile("hierarchy", """
+                        feature: feature description
+                            background: background description
+                                given background given description
+                                    call ^operationId
+                                        id: {{petId}}
+                                        body:
+                                            name: foo
+                                then check the value
+                                    assert status 2xx
+                            scenario: nested scenario
+                                given nested step
+
+                        scenario: standalone scenario
+                            given standalone step
+                """.trimIndent())
+
+                val psiFile = psiManager.findFile(file)
+                assertNotNull("PSI file should be created", psiFile)
+
+                val feature = PsiTreeUtil.findChildOfType(psiFile, BerryCrushFeatureElement::class.java)
+                assertNotNull("Feature element should exist", feature)
+                assertEquals("feature description", feature?.description)
+
+                val background = feature?.backgrounds?.singleOrNull()
+                assertNotNull("Feature should contain one background child", background)
+                assertEquals("background description", background?.description)
+
+                val nestedScenario = feature?.scenarios?.singleOrNull()
+                assertNotNull("Feature should contain one nested scenario child", nestedScenario)
+                assertEquals("nested scenario", nestedScenario?.description)
+
+                val standaloneScenario = PsiTreeUtil.findChildrenOfType(psiFile, BerryCrushScenarioElement::class.java)
+                        .firstOrNull { it.keyword == "scenario" && it.description == "standalone scenario" }
+                assertNotNull("Standalone scenario should exist", standaloneScenario)
+                assertSame("Standalone scenario should be top-level", psiFile, standaloneScenario?.parent)
+                assertSame("Nested scenario should be child of feature", feature, nestedScenario?.parent)
+        }
+
+        fun testBackgroundStepDirectiveComposition() {
+                val file = createScenarioFile("stepComposition", """
+                        feature: feature description
+                            background: background description
+                                given background given description
+                                    call ^operationId
+                                        id: {{petId}}
+                                then check the value
+                                    assert status 2xx
+                """.trimIndent())
+
+                val psiFile = psiManager.findFile(file)
+                assertNotNull("PSI file should be created", psiFile)
+
+                val background = PsiTreeUtil.findChildrenOfType(psiFile, BerryCrushScenarioElement::class.java)
+                        .firstOrNull { it.keyword == "background" }
+                assertNotNull("Background element should exist", background)
+
+                val steps = background?.steps.orEmpty()
+                assertEquals("Background should contain two direct steps", 2, steps.size)
+
+                val givenStep = steps.firstOrNull { it.keyword == "given" }
+                val thenStep = steps.firstOrNull { it.keyword == "then" }
+                assertNotNull("Given step should exist", givenStep)
+                assertNotNull("Then step should exist", thenStep)
+
+                val call = givenStep?.callDirectives?.singleOrNull()
+                assertNotNull("Given step should contain nested call", call)
+                assertEquals("operationId", call?.operationId)
+
+                val assertDirective = thenStep?.assertDirectives?.singleOrNull()
+                assertNotNull("Then step should contain nested assert", assertDirective)
+                assertEquals("status 2xx", assertDirective?.assertionText)
+        }
+
+        fun testMalformedPayloadRecoveryKeepsHierarchy() {
+                val file = createScenarioFile("recovery", """
+                        feature: feature description
+                            background: background description
+                                given background given description
+                                    call ^operationId
+                                        id {{petId}}
+                                then check the value
+                                    assert status 2xx
+                            scenario: nested scenario
+                                given nested step
+                """.trimIndent())
+
+                val psiFile = psiManager.findFile(file)
+                assertNotNull("PSI file should be created", psiFile)
+
+                val feature = PsiTreeUtil.findChildOfType(psiFile, BerryCrushFeatureElement::class.java)
+                assertNotNull("Feature should still be parsed", feature)
+
+                val background = feature?.backgrounds?.singleOrNull()
+                assertNotNull("Background should still be parsed", background)
+                assertEquals(
+                        "Background should keep step hierarchy after malformed payload",
+                        2,
+                        background?.steps?.size,
+                )
+
+                val nestedScenario = feature?.scenarios?.singleOrNull()
+                assertNotNull("Nested scenario should still be present", nestedScenario)
+        }
 
     fun testFragmentContainsNestedSteps() {
         val file = createFragmentFile("test", """

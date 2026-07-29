@@ -43,16 +43,19 @@ abstract class BerryCrushPsiElement(node: ASTNode) : ASTWrapperPsiElement(node) 
             }
         }
     }
+
+    protected inline fun <reified T : PsiElement> directChildrenOfType(): List<T> =
+        children.filterIsInstance<T>()
 }
 
 /**
  * Include directive element: `include fragmentName` with optional parameters.
  */
-class BerryCrushIncludeElement(node: ASTNode) : BerryCrushPsiElement(node), PsiNameIdentifierOwner {
+class BerryCrushIncludeElement(node: ASTNode) : BerryCrushDirectiveElement("include", node), PsiNameIdentifierOwner {
     val fragmentName: String?
         get() {
             val text = node.text
-            val match = Regex("""include\s+\^?([a-zA-Z_][a-zA-Z0-9_.\-]*)""").find(text)
+            val match = Regex("""$directiveName\s+\^?([a-zA-Z_][a-zA-Z0-9_.\-]*)""").find(text)
             return match?.groupValues?.get(1)
         }
 
@@ -120,10 +123,12 @@ class BerryCrushOperationRefElement(node: ASTNode) : BerryCrushPsiElement(node),
     }
 }
 
+abstract class BerryCrushDirectiveElement(val directiveName: String, node: ASTNode) : BerryCrushPsiElement(node)
+
 /**
  * Call directive element: `call ^operationId` with optional parameters
  */
-class BerryCrushCallElement(node: ASTNode) : BerryCrushPsiElement(node) {
+class BerryCrushCallElement(node: ASTNode) : BerryCrushDirectiveElement("call", node) {
     val operationRef: BerryCrushOperationRefElement?
         get() = findChildByClass(BerryCrushOperationRefElement::class.java)
 
@@ -141,20 +146,52 @@ class BerryCrushCallElement(node: ASTNode) : BerryCrushPsiElement(node) {
      */
     val parameterNames: Set<String>
         get() = parameters.mapNotNull { it.parameterName }.toSet()
+
+    val directParameters: List<BerryCrushIncludeParameterElement>
+        get() = directChildrenOfType()
+
+    fun findParameter(name: String): BerryCrushIncludeParameterElement? =
+        directParameters.firstOrNull { it.parameterName == name }
+}
+
+/**
+ * Variable ref `{{var}}`
+ */
+class BerryCrushVariableRefElement(node: ASTNode) : BerryCrushPsiElement(node), PsiNameIdentifierOwner {
+    val variableName by lazy {
+        node.treeNext?.text?.removePrefix("{{")?.removeSuffix("}}")
+    }
+
+    override fun getName(): String? = variableName
+    override fun setName(name: String): PsiElement = this
+    override fun getNameIdentifier(): PsiElement? = null
+}
+
+abstract class BerryCrushBlockElement(node: ASTNode) : BerryCrushPsiElement(node), PsiNameIdentifierOwner {
+    abstract val keyword: String
+    val description: String?
+        get() {
+            val text = node.text
+            val match = Regex("""$keyword:\s*(.+)""").find(text.lines().first())
+            return match?.groupValues?.get(1)?.trim()
+        }
+    override fun getName(): String? = description
 }
 
 /**
  * Feature block element.
  */
-class BerryCrushFeatureElement(node: ASTNode) : BerryCrushPsiElement(node), PsiNameIdentifierOwner {
-    val featureName: String?
-        get() {
-            val text = node.text
-            val match = Regex("""feature:\s*(.+)""").find(text.lines().first())
-            return match?.groupValues?.get(1)?.trim()
-        }
+class BerryCrushFeatureElement(node: ASTNode) : BerryCrushBlockElement(node), PsiNameIdentifierOwner {
+    override val keyword = "feature"
 
-    override fun getName(): String? = featureName
+    val blocks: List<BerryCrushScenarioElement>
+        get() = directChildrenOfType()
+
+    val backgrounds: List<BerryCrushScenarioElement>
+        get() = blocks.filter { it.keyword == "background" }
+
+    val scenarios: List<BerryCrushScenarioElement>
+        get() = blocks.filter { it.keyword == "scenario" }
 
     override fun setName(name: String): PsiElement = this
 
@@ -164,15 +201,13 @@ class BerryCrushFeatureElement(node: ASTNode) : BerryCrushPsiElement(node), PsiN
 /**
  * Scenario block element.
  */
-class BerryCrushScenarioElement(node: ASTNode) : BerryCrushPsiElement(node), PsiNameIdentifierOwner {
-    val scenarioName: String?
-        get() {
-            val text = node.text
-            val match = Regex("""[Ss]cenario:\s*(.+)""").find(text.lines().first())
-            return match?.groupValues?.get(1)?.trim()
-        }
+class BerryCrushScenarioElement(override val keyword: String, node: ASTNode) : BerryCrushBlockElement(node), PsiNameIdentifierOwner {
+    val steps: List<BerryCrushStepElement>
+        get() = directChildrenOfType()
 
-    override fun getName(): String? = scenarioName
+    val nestedScenarios: List<BerryCrushScenarioElement>
+        get() = directChildrenOfType<BerryCrushScenarioElement>()
+            .filter { it.keyword == "scenario" }
 
     override fun setName(name: String): PsiElement = this
 
@@ -182,15 +217,11 @@ class BerryCrushScenarioElement(node: ASTNode) : BerryCrushPsiElement(node), Psi
 /**
  * Fragment definition element.
  */
-class BerryCrushFragmentElement(node: ASTNode) : BerryCrushPsiElement(node), PsiNameIdentifierOwner {
-    val fragmentName: String?
-        get() {
-            val text = node.text
-            val match = Regex("""[Ff]ragment:\s*(.+)""").find(text.lines().first())
-            return match?.groupValues?.get(1)?.trim()
-        }
+class BerryCrushFragmentElement(node: ASTNode) : BerryCrushBlockElement(node), PsiNameIdentifierOwner {
+    override val keyword = "fragment"
 
-    override fun getName(): String? = fragmentName
+    val fragmentName: String?
+        get() = description
 
     override fun setName(name: String): PsiElement = this
 
@@ -236,19 +267,45 @@ class BerryCrushStepElement(node: ASTNode) : BerryCrushPsiElement(node) {
             val prefixLength = kw.length
             return text.substring(prefixLength).trim()
         }
+
+    val callDirectives: List<BerryCrushCallElement>
+        get() = directChildrenOfType()
+
+    val assertDirectives: List<BerryCrushAssertElement>
+        get() = directChildrenOfType()
 }
 
 /**
  * Assert directive element.
  */
-class BerryCrushAssertElement(node: ASTNode) : BerryCrushPsiElement(node) {
+class BerryCrushAssertElement(node: ASTNode) : BerryCrushDirectiveElement("assert", node) {
     val assertionText: String?
         get() {
             val text = node.text.trim()
             // Strict lowercase matching for "assert" keyword
-            val match = Regex("""^assert\s+(.+)$""").find(text)
+            val match = Regex("""^$directiveName\s+(.+)$""").find(text)
             return match?.groupValues?.get(1)?.trim()
         }
+}
+
+class BerryCrushNotElement(node: ASTNode) : BerryCrushPsiElement(node)
+
+class BerryCrushOperatorElement(node: ASTNode) : BerryCrushPsiElement(node) {
+    val operatorName: String? = node.treeNext?.text?.trim()
+    val operatorType by lazy {
+        node.treeNext?.elementType
+    }
+}
+
+class BerryCrushJsonPathElement(node: ASTNode) : BerryCrushPsiElement(node) {
+    val jsonPathText = node.treeNext?.text
+}
+
+class BerryCrushAssertOperationElement(node: ASTNode) : BerryCrushPsiElement(node) {
+    val operationName = node.treeNext?.text
+    val operationType by lazy {
+        node.treeNext?.elementType
+    }
 }
 
 /**
@@ -266,6 +323,12 @@ class BerryCrushIncludeParameterElement(node: ASTNode) : BerryCrushPsiElement(no
      */
     val parameterValue: String?
         get() = extractParamValue(node.text.trim())
+
+    val nestedParameters: List<BerryCrushIncludeParameterElement>
+        get() = directChildrenOfType()
+
+    fun findNestedParameter(name: String): BerryCrushIncludeParameterElement? =
+        nestedParameters.firstOrNull { it.parameterName == name }
 
     override fun getName(): String? = parameterName
 

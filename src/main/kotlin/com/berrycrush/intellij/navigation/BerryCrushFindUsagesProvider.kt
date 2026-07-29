@@ -1,13 +1,13 @@
 package com.berrycrush.intellij.navigation
 
+import com.berrycrush.intellij.lexer.BerryCrushLexer
+import com.berrycrush.intellij.lexer.BerryCrushTokenTypes
 import com.berrycrush.intellij.psi.BerryCrushFile
 import com.intellij.lang.cacheBuilder.DefaultWordsScanner
 import com.intellij.lang.cacheBuilder.WordsScanner
 import com.intellij.lang.findUsages.FindUsagesProvider
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNamedElement
-import com.berrycrush.intellij.lexer.BerryCrushLexer
-import com.berrycrush.intellij.lexer.BerryCrushTokenTypes
 
 /**
  * Find Usages provider for BerryCrush elements.
@@ -17,7 +17,7 @@ import com.berrycrush.intellij.lexer.BerryCrushTokenTypes
 class BerryCrushFindUsagesProvider : FindUsagesProvider {
 
     override fun canFindUsagesFor(element: PsiElement): Boolean {
-        return element is PsiNamedElement || element is BerryCrushFile
+        return element is PsiNamedElement
     }
 
     override fun getHelpId(element: PsiElement): String? = null
@@ -39,7 +39,6 @@ class BerryCrushFindUsagesProvider : FindUsagesProvider {
     override fun getDescriptiveName(element: PsiElement): String {
         return when (element) {
             is PsiNamedElement -> element.name ?: "<unnamed>"
-            is BerryCrushFile -> element.name
             else -> element.text.take(30)
         }
     }
