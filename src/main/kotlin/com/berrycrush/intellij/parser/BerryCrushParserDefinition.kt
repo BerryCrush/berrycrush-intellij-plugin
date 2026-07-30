@@ -7,6 +7,7 @@ import com.berrycrush.intellij.psi.BerryCrushAssertElement
 import com.berrycrush.intellij.psi.BerryCrushAssertOperationElement
 import com.berrycrush.intellij.psi.BerryCrushCallElement
 import com.berrycrush.intellij.psi.BerryCrushElementTypes
+import com.berrycrush.intellij.psi.BerryCrushExtractElement
 import com.berrycrush.intellij.psi.BerryCrushFeatureElement
 import com.berrycrush.intellij.psi.BerryCrushFile
 import com.berrycrush.intellij.psi.BerryCrushFragmentElement
@@ -19,10 +20,13 @@ import com.berrycrush.intellij.psi.BerryCrushNotElement
 import com.berrycrush.intellij.psi.BerryCrushOperationRefElement
 import com.berrycrush.intellij.psi.BerryCrushOperatorElement
 import com.berrycrush.intellij.psi.BerryCrushParameterEntryElement
-import com.berrycrush.intellij.psi.BerryCrushParametersBlockElement
+import com.berrycrush.intellij.psi.BerryCrushParameterKeyElement
+import com.berrycrush.intellij.psi.BerryCrushParameterValueElement
+import com.berrycrush.intellij.psi.BerryCrushParametersElement
 import com.berrycrush.intellij.psi.BerryCrushScenarioElement
 import com.berrycrush.intellij.psi.BerryCrushStepElement
 import com.berrycrush.intellij.psi.BerryCrushVariableRefElement
+import com.berrycrush.intellij.psi.BerryCrushWebhookElement
 import com.intellij.lang.ASTNode
 import com.intellij.lang.ParserDefinition
 import com.intellij.lang.PsiParser
@@ -66,12 +70,16 @@ class BerryCrushParserDefinition : ParserDefinition {
             BerryCrushElementTypes.CALL_DIRECTIVE -> BerryCrushCallElement(node)
             BerryCrushElementTypes.INCLUDE_DIRECTIVE -> BerryCrushIncludeElement(node)
             BerryCrushElementTypes.ASSERT_DIRECTIVE -> BerryCrushAssertElement(node)
+            BerryCrushElementTypes.EXTRACT_DIRECTIVE -> BerryCrushExtractElement(node)
+            BerryCrushElementTypes.WEBHOOK_DIRECTIVE -> BerryCrushWebhookElement(node)
             BerryCrushElementTypes.OPERATION_REF -> BerryCrushOperationRefElement(node)
             BerryCrushElementTypes.FRAGMENT_REF -> BerryCrushFragmentRefElement(node)
             BerryCrushElementTypes.VARIABLE_REF -> BerryCrushVariableRefElement(node)
-            BerryCrushElementTypes.PARAMETER -> BerryCrushIncludeParameterElement(node)
-            BerryCrushElementTypes.PARAMETERS_BLOCK -> BerryCrushParametersBlockElement(node)
+            BerryCrushElementTypes.INCLUDED_PARAMETER -> BerryCrushIncludeParameterElement(node)
+            BerryCrushElementTypes.PARAMETERS -> BerryCrushParametersElement(node)
             BerryCrushElementTypes.PARAMETER_ENTRY -> BerryCrushParameterEntryElement(node)
+            BerryCrushElementTypes.PARAMETER_KEY -> BerryCrushParameterKeyElement(node)
+            BerryCrushElementTypes.PARAMETER_VALUE -> BerryCrushParameterValueElement(node)
             BerryCrushElementTypes.JSON_PATH -> BerryCrushJsonPathElement(node)
             BerryCrushElementTypes.ASSERTION_OPERATION -> BerryCrushAssertOperationElement(node)
             BerryCrushElementTypes.NOT -> BerryCrushNotElement(node)

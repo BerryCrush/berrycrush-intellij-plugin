@@ -3,10 +3,8 @@ package com.berrycrush.intellij.parser
 import com.berrycrush.intellij.BerryCrushTestCase
 import com.berrycrush.intellij.psi.BerryCrushFragmentElement
 import com.berrycrush.intellij.psi.BerryCrushFeatureElement
-import com.berrycrush.intellij.psi.BerryCrushCallElement
-import com.berrycrush.intellij.psi.BerryCrushAssertElement
 import com.berrycrush.intellij.psi.BerryCrushParameterEntryElement
-import com.berrycrush.intellij.psi.BerryCrushParametersBlockElement
+import com.berrycrush.intellij.psi.BerryCrushParametersElement
 import com.berrycrush.intellij.psi.BerryCrushScenarioElement
 import com.berrycrush.intellij.psi.BerryCrushStepElement
 import com.intellij.psi.util.PsiTreeUtil
@@ -197,7 +195,7 @@ class BerryCrushParserTest : BerryCrushTestCase() {
         assertEquals("Should find 1 scenario", 1, scenarios.size)
 
         // Find parameters block
-        val paramsBlocks = PsiTreeUtil.findChildrenOfType(psiFile, BerryCrushParametersBlockElement::class.java)
+        val paramsBlocks = PsiTreeUtil.findChildrenOfType(psiFile, BerryCrushParametersElement::class.java)
         assertEquals("Should find 1 parameters block", 1, paramsBlocks.size)
 
         // Check parameter entries

@@ -205,10 +205,6 @@ class BerryCrushScenarioElement(override val keyword: String, node: ASTNode) : B
     val steps: List<BerryCrushStepElement>
         get() = directChildrenOfType()
 
-    val nestedScenarios: List<BerryCrushScenarioElement>
-        get() = directChildrenOfType<BerryCrushScenarioElement>()
-            .filter { it.keyword == "scenario" }
-
     override fun setName(name: String): PsiElement = this
 
     override fun getNameIdentifier(): PsiElement? = null
@@ -308,6 +304,9 @@ class BerryCrushAssertOperationElement(node: ASTNode) : BerryCrushPsiElement(nod
     }
 }
 
+class BerryCrushExtractElement(node: ASTNode) : BerryCrushDirectiveElement("extract", node)
+class BerryCrushWebhookElement(node: ASTNode) : BerryCrushDirectiveElement("webhook", node)
+
 /**
  * Include parameter element: `paramName: value` inside an include directive.
  */
@@ -337,16 +336,22 @@ class BerryCrushIncludeParameterElement(node: ASTNode) : BerryCrushPsiElement(no
     override fun getNameIdentifier(): PsiElement? = null
 }
 
+
 /**
  * Generic element for unspecified element types.
  */
 class BerryCrushGenericElement(node: ASTNode) : BerryCrushPsiElement(node)
 
 /**
- * Parameters block element: `parameters:\n  key: value\n  key2: value2`
+ * Parameters block element:
+ * ```
+ * parameters:
+ *   key: value
+ *   key2: value2
+ * ```
  * Used in scenario and feature blocks.
  */
-class BerryCrushParametersBlockElement(node: ASTNode) : BerryCrushPsiElement(node) {
+class BerryCrushParametersElement(node: ASTNode) : BerryCrushPsiElement(node) {
     /**
      * Get all parameter entries in this block.
      */
@@ -390,3 +395,9 @@ class BerryCrushParameterEntryElement(node: ASTNode) : BerryCrushPsiElement(node
 
     override fun getNameIdentifier(): PsiElement? = null
 }
+
+class BerryCrushParameterKeyElement(node: ASTNode) : BerryCrushPsiElement(node) {
+    val keyName = node.text.removeSuffix(":").trim()
+}
+// value can be text or other node...
+class BerryCrushParameterValueElement(node: ASTNode) : BerryCrushPsiElement(node)

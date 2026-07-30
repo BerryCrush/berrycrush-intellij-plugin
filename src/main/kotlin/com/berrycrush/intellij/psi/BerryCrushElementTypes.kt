@@ -71,7 +71,6 @@ object BerryCrushElementTypes {
     @JvmField
     val ASSERTION_OPERATION = BerryCrushPsiElementType("ASSERTION_OPERATION")
 
-
     @JvmField
     val WEBHOOK_NAME = BerryCrushPsiElementType("WEBHOOK_NAME")
 
@@ -83,14 +82,16 @@ object BerryCrushElementTypes {
     val PARAMETERS = BerryCrushPsiElementType("PARAMETERS")
 
     @JvmField
-    val PARAMETER = BerryCrushPsiElementType("PARAMETER")
-
-    // Parameters block elements for scenario/feature parameters
-    @JvmField
-    val PARAMETERS_BLOCK = BerryCrushPsiElementType("PARAMETERS_BLOCK")
+    val INCLUDED_PARAMETER = BerryCrushPsiElementType("INCLUDED_PARAMETER")
 
     @JvmField
     val PARAMETER_ENTRY = BerryCrushPsiElementType("PARAMETER_ENTRY")
+
+    @JvmField
+    val PARAMETER_KEY = BerryCrushPsiElementType("PARAMETER_KEY")
+
+    @JvmField
+    val PARAMETER_VALUE = BerryCrushPsiElementType("PARAMETER_VALUE")
 
     @JvmField
     val TEXT = BerryCrushPsiElementType("TEXT")
@@ -100,6 +101,9 @@ object BerryCrushElementTypes {
 
     @JvmField
     val OPERATOR = BerryCrushPsiElementType("OPERATOR")
+
+    @JvmField
+    val ARROW = BerryCrushPsiElementType("ARROW")
 }
 
 /**

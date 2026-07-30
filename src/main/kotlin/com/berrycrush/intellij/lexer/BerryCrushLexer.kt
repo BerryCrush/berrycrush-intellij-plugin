@@ -117,6 +117,7 @@ class BerryCrushLexer : LexerBase() {
                     c == '{' && peek() == '{' -> scanVariable()
                     c.isDigit() || (c == '-' && peek()?.isDigit() == true) -> scanNumber()
                     c == '$' -> scanJsonPath()
+                    c == '=' && peek() == '>' -> { position += 2; BerryCrushTokenTypes.ARROW }
                     c == ':' -> { position++; BerryCrushTokenTypes.COLON }
                     c == '|' -> { position++; BerryCrushTokenTypes.PIPE }
                     c == '.' -> { position++; BerryCrushTokenTypes.DOT }

@@ -75,6 +75,7 @@ object BerryCrushTokenTypes {
     @JvmField val JSON_PATH = BerryCrushElementType("JSON_PATH")
 
     // Syntax elements
+    @JvmField val ARROW = BerryCrushElementType("ARROW")
     @JvmField val COLON = BerryCrushElementType("COLON")
     @JvmField val PIPE = BerryCrushElementType("PIPE")
     @JvmField val CARET = BerryCrushElementType("CARET")

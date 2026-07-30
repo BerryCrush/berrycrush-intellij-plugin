@@ -2,7 +2,7 @@ package com.berrycrush.intellij.completion
 
 import com.berrycrush.intellij.language.BerryCrushLanguage
 import com.berrycrush.intellij.psi.BerryCrushIncludeElement
-import com.berrycrush.intellij.psi.BerryCrushParametersBlockElement
+import com.berrycrush.intellij.psi.BerryCrushParametersElement
 import com.berrycrush.intellij.psi.BerryCrushScenarioElement
 import com.berrycrush.intellij.reference.BerryCrushFragmentReference
 import com.intellij.codeInsight.completion.CompletionContributor
@@ -55,7 +55,7 @@ class BerryCrushCompletionProvider : CompletionProvider<CompletionParameters>() 
         }
 
         // Check if we're inside a scenario/feature parameters block
-        val parametersBlock = PsiTreeUtil.getParentOfType(position, BerryCrushParametersBlockElement::class.java)
+        val parametersBlock = PsiTreeUtil.getParentOfType(position, BerryCrushParametersElement::class.java)
         if (parametersBlock != null) {
             addScenarioParameterCompletions(result)
             return
