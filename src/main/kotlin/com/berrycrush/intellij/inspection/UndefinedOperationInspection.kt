@@ -1,9 +1,11 @@
 package com.berrycrush.intellij.inspection
 
+import com.berrycrush.intellij.psi.BerryCrushCallElement
 import com.berrycrush.intellij.reference.BerryCrushOperationReference
 import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.PsiFile
+import com.intellij.psi.util.PsiTreeUtil
 
 /**
  * Inspection that detects undefined OpenAPI operation references.
@@ -26,26 +28,14 @@ class UndefinedOperationInspection : BerryCrushInspection() {
         if (knownOperations.isEmpty() && BerryCrushOperationReference.findOpenAPIFiles(project).isEmpty()) {
             return
         }
-        
-        val lines = file.text.lines()
-        
-        lines.forEachIndexed { lineIndex, line ->
-            CALL_PATTERN.find(line)?.let { match ->
-                val operationId = match.groupValues[1]
-                if (operationId !in knownOperations) {
-                    findElementAtLine(file, lineIndex, match.range.first)?.let { element ->
-                        holder.registerProblem(
-                            element,
-                            "Operation '$operationId' not found in OpenAPI specs",
-                            ProblemHighlightType.WARNING
-                        )
-                    }
-                }
+        val callDirectives = PsiTreeUtil.findChildrenOfType(file, BerryCrushCallElement::class.java)
+        callDirectives.forEach{ call ->
+            val operationId = call.operationId
+            if (operationId !in knownOperations) {
+                holder.registerProblem(call,
+                    "Operation '$operationId' not found in OpenAPI specs",
+                    ProblemHighlightType.WARNING)
             }
         }
-    }
-
-    companion object {
-        private val CALL_PATTERN = Regex("""call\s+\^(\w+)""")
     }
 }

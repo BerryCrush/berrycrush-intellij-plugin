@@ -25,6 +25,7 @@ import com.berrycrush.intellij.psi.BerryCrushParameterValueElement
 import com.berrycrush.intellij.psi.BerryCrushParametersElement
 import com.berrycrush.intellij.psi.BerryCrushScenarioElement
 import com.berrycrush.intellij.psi.BerryCrushStepElement
+import com.berrycrush.intellij.psi.BerryCrushTextElement
 import com.berrycrush.intellij.psi.BerryCrushVariableRefElement
 import com.berrycrush.intellij.psi.BerryCrushWebhookElement
 import com.intellij.lang.ASTNode
@@ -84,6 +85,7 @@ class BerryCrushParserDefinition : ParserDefinition {
             BerryCrushElementTypes.ASSERTION_OPERATION -> BerryCrushAssertOperationElement(node)
             BerryCrushElementTypes.NOT -> BerryCrushNotElement(node)
             BerryCrushElementTypes.OPERATOR -> BerryCrushOperatorElement(node)
+            BerryCrushElementTypes.TEXT -> BerryCrushTextElement(node)
             else -> BerryCrushGenericElement(node)
         }
     }

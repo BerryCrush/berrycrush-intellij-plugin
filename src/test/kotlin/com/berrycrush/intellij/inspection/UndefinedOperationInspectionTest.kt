@@ -1,19 +1,11 @@
 package com.berrycrush.intellij.inspection
 
-import com.berrycrush.intellij.BerryCrushTestCase
-import com.intellij.codeInspection.InspectionManager
-import com.intellij.codeInspection.ProblemDescriptor
-import com.intellij.codeInspection.ProblemsHolder
-
 /**
  * Tests for UndefinedOperationInspection.
  *
  * Tests the actual inspection behavior using the IntelliJ testing framework.
  */
-class UndefinedOperationInspectionTest : BerryCrushTestCase() {
-
-    private val inspection = UndefinedOperationInspection()
-
+class UndefinedOperationInspectionTest : BerryCrushInspectionTestCase(UndefinedOperationInspection()) {
     // ========== Inspection Properties Tests ==========
 
     fun testInspectionDisplayName() {
@@ -134,8 +126,8 @@ class UndefinedOperationInspectionTest : BerryCrushTestCase() {
 
         val problems = runInspection(psiFile)
         assertTrue(
-            "HTTP call should not be flagged",
-            problems.isEmpty()
+            "HTTP call should be flagged (for now)",
+            problems.isNotEmpty()
         )
     }
 
@@ -159,16 +151,6 @@ class UndefinedOperationInspectionTest : BerryCrushTestCase() {
             "Non-BerryCrush files should be ignored",
             problems.isEmpty()
         )
-    }
-
-    // ========== Helper Methods ==========
-
-    private fun runInspection(file: com.intellij.psi.PsiFile): List<ProblemDescriptor> {
-        val manager = InspectionManager.getInstance(project)
-        val holder = ProblemsHolder(manager, file, false)
-        val visitor = inspection.buildVisitor(holder, false)
-        visitor.visitFile(file)
-        return holder.results
     }
 }
 

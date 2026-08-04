@@ -10,10 +10,7 @@ import com.intellij.codeInspection.ProblemsHolder
  *
  * Tests the inspection for undefined ${param.name} references.
  */
-class UndefinedParameterReferenceInspectionTest : BerryCrushTestCase() {
-
-    private val inspection = UndefinedParameterReferenceInspection()
-
+class UndefinedParameterReferenceInspectionTest : BerryCrushInspectionTestCase(UndefinedParameterReferenceInspection()) {
     // ========== Inspection Properties Tests ==========
 
     fun testInspectionDisplayName() {
@@ -54,7 +51,7 @@ class UndefinedParameterReferenceInspectionTest : BerryCrushTestCase() {
         val psiFile = myFixture.addFileToProject("undefined-param.scenario", """
             scenario: test
               given setup
-                call GET /api?timeout=${"$"}{param.undefinedParam}
+                call GET /api?timeout={{param.undefinedParam}}
         """.trimIndent())
 
         val problems = runInspection(psiFile)
@@ -93,18 +90,5 @@ class UndefinedParameterReferenceInspectionTest : BerryCrushTestCase() {
             "Defined context variable should not be flagged",
             problems.none { it.descriptionTemplate.contains("userId") }
         )
-    }
-
-    // ========== Helper Methods ==========
-
-    private fun runInspection(psiFile: com.intellij.psi.PsiFile): List<ProblemDescriptor> {
-        val inspectionManager = InspectionManager.getInstance(project)
-        val holder = ProblemsHolder(inspectionManager, psiFile, true)
-
-        // Build the visitor and visit the file
-        val visitor = inspection.buildVisitor(holder, true)
-        visitor.visitFile(psiFile)
-
-        return holder.results.toList()
     }
 }

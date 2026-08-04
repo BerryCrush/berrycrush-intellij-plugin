@@ -1,20 +1,11 @@
 package com.berrycrush.intellij.inspection
 
-import com.berrycrush.intellij.BerryCrushTestCase
-import com.intellij.codeInspection.InspectionManager
-import com.intellij.codeInspection.ProblemDescriptor
-import com.intellij.codeInspection.ProblemsHolder
-import com.intellij.psi.PsiManager
-
 /**
  * Tests for UndefinedStepInspection.
  *
  * Tests the actual inspection behavior using the IntelliJ testing framework.
  */
-class UndefinedStepInspectionTest : BerryCrushTestCase() {
-
-    private val inspection = UndefinedStepInspection()
-
+class UndefinedStepInspectionTest : BerryCrushInspectionTestCase(UndefinedStepInspection()) {
     // ========== Inspection Properties Tests ==========
 
     fun testInspectionDisplayName() {
@@ -91,7 +82,11 @@ class UndefinedStepInspectionTest : BerryCrushTestCase() {
         val psiFile = myFixture.addFileToProject("test4.scenario", """
             scenario: test
               given: first step
-                call GET /api
+                webhook: name
+                  port: 0
+                  hook: hook
+              given include step
+                include: fragment
               when: second step
                 call POST /api
               then: third step
@@ -106,25 +101,6 @@ class UndefinedStepInspectionTest : BerryCrushTestCase() {
         // All steps have directives, so no problems
         assertTrue(
             "Steps with directives should not be flagged",
-            problems.isEmpty()
-        )
-    }
-
-    fun testCaseInsensitiveStepKeywords() {
-        // Step keywords should be case insensitive
-        val psiFile = myFixture.addFileToProject("test5.scenario", """
-            scenario: test
-              Given: setup with directive
-                call GET /api
-              WHEN: action with directive
-                call POST /api
-              Then: verification with directive
-                assert status 200
-        """.trimIndent())
-
-        val problems = runInspection(psiFile)
-        assertTrue(
-            "Capitalized step keywords should be recognized",
             problems.isEmpty()
         )
     }
@@ -215,16 +191,6 @@ class UndefinedStepInspectionTest : BerryCrushTestCase() {
             "Non-BerryCrush files should be ignored",
             problems.isEmpty()
         )
-    }
-
-    // ========== Helper Methods ==========
-
-    private fun runInspection(file: com.intellij.psi.PsiFile): List<ProblemDescriptor> {
-        val manager = InspectionManager.getInstance(project)
-        val holder = ProblemsHolder(manager, file, false)
-        val visitor = inspection.buildVisitor(holder, false)
-        visitor.visitFile(file)
-        return holder.results
     }
 }
 

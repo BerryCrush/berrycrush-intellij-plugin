@@ -159,7 +159,7 @@ class BerryCrushCallElement(node: ASTNode) : BerryCrushDirectiveElement("call", 
  */
 class BerryCrushVariableRefElement(node: ASTNode) : BerryCrushPsiElement(node), PsiNameIdentifierOwner {
     val variableName by lazy {
-        node.treeNext?.text?.removePrefix("{{")?.removeSuffix("}}")
+        node.text.removePrefix("{{").removeSuffix("}}")
     }
 
     override fun getName(): String? = variableName
@@ -304,7 +304,9 @@ class BerryCrushAssertOperationElement(node: ASTNode) : BerryCrushPsiElement(nod
     }
 }
 
-class BerryCrushExtractElement(node: ASTNode) : BerryCrushDirectiveElement("extract", node)
+class BerryCrushExtractElement(node: ASTNode) : BerryCrushDirectiveElement("extract", node) {
+    val extractName = node.treeNext?.text?.trim()
+}
 class BerryCrushWebhookElement(node: ASTNode) : BerryCrushDirectiveElement("webhook", node)
 
 /**
@@ -401,3 +403,5 @@ class BerryCrushParameterKeyElement(node: ASTNode) : BerryCrushPsiElement(node) 
 }
 // value can be text or other node...
 class BerryCrushParameterValueElement(node: ASTNode) : BerryCrushPsiElement(node)
+
+class BerryCrushTextElement(node: ASTNode) : BerryCrushPsiElement(node)

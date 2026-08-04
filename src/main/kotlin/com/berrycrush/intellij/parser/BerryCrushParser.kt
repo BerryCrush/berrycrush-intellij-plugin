@@ -366,6 +366,8 @@ class BerryCrushParser : PsiParser {
         while (!builder.eof() && !isLineEnd(builder.tokenType)) {
             if (builder.tokenType == BerryCrushTokenTypes.OPERATION_REF) {
                 parseOperationRef(builder)
+            } else if (builder.tokenType == BerryCrushTokenTypes.VARIABLE) {
+                parseVariableRef(builder)
             } else {
                 builder.advanceLexer()
             }
@@ -435,7 +437,6 @@ class BerryCrushParser : PsiParser {
             parseIndentedEntries(builder, parentIndent, ::tryParseParameter)
             marker.done(BerryCrushElementTypes.INCLUDED_PARAMETER)
         }
-
     }
 
     /**
@@ -505,22 +506,18 @@ class BerryCrushParser : PsiParser {
         return true
     }
 
-    private fun parseWebhookName(builder: PsiBuilder) {
-        val marker = builder.mark()
-        builder.advanceLexer()
-        marker.done(BerryCrushElementTypes.WEBHOOK_NAME)
-    }
+    private fun parseWebhookName(builder: PsiBuilder) = builder.markAs(BerryCrushElementTypes.WEBHOOK_NAME)
 
-    private fun parseOperationRef(builder: PsiBuilder) {
-        val marker = builder.mark()
-        builder.advanceLexer()
-        marker.done(BerryCrushElementTypes.OPERATION_REF)
-    }
+    private fun parseVariableRef(builder: PsiBuilder) = builder.markAs(BerryCrushElementTypes.VARIABLE_REF)
 
-    private fun parseFragmentRef(builder: PsiBuilder) {
-        val marker = builder.mark()
-        builder.advanceLexer()
-        marker.done(BerryCrushElementTypes.FRAGMENT_REF)
+    private fun parseOperationRef(builder: PsiBuilder) = builder.markAs(BerryCrushElementTypes.OPERATION_REF)
+
+    private fun parseFragmentRef(builder: PsiBuilder) = builder.markAs(BerryCrushElementTypes.FRAGMENT_REF)
+
+    private fun PsiBuilder.markAs(type: BerryCrushPsiElementType) {
+        val marker = mark()
+        advanceLexer()
+        marker.done(type)
     }
 
     private fun currentLineIndent(builder: PsiBuilder): Int {
@@ -547,7 +544,11 @@ class BerryCrushParser : PsiParser {
     private fun skipToEndOfLine(builder: PsiBuilder, type: BerryCrushPsiElementType = BerryCrushElementTypes.TEXT) {
         val marker = builder.mark()
         while (!builder.eof() && builder.tokenType != BerryCrushTokenTypes.NEWLINE) {
-            builder.advanceLexer()
+            if (builder.tokenType == BerryCrushTokenTypes.VARIABLE) {
+                parseVariableRef(builder)
+            } else {
+                builder.advanceLexer()
+            }
         }
         marker.done(type)
         skipNewlines(builder)

@@ -1,19 +1,11 @@
 package com.berrycrush.intellij.inspection
 
-import com.berrycrush.intellij.BerryCrushTestCase
-import com.intellij.codeInspection.InspectionManager
-import com.intellij.codeInspection.ProblemDescriptor
-import com.intellij.codeInspection.ProblemsHolder
-
 /**
  * Tests for MissingFragmentInspection.
  *
  * Tests the actual inspection behavior using the IntelliJ testing framework.
  */
-class MissingFragmentInspectionTest : BerryCrushTestCase() {
-
-    private val inspection = MissingFragmentInspection()
-
+class MissingFragmentInspectionTest : BerryCrushInspectionTestCase(MissingFragmentInspection()) {
     // ========== Inspection Properties Tests ==========
 
     fun testInspectionDisplayName() {
@@ -140,16 +132,6 @@ class MissingFragmentInspectionTest : BerryCrushTestCase() {
             "Non-BerryCrush files should be ignored",
             problems.isEmpty()
         )
-    }
-
-    // ========== Helper Methods ==========
-
-    private fun runInspection(file: com.intellij.psi.PsiFile): List<ProblemDescriptor> {
-        val manager = InspectionManager.getInstance(project)
-        val holder = ProblemsHolder(manager, file, false)
-        val visitor = inspection.buildVisitor(holder, false)
-        visitor.visitFile(file)
-        return holder.results
     }
 }
 

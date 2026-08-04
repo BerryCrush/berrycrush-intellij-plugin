@@ -1,15 +1,21 @@
 package com.berrycrush.intellij.inspection
 
-import com.berrycrush.intellij.psi.BerryCrushParameterEntryElement
+import com.berrycrush.intellij.psi.BerryCrushBlockElement
+import com.berrycrush.intellij.psi.BerryCrushExtractElement
+import com.berrycrush.intellij.psi.BerryCrushFeatureElement
+import com.berrycrush.intellij.psi.BerryCrushParametersElement
+import com.berrycrush.intellij.psi.BerryCrushScenarioElement
+import com.berrycrush.intellij.psi.BerryCrushVariableRefElement
 import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
+import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.PsiTreeUtil
 
 /**
  * Inspection that detects undefined parameter references.
  *
- * Highlights `${param.name}` references where the parameter name
+ * Highlights `{{param.name}}` references where the parameter name
  * doesn't exist in any parameters block in the file.
  */
 class UndefinedParameterReferenceInspection : BerryCrushInspection() {
@@ -20,78 +26,46 @@ class UndefinedParameterReferenceInspection : BerryCrushInspection() {
     override fun isEnabledByDefault(): Boolean = true
 
     override fun checkFile(file: PsiFile, holder: ProblemsHolder) {
-        // Find all defined parameter names
-        val definedParameters = PsiTreeUtil.findChildrenOfType(file, BerryCrushParameterEntryElement::class.java)
-            .mapNotNull { it.parameterName }
-            .toSet()
+        checkParameters(file, emptyList(), emptyList(), holder)
+    }
 
-        // Find all extracted variables (for context variable validation)
-        val extractedVariables = findExtractedVariables(file)
-
-        // Check all variable interpolation elements
-        val lines = file.text.lines()
-
-        lines.forEachIndexed { lineIndex, line ->
-            // Check for ${param.name} references
-            PARAM_REF_PATTERN.findAll(line).forEach { match ->
-                val paramName = match.groupValues[1]
-                if (paramName !in definedParameters) {
-                    findElementAtLine(file, lineIndex, match.range.first)?.let { element ->
-                        holder.registerProblem(
-                            element,
-                            "Parameter '$paramName' is not defined in any parameters block",
-                            ProblemHighlightType.ERROR
-                        )
-                    }
+    private fun checkParameters(element: PsiElement, parentParameters: List<BerryCrushParametersElement>, extractedVariables: List<BerryCrushExtractElement>, holder: ProblemsHolder) {
+        element.children.forEach { element ->
+            when (element) {
+                is BerryCrushBlockElement -> {
+                    val parameters = element.children.filterIsInstance<BerryCrushParametersElement>()
+                    val extracted: Collection<BerryCrushExtractElement> = PsiTreeUtil.findChildrenOfType(element, BerryCrushExtractElement::class.java)
+                    checkParameters(element, parameters + parentParameters, extractedVariables + extracted, holder)
                 }
-            }
-
-            // Check for ${context.varName} or ${varName} references (shorthand)
-            CONTEXT_REF_PATTERN.findAll(line).forEach { match ->
-                val varName = match.groupValues[1]
-                if (varName !in extractedVariables) {
-                    findElementAtLine(file, lineIndex, match.range.first)?.let { element ->
-                        holder.registerProblem(
-                            element,
-                            "Variable '$varName' is not extracted in this scenario",
-                            ProblemHighlightType.WARNING
-                        )
-                    }
-                }
-            }
-
-            // Check shorthand variable references
-            SHORTHAND_REF_PATTERN.findAll(line).forEach { match ->
-                val varName = match.groupValues[1]
-                // Skip if it's a known prefix
-                if (varName !in listOf("env", "context", "param") && varName !in extractedVariables) {
-                    findElementAtLine(file, lineIndex, match.range.first)?.let { element ->
-                        holder.registerProblem(
-                            element,
-                            "Variable '$varName' is not extracted in this scenario",
-                            ProblemHighlightType.WARNING
-                        )
-                    }
-                }
+                else -> checkElement(element, parentParameters, extractedVariables, holder)
             }
         }
     }
 
-    /**
-     * Find all extracted variable names from extract directives.
-     */
-    private fun findExtractedVariables(file: PsiFile): Set<String> {
-        val text = file.text
-        val pattern = Regex("""extract\s+(\w+)\s*=""")
-        return pattern.findAll(text)
-            .map { it.groupValues[1] }
-            .toSet()
-    }
+    private fun checkElement(element: PsiElement, parentParameters: List<BerryCrushParametersElement>,  extractedVariables: List<BerryCrushExtractElement>, holder: ProblemsHolder) {
+        PsiTreeUtil.findChildrenOfAnyType(element, true, BerryCrushVariableRefElement::class.java).forEach { variable ->
+            val name = variable.variableName ?: return@forEach
 
-    companion object {
-        private val PARAM_REF_PATTERN = Regex("""\$\{param\.(\w+)}""")
-        private val CONTEXT_REF_PATTERN = Regex("""\$\{context\.(\w+)}""")
-        // Shorthand pattern: ${varName} where varName is NOT followed by a dot
-        private val SHORTHAND_REF_PATTERN = Regex("""\$\{(\w+)}(?!\.)""")
+            if (name.startsWith("param.")) {
+                val result = parentParameters.find { name in it.parameterNames }
+                if (result == null) {
+                    holder.registerProblem(
+                        element,
+                        "Parameter '$name' is not defined in any parameters block",
+                        ProblemHighlightType.WARNING
+                    )
+                }
+            } else {
+                val result = extractedVariables.find { name == it.extractName }
+                if (result == null) {
+                    holder.registerProblem(
+                        element,
+                        "Variable '$name' is not extracted in this block",
+                        ProblemHighlightType.WARNING
+                    )
+                }
+            }
+        }
+
     }
 }
