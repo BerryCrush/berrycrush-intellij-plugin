@@ -1,6 +1,6 @@
 package com.berrycrush.intellij.highlighting
 
-import com.berrycrush.intellij.psi.BerryCrushIncludeParameterElement
+import com.berrycrush.intellij.psi.BerryCrushParameterKeyElement
 import com.intellij.lang.annotation.AnnotationHolder
 import com.intellij.lang.annotation.Annotator
 import com.intellij.lang.annotation.HighlightSeverity
@@ -16,7 +16,7 @@ class BerryCrushAnnotator : Annotator {
     override fun annotate(element: PsiElement, holder: AnnotationHolder) {
         annotateLeafToken(element, holder)
         when (element) {
-            is BerryCrushIncludeParameterElement -> annotateParameter(element, holder)
+            is BerryCrushParameterKeyElement -> annotateParameter(element, holder)
         }
     }
 
@@ -87,24 +87,14 @@ class BerryCrushAnnotator : Annotator {
         return TextRange(baseOffset + match.range.first, baseOffset + match.range.last + 1)
     }
 
-    private fun annotateParameter(element: BerryCrushIncludeParameterElement, holder: AnnotationHolder) {
-        val range = parameterKeyRange(element) ?: return
+    private fun annotateParameter(element: BerryCrushParameterKeyElement, holder: AnnotationHolder) {
+        val name = element.keyName
+        val range = TextRange(element.textRange.startOffset, element.textRange.startOffset + name.length)
 
         holder.newSilentAnnotation(HighlightSeverity.INFORMATION)
             .range(range)
             .textAttributes(BerryCrushHighlightingColors.PARAMETER_KEY)
             .create()
-    }
-
-    /**
-     * Highlight the parameter name (key before colon) in include parameters.
-     */
-    internal fun parameterKeyRange(element: BerryCrushIncludeParameterElement): TextRange? {
-        val name = element.parameterName ?: return null
-        val offset = element.text.indexOf("$name:")
-        if (offset == -1) return null
-
-        return TextRange(element.textRange.startOffset + offset, element.textRange.startOffset + offset + name.length)
     }
 
     companion object {

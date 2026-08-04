@@ -227,7 +227,7 @@ class BerryCrushCompletionProvider : CompletionProvider<CompletionParameters>() 
 
         // Extract expected parameters from fragment
         val expectedParams = extractExpectedParameters(fragmentFile)
-        val providedParams = includeElement.parameterNames
+        val providedParams = includeElement.parameterNames.toSet()
 
         // Suggest parameters that haven't been provided yet
         expectedParams.subtract(providedParams).forEach { paramName ->

@@ -59,8 +59,8 @@ abstract class BerryCrushIncludeLikeElement(name: String, node: ASTNode) : Berry
     /**
      * Get parameter names as a set.
      */
-    val parameterNames: Set<String>
-        get() = parameters?.parameterNames?.toSet() ?: emptySet()
+    val parameterNames: List<String>
+        get() = parameters?.parameterNames?.toList() ?: emptyList()
 
 
     fun findParameter(name: String): BerryCrushParameterEntryElement? =
@@ -319,8 +319,8 @@ abstract class BerryCrushParameterLikeElement(node: ASTNode) : BerryCrushPsiElem
     /**
      * Get parameter names defined in this block.
      */
-    val parameterNames: Set<String>
-        get() = entries.mapNotNull { it.parameterName }.toSet()
+    val parameterNames: List<String>
+        get() = entries.mapNotNull { it.parameterName }
 
     /**
      * Get a parameter value by name.

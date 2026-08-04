@@ -6,6 +6,7 @@ import com.berrycrush.intellij.reference.BerryCrushFragmentReference
 import com.berrycrush.intellij.reference.BerryCrushOperationReference
 import com.berrycrush.intellij.reference.BerryCrushStepReference
 import com.berrycrush.intellij.reference.BerryCrushAssertionReference
+import com.berrycrush.intellij.util.BerryCrushStepLineParser
 import com.intellij.codeInsight.daemon.LineMarkerInfo
 import com.intellij.codeInsight.daemon.LineMarkerProvider
 import com.intellij.codeInsight.navigation.NavigationGutterIconBuilder
@@ -100,11 +101,7 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
         }
         
         // Match step keywords - handle "given " (with space) or just "given"
-        val isStepKeyword = trimmedLower.startsWith("given") || 
-                            trimmedLower.startsWith("when") || 
-                            trimmedLower.startsWith("then") ||
-                            trimmedLower.startsWith("and") || 
-                            trimmedLower.startsWith("but")
+        val isStepKeyword = BerryCrushStepLineParser.extractStepText(trimmedLower) != null
         
         if (isStepKeyword) {
             val fullLineText = getFullLineText(element)
@@ -223,14 +220,9 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
 
     companion object {
         /**
-         * Extract step text by removing the given/when/then/and/but prefix (strict lowercase).
+         * Extract step text from step lines.
          */
-        internal fun extractStepText(text: String): String? {
-            val trimmedText = text.trim()
-            val prefixPattern = Regex("""^(given|when|then|and|but)\s+""")
-            val match = prefixPattern.find(trimmedText) ?: return null
-            return trimmedText.substring(match.range.last + 1).trim()
-        }
+        internal fun extractStepText(text: String): String? = BerryCrushStepLineParser.extractStepText(text)
 
         /**
          * Extract assertion text by removing the assert prefix (strict lowercase).
@@ -259,14 +251,8 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
         }
 
         /**
-         * Check if the given text is a step keyword (strict lowercase).
+         * Check if the given text is a supported step keyword.
          */
-        internal fun isStepKeyword(text: String): Boolean {
-            return text == "given" ||
-                   text == "when" ||
-                   text == "then" ||
-                   text == "and" ||
-                   text == "but"
-        }
+        internal fun isStepKeyword(text: String): Boolean = BerryCrushStepLineParser.isStepKeyword(text)
     }
 }

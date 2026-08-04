@@ -6,6 +6,7 @@ package com.berrycrush.intellij.index
 
 import com.berrycrush.intellij.language.FragmentFileType
 import com.berrycrush.intellij.language.ScenarioFileType
+import com.berrycrush.intellij.util.BerryCrushStepLineParser
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiManager
 import com.intellij.psi.search.GlobalSearchScope
@@ -32,20 +33,9 @@ class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
         val NAME: ID<String, StepUsageData> = ID.create("com.berrycrush.intellij.index.StepUsageIndex")
 
         /**
-         * Extract step text from a line (removes Given/When/Then/And/But prefix)
+         * Extract step text from a line.
          */
-        fun extractStepText(line: String): String? {
-            val trimmed = line.trim()
-            val lowerTrimmed = trimmed.lowercase()
-
-            val prefixes = listOf("given ", "when ", "then ", "and ", "but ")
-            for (prefix in prefixes) {
-                if (lowerTrimmed.startsWith(prefix)) {
-                    return trimmed.substring(prefix.length).trim()
-                }
-            }
-            return null
-        }
+        fun extractStepText(line: String): String? = BerryCrushStepLineParser.extractStepText(line)
 
         /**
          * Extract assertion text from a line (removes Assert: prefix)
@@ -226,7 +216,7 @@ class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
 
     override fun getName(): ID<String, StepUsageData> = NAME
 
-    override fun getVersion(): Int = 4  // Bumped to force reindex with assertion support
+    override fun getVersion(): Int = 5  // Bumped to force reindex after shared step parser adoption
 
     override fun dependsOnFileContent(): Boolean = true
 
