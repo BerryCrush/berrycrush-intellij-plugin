@@ -2,9 +2,9 @@ package com.berrycrush.intellij.inspection
 
 import com.berrycrush.intellij.psi.BerryCrushIncludeLikeElement
 import com.berrycrush.intellij.psi.BerryCrushParameterEntryElement
-import com.berrycrush.intellij.util.lineNumber
 import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
+import com.intellij.jvm.dfa.analysis.ui.inspection.presentation.PsiElementLineLocator.getStartLine
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.PsiTreeUtil
 
@@ -31,10 +31,9 @@ class DuplicateParameterInspection : BerryCrushInspection() {
                             v ?: entry
                         }
                         if (prev != entry) {
-                            val lineNumber = prev?.textRange?.let { file.lineNumber(it) }
                             holder.registerProblem(
                                 entry,
-                                "Duplicate parameter '$name' (first defined on line ${lineNumber?.first ?: "n/a"})",
+                                "Duplicate parameter '$name' (first defined on line ${prev?.getStartLine() ?: "n/a"})",
                                 ProblemHighlightType.ERROR
                             )
                         }

@@ -1,6 +1,7 @@
 package com.berrycrush.intellij.index
 
 import com.berrycrush.intellij.language.FragmentFileType
+import com.berrycrush.intellij.psi.BerryCrushFragmentElement
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
@@ -8,6 +9,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.indexing.DataIndexer
 import com.intellij.util.indexing.DefaultFileTypeSpecificInputFilter
 import com.intellij.util.indexing.FileBasedIndex
@@ -34,19 +36,11 @@ class FragmentIndex : ScalarIndexExtension<String>() {
 
     override fun getIndexer(): DataIndexer<String, Void, FileContent> = DataIndexer { fileContent ->
         val result = mutableMapOf<String, Void?>()
-        val text = fileContent.contentAsText.toString()
-
-        // Process line by line to skip commented lines
-        text.lineSequence().forEach { line ->
-            val trimmedLine = line.trimStart()
-            // Skip comment lines
-            if (trimmedLine.startsWith("#")) return@forEach
-
-            // Find fragment definition in this line
-            val match = FRAGMENT_PATTERN.find(line) ?: return@forEach
-            val fragmentName = match.groupValues[1].trim()
-            if (fragmentName.isNotEmpty()) {
-                result[fragmentName] = null
+        PsiTreeUtil.findChildrenOfType(fileContent.psiFile, BerryCrushFragmentElement::class.java).forEach { fragment ->
+            fragment.fragmentName?.let { name ->
+                if (name.isNotEmpty()) {
+                    result[name] = null
+                }
             }
         }
 
@@ -63,8 +57,6 @@ class FragmentIndex : ScalarIndexExtension<String>() {
         val KEY: ID<String, Void> = ID.create("berrycrush.fragment.index")
 
         private const val VERSION = 2
-
-        private val FRAGMENT_PATTERN = Regex("""[Ff]ragment:\s*(\S+)""")
 
         /**
          * Gets all fragment names in the project.
@@ -109,24 +101,8 @@ class FragmentIndex : ScalarIndexExtension<String>() {
         }
 
         private fun findFragmentDefinitionInFile(file: PsiFile, fragmentName: String): PsiElement? {
-            val text = file.text
-            val pattern = Regex("""[Ff]ragment:\s*${Regex.escape(fragmentName)}""")
-
-            // Process line by line to skip commented lines
-            var offset = 0
-            text.lineSequence().forEach { line ->
-                val trimmedLine = line.trimStart()
-                // Skip comment lines
-                if (!trimmedLine.startsWith("#")) {
-                    val match = pattern.find(line)
-                    if (match != null) {
-                        // Find the element at this position
-                        return file.findElementAt(offset + match.range.first)
-                    }
-                }
-                offset += line.length + 1 // +1 for newline
-            }
-            return null
+            return PsiTreeUtil.findChildrenOfType(file, BerryCrushFragmentElement::class.java)
+                .find { fragment -> fragment.fragmentName == fragmentName }
         }
     }
 }

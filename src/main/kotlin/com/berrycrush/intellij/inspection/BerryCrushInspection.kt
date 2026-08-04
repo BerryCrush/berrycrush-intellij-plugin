@@ -2,7 +2,6 @@ package com.berrycrush.intellij.inspection
 
 import com.intellij.codeInspection.LocalInspectionTool
 import com.intellij.codeInspection.ProblemsHolder
-import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
 import com.intellij.psi.PsiFile
 
@@ -34,19 +33,4 @@ abstract class BerryCrushInspection : LocalInspectionTool() {
      * Called once per file during inspection.
      */
     protected abstract fun checkFile(file: PsiFile, holder: ProblemsHolder)
-
-    /**
-     * Find a PSI element at a specific line and column.
-     */
-    protected fun findElementAtLine(file: PsiFile, lineNumber: Int, column: Int = 0): PsiElement? {
-        val document = com.intellij.psi.PsiDocumentManager.getInstance(file.project).getDocument(file)
-            ?: return null
-        
-        if (lineNumber >= document.lineCount) return null
-        
-        val lineStartOffset = document.getLineStartOffset(lineNumber)
-        val offset = lineStartOffset + column
-        
-        return file.findElementAt(offset)
-    }
 }

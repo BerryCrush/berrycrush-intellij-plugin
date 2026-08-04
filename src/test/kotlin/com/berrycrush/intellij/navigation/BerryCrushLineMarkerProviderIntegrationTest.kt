@@ -72,30 +72,6 @@ class BerryCrushLineMarkerProviderIntegrationTest : BerryCrushTestCase() {
     }
 
     /**
-     * Test helper function extractIncludeFragmentName works correctly.
-     */
-    fun testExtractIncludeFragmentName() {
-        val result1 = BerryCrushLineMarkerProvider.extractIncludeFragmentName("include login-steps")
-        println("extractIncludeFragmentName('include login-steps') = '$result1'")
-        assertEquals("login-steps", result1)
-        
-        val result2 = BerryCrushLineMarkerProvider.extractIncludeFragmentName("include ^auth-flow")
-        println("extractIncludeFragmentName('include ^auth-flow') = '$result2'")
-        assertEquals("auth-flow", result2)
-        
-        val result3 = BerryCrushLineMarkerProvider.extractIncludeFragmentName("include my.fragment")
-        println("extractIncludeFragmentName('include my.fragment') = '$result3'")
-        assertEquals("my.fragment", result3)
-        
-        val result4 = BerryCrushLineMarkerProvider.extractIncludeFragmentName("given I include the header")
-        println("extractIncludeFragmentName('given I include the header') = '$result4'")
-        // Note: the function doesn't check for line start, so it will return "the"
-        // This is intentional - the line marker provider uses getLineMarkerInfo which 
-        // is only called for the "include" token, not for step text
-        println("Note: 'given I include the header' returns: $result4")
-    }
-
-    /**
      * Test that line markers are created for include directives.
      */
     fun testLineMarkersForIncludeDirective() {

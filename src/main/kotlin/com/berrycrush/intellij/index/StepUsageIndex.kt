@@ -6,10 +6,15 @@ package com.berrycrush.intellij.index
 
 import com.berrycrush.intellij.language.FragmentFileType
 import com.berrycrush.intellij.language.ScenarioFileType
-import com.berrycrush.intellij.util.BerryCrushStepLineParser
+import com.berrycrush.intellij.psi.BerryCrushAssertElement
+import com.berrycrush.intellij.psi.BerryCrushStepElement
+import com.intellij.jvm.dfa.analysis.ui.inspection.presentation.PsiElementLineLocator.getStartLine
+import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiManager
 import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.psi.util.PsiTreeUtil
+import com.intellij.psi.util.startOffset
 import com.intellij.util.indexing.DataIndexer
 import com.intellij.util.indexing.FileBasedIndex
 import com.intellij.util.indexing.FileBasedIndexExtension
@@ -33,42 +38,6 @@ class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
         val NAME: ID<String, StepUsageData> = ID.create("com.berrycrush.intellij.index.StepUsageIndex")
 
         /**
-         * Extract step text from a line.
-         */
-        fun extractStepText(line: String): String? = BerryCrushStepLineParser.extractStepText(line)
-
-        /**
-         * Extract assertion text from a line (removes Assert: prefix)
-         */
-        fun extractAssertionText(line: String): String? {
-            val trimmed = line.trim()
-            if (trimmed.lowercase().startsWith("assert")) {
-                return trimmed.substring(6).trim()
-            }
-            return null
-        }
-
-        /**
-         * Find all usages of a step pattern in the project.
-         */
-        fun findStepUsages(
-            project: com.intellij.openapi.project.Project,
-            stepPattern: String
-        ): List<PsiElement> {
-            return findStepUsagesInScope(project, stepPattern, GlobalSearchScope.projectScope(project))
-        }
-
-        /**
-         * Find all usages of a step pattern using allScope (includes all indexed files).
-         */
-        fun findStepUsagesAllScope(
-            project: com.intellij.openapi.project.Project,
-            stepPattern: String
-        ): List<PsiElement> {
-            return findStepUsagesInScope(project, stepPattern, GlobalSearchScope.allScope(project))
-        }
-
-        /**
          * Find all usages of a step pattern within the given scope.
          *
          * Use this for module-scoped search, passing in the result of
@@ -80,7 +49,7 @@ class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
          * @return List of PSI elements where the step is used
          */
         fun findStepUsagesInScope(
-            project: com.intellij.openapi.project.Project,
+            project: Project,
             stepPattern: String,
             scope: GlobalSearchScope
         ): List<PsiElement> {
@@ -124,26 +93,6 @@ class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
         }
 
         /**
-         * Find all usages of an assertion pattern in the project.
-         */
-        fun findAssertionUsages(
-            project: com.intellij.openapi.project.Project,
-            assertionPattern: String
-        ): List<PsiElement> {
-            return findAssertionUsagesInScope(project, assertionPattern, GlobalSearchScope.projectScope(project))
-        }
-
-        /**
-         * Find all usages of an assertion pattern using allScope (includes all indexed files).
-         */
-        fun findAssertionUsagesAllScope(
-            project: com.intellij.openapi.project.Project,
-            assertionPattern: String
-        ): List<PsiElement> {
-            return findAssertionUsagesInScope(project, assertionPattern, GlobalSearchScope.allScope(project))
-        }
-
-        /**
          * Find all usages of an assertion pattern within the given scope.
          *
          * Use this for module-scoped search, passing in the result of
@@ -155,7 +104,7 @@ class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
          * @return List of PSI elements where the assertion is used
          */
         fun findAssertionUsagesInScope(
-            project: com.intellij.openapi.project.Project,
+            project: Project,
             assertionPattern: String,
             scope: GlobalSearchScope
         ): List<PsiElement> {
@@ -234,49 +183,28 @@ class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
     override fun getIndexer(): DataIndexer<String, StepUsageData, FileContent> {
         return DataIndexer { inputData ->
             val result = mutableMapOf<String, StepUsageData>()
-            val content = inputData.contentAsText.toString()
-            val lines = content.lines()
-
-            var offset = 0
-            for ((lineNumber, line) in lines.withIndex()) {
-                // Check for step keywords
-                val stepText = extractStepText(line)
-                if (stepText != null && stepText.isNotBlank()) {
-                    // Store with lowercase key for case-insensitive matching
+            PsiTreeUtil.findChildrenOfType(inputData.psiFile, BerryCrushStepElement::class.java).forEach { step ->
+                val stepText = step.stepText
+                if (!stepText.isNullOrBlank()) {
                     result[stepText] = StepUsageData(
-                        offset = offset + line.indexOfFirst { !it.isWhitespace() },
-                        lineNumber = lineNumber + 1,
-                        stepType = extractStepType(line)
+                        offset = step.startOffset,
+                        lineNumber = step.getStartLine() + 1,
+                        stepType = step.keyword ?: "step"
                     )
                 }
-
-                // Check for assertion
-                val assertionText = extractAssertionText(line)
-                if (assertionText != null && assertionText.isNotBlank()) {
+            }
+            PsiTreeUtil.findChildrenOfType(inputData.psiFile, BerryCrushAssertElement::class.java).forEach { assert ->
+                val assertionText = assert.assertionText
+                if (!assertionText.isNullOrBlank()) {
                     // Prefix with ASSERT: to distinguish from steps
                     result["ASSERT:$assertionText"] = StepUsageData(
-                        offset = offset + line.indexOfFirst { !it.isWhitespace() },
-                        lineNumber = lineNumber + 1,
+                        offset = assert.startOffset,
+                        lineNumber = assert.getStartLine() + 1,
                         stepType = "assert"
                     )
                 }
-
-                offset += line.length + 1 // +1 for newline
             }
-
             result
-        }
-    }
-
-    private fun extractStepType(line: String): String {
-        val trimmed = line.trim().lowercase()
-        return when {
-            trimmed.startsWith("given") -> "given"
-            trimmed.startsWith("when") -> "when"
-            trimmed.startsWith("then") -> "then"
-            trimmed.startsWith("and") -> "and"
-            trimmed.startsWith("but") -> "but"
-            else -> "step"
         }
     }
 }

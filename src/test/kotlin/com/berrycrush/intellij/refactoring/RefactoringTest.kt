@@ -3,6 +3,8 @@ package com.berrycrush.intellij.refactoring
 import com.berrycrush.intellij.BerryCrushTestCase
 import com.berrycrush.intellij.refactoring.fragment.FragmentRenameProcessor
 import com.berrycrush.intellij.refactoring.variable.VariableRenameProcessor
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.search.SearchScope
 
 /**
  * Tests for BerryCrush refactoring support.

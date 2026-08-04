@@ -2,10 +2,14 @@ package com.berrycrush.intellij.index
 
 import com.berrycrush.intellij.language.FragmentFileType
 import com.berrycrush.intellij.language.ScenarioFileType
+import com.berrycrush.intellij.psi.BerryCrushIncludeElement
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
+import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.indexing.DataIndexer
 import com.intellij.util.indexing.DefaultFileTypeSpecificInputFilter
 import com.intellij.util.indexing.FileBasedIndex
@@ -14,7 +18,6 @@ import com.intellij.util.indexing.ID
 import com.intellij.util.indexing.ScalarIndexExtension
 import com.intellij.util.io.EnumeratorStringDescriptor
 import com.intellij.util.io.KeyDescriptor
-import com.intellij.psi.search.GlobalSearchScope
 
 /**
  * Index for BerryCrush include directive usages.
@@ -32,16 +35,13 @@ class IncludeUsageIndex : ScalarIndexExtension<String>() {
 
     override fun getIndexer(): DataIndexer<String, Void, FileContent> = DataIndexer { fileContent ->
         val result = mutableMapOf<String, Void?>()
-        val text = fileContent.contentAsText.toString()
-
-        // Find all include directives (include fragmentName)
-        INCLUDE_PATTERN.findAll(text).forEach { match ->
-            val fragmentName = match.groupValues[1].removePrefix("^")
-            if (fragmentName.isNotEmpty()) {
-                result[fragmentName] = null
+        PsiTreeUtil.findChildrenOfType(fileContent.psiFile, BerryCrushIncludeElement::class.java).forEach { include ->
+            include.fragmentName?.let { name ->
+                if (name.isNotEmpty()) {
+                    result[name] = null
+                }
             }
         }
-
         result
     }
 
@@ -55,12 +55,6 @@ class IncludeUsageIndex : ScalarIndexExtension<String>() {
         val KEY: ID<String, Void> = ID.create("berrycrush.include.usage.index")
 
         private const val VERSION = 1
-
-        // Match "include fragmentName" at the start of a line (strict lowercase)
-        private val INCLUDE_PATTERN = Regex(
-            """^\s*include\s+(\^?[a-zA-Z_][a-zA-Z0-9_.\-]*)""",
-            RegexOption.MULTILINE
-        )
 
         /**
          * Gets all included fragment names in the project.
@@ -96,26 +90,9 @@ class IncludeUsageIndex : ScalarIndexExtension<String>() {
             return results
         }
 
-        private fun findIncludeDirectivesInFile(file: com.intellij.psi.PsiFile, fragmentName: String): List<PsiElement> {
-            val results = mutableListOf<PsiElement>()
-            val text = file.text
-            val escapedName = Regex.escape(fragmentName)
-            // Match "include fragmentName" at the start of a line (strict lowercase)
-            val pattern = Regex(
-                """^\s*(include\s+\^?$escapedName)(?!\w)""",
-                RegexOption.MULTILINE
-            )
-
-            pattern.findAll(text).forEach { match ->
-                // Find element at the "include" keyword position (group 1 start)
-                val includeStart = match.groups[1]?.range?.first ?: match.range.first
-                val element = file.findElementAt(includeStart)
-                if (element != null) {
-                    results.add(element)
-                }
-            }
-
-            return results
+        private fun findIncludeDirectivesInFile(file: PsiFile, fragmentName: String): List<PsiElement> {
+            return PsiTreeUtil.findChildrenOfType(file, BerryCrushIncludeElement::class.java)
+                .filter { it.fragmentName == fragmentName }
         }
     }
 }
