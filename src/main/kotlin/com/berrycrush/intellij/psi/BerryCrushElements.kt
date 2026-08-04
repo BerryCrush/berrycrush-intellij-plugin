@@ -10,6 +10,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.PsiReference
 import com.intellij.psi.impl.source.resolve.reference.ReferenceProvidersRegistry
+import com.intellij.psi.util.PsiTreeUtil
 
 /**
  * Base class for all BerryCrush PSI elements.
@@ -48,10 +49,28 @@ abstract class BerryCrushPsiElement(node: ASTNode) : ASTWrapperPsiElement(node) 
         children.filterIsInstance<T>()
 }
 
+abstract class BerryCrushIncludeLikeElement(name: String, node: ASTNode) : BerryCrushDirectiveElement(name, node) {
+    /**
+     * Get all parameter elements for this include directive.
+     */
+    val parameters: BerryCrushIncludeParameterElement?
+        get() = findChildByClass(BerryCrushIncludeParameterElement::class.java)
+
+    /**
+     * Get parameter names as a set.
+     */
+    val parameterNames: Set<String>
+        get() = parameters?.parameterNames?.toSet() ?: emptySet()
+
+
+    fun findParameter(name: String): BerryCrushParameterEntryElement? =
+        parameters?.entries?.find { it.parameterName == name }
+}
+
 /**
  * Include directive element: `include fragmentName` with optional parameters.
  */
-class BerryCrushIncludeElement(node: ASTNode) : BerryCrushDirectiveElement("include", node), PsiNameIdentifierOwner {
+class BerryCrushIncludeElement(node: ASTNode) : BerryCrushIncludeLikeElement("include", node), PsiNameIdentifierOwner {
     val fragmentName: String?
         get() {
             val text = node.text
@@ -59,17 +78,6 @@ class BerryCrushIncludeElement(node: ASTNode) : BerryCrushDirectiveElement("incl
             return match?.groupValues?.get(1)
         }
 
-    /**
-     * Get all parameter elements for this include directive.
-     */
-    val parameters: List<BerryCrushIncludeParameterElement>
-        get() = findChildrenByClass(BerryCrushIncludeParameterElement::class.java).toList()
-
-    /**
-     * Get parameter names as a set.
-     */
-    val parameterNames: Set<String>
-        get() = parameters.mapNotNull { it.parameterName }.toSet()
 
     override fun getName(): String? = fragmentName
 
@@ -128,30 +136,12 @@ abstract class BerryCrushDirectiveElement(val directiveName: String, node: ASTNo
 /**
  * Call directive element: `call ^operationId` with optional parameters
  */
-class BerryCrushCallElement(node: ASTNode) : BerryCrushDirectiveElement("call", node) {
+class BerryCrushCallElement(node: ASTNode) : BerryCrushIncludeLikeElement("call", node) {
     val operationRef: BerryCrushOperationRefElement?
         get() = findChildByClass(BerryCrushOperationRefElement::class.java)
 
     val operationId: String?
         get() = operationRef?.operationId
-
-    /**
-     * Get all parameter elements for this call directive.
-     */
-    val parameters: List<BerryCrushIncludeParameterElement>
-        get() = findChildrenByClass(BerryCrushIncludeParameterElement::class.java).toList()
-
-    /**
-     * Get parameter names as a set.
-     */
-    val parameterNames: Set<String>
-        get() = parameters.mapNotNull { it.parameterName }.toSet()
-
-    val directParameters: List<BerryCrushIncludeParameterElement>
-        get() = directChildrenOfType()
-
-    fun findParameter(name: String): BerryCrushIncludeParameterElement? =
-        directParameters.firstOrNull { it.parameterName == name }
 }
 
 /**
@@ -312,48 +302,14 @@ class BerryCrushWebhookElement(node: ASTNode) : BerryCrushDirectiveElement("webh
 /**
  * Include parameter element: `paramName: value` inside an include directive.
  */
-class BerryCrushIncludeParameterElement(node: ASTNode) : BerryCrushPsiElement(node), PsiNameIdentifierOwner {
-    /**
-     * The parameter name (key before the colon).
-     */
-    val parameterName: String?
-        get() = extractParamName(node.text.trim())
-
-    /**
-     * The parameter value (after the colon).
-     */
-    val parameterValue: String?
-        get() = extractParamValue(node.text.trim())
-
-    val nestedParameters: List<BerryCrushIncludeParameterElement>
-        get() = directChildrenOfType()
-
-    fun findNestedParameter(name: String): BerryCrushIncludeParameterElement? =
-        nestedParameters.firstOrNull { it.parameterName == name }
-
-    override fun getName(): String? = parameterName
-
-    override fun setName(name: String): PsiElement = this
-
-    override fun getNameIdentifier(): PsiElement? = null
-}
-
+class BerryCrushIncludeParameterElement(node: ASTNode) : BerryCrushParameterLikeElement(node)
 
 /**
  * Generic element for unspecified element types.
  */
 class BerryCrushGenericElement(node: ASTNode) : BerryCrushPsiElement(node)
 
-/**
- * Parameters block element:
- * ```
- * parameters:
- *   key: value
- *   key2: value2
- * ```
- * Used in scenario and feature blocks.
- */
-class BerryCrushParametersElement(node: ASTNode) : BerryCrushPsiElement(node) {
+abstract class BerryCrushParameterLikeElement(node: ASTNode) : BerryCrushPsiElement(node) {
     /**
      * Get all parameter entries in this block.
      */
@@ -375,6 +331,17 @@ class BerryCrushParametersElement(node: ASTNode) : BerryCrushPsiElement(node) {
 }
 
 /**
+ * Parameters block element:
+ * ```
+ * parameters:
+ *   key: value
+ *   key2: value2
+ * ```
+ * Used in scenario and feature blocks.
+ */
+class BerryCrushParametersElement(node: ASTNode) : BerryCrushParameterLikeElement(node)
+
+/**
  * Single parameter entry element: `key: value`
  * Used inside a parameters block.
  */
@@ -390,6 +357,11 @@ class BerryCrushParameterEntryElement(node: ASTNode) : BerryCrushPsiElement(node
      */
     val parameterValue: String?
         get() = extractParamValue(node.text.trim())
+
+    fun findNestedParameter(name: String): BerryCrushParameterEntryElement? {
+        return PsiTreeUtil.findChildrenOfType(this, BerryCrushParameterEntryElement::class.java)
+            .find { it.parameterName == name }
+    }
 
     override fun getName(): String? = parameterName
 

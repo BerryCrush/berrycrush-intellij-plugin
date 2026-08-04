@@ -29,7 +29,7 @@ class BerryCrushFragmentReference(
     override fun getVariants(): Array<Any> {
         val project = element.project
         return findAllFragments(project)
-            .mapNotNull { it.nameWithoutExtension }
+            .map { it.nameWithoutExtension }
             .toTypedArray()
     }
 
