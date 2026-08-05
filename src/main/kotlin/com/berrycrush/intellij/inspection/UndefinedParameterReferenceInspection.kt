@@ -44,13 +44,13 @@ class UndefinedParameterReferenceInspection : BerryCrushInspection() {
 
     private fun checkElement(element: PsiElement, parentParameters: List<BerryCrushParametersElement>,  extractedVariables: List<BerryCrushExtractElement>, holder: ProblemsHolder) {
         PsiTreeUtil.findChildrenOfAnyType(element, true, BerryCrushVariableRefElement::class.java).forEach { variable ->
-            val name = variable.variableName ?: return@forEach
+            val name = variable.variableName
 
             if (name.startsWith("param.")) {
                 val result = parentParameters.find { name in it.parameterNames }
                 if (result == null) {
                     holder.registerProblem(
-                        element,
+                        variable,
                         "Parameter '$name' is not defined in any parameters block",
                         ProblemHighlightType.WARNING
                     )
@@ -59,7 +59,7 @@ class UndefinedParameterReferenceInspection : BerryCrushInspection() {
                 val result = extractedVariables.find { name == it.extractName }
                 if (result == null) {
                     holder.registerProblem(
-                        element,
+                        variable,
                         "Variable '$name' is not extracted in this block",
                         ProblemHighlightType.WARNING
                     )

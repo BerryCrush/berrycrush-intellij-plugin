@@ -1,6 +1,6 @@
 package com.berrycrush.intellij.inspection
 
-import com.berrycrush.intellij.psi.BerryCrushCallElement
+import com.berrycrush.intellij.psi.BerryCrushOperationRefElement
 import com.berrycrush.intellij.reference.BerryCrushOperationReference
 import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
@@ -28,11 +28,11 @@ class UndefinedOperationInspection : BerryCrushInspection() {
         if (knownOperations.isEmpty() && BerryCrushOperationReference.findOpenAPIFiles(project).isEmpty()) {
             return
         }
-        val callDirectives = PsiTreeUtil.findChildrenOfType(file, BerryCrushCallElement::class.java)
-        callDirectives.forEach{ call ->
-            val operationId = call.operationId
+        val refs = PsiTreeUtil.findChildrenOfType(file, BerryCrushOperationRefElement::class.java)
+        refs.forEach{ ref ->
+            val operationId = ref.operationId
             if (operationId !in knownOperations) {
-                holder.registerProblem(call,
+                holder.registerProblem(ref,
                     "Operation '$operationId' not found in OpenAPI specs",
                     ProblemHighlightType.WARNING)
             }

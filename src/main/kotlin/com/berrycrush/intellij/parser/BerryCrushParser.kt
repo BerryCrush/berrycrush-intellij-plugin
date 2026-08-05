@@ -53,6 +53,7 @@ class BerryCrushParser : PsiParser {
                 builder.advanceLexer()
                 skipToEndOfLine(builder)
             }
+            BerryCrushTokenTypes.COMMENT -> skipToEndOfLine(builder, BerryCrushElementTypes.COMMENT, false)
             else -> builder.advanceLexer()
         }
     }
@@ -86,6 +87,7 @@ class BerryCrushParser : PsiParser {
                 BerryCrushTokenTypes.THEN,
                 BerryCrushTokenTypes.AND,
                 BerryCrushTokenTypes.BUT -> parseStep(builder, indent)
+                BerryCrushTokenTypes.COMMENT -> skipToEndOfLine(builder, BerryCrushElementTypes.COMMENT, false)
                 else -> skipToEndOfLine(builder)
             }
         }
@@ -164,6 +166,7 @@ class BerryCrushParser : PsiParser {
                 BerryCrushTokenTypes.BACKGROUND -> parseBackground(builder, indent)
                 BerryCrushTokenTypes.SCENARIO -> parseScenario(builder, indent)
                 BerryCrushTokenTypes.OUTLINE -> parseOutline(builder, indent)
+                BerryCrushTokenTypes.COMMENT -> skipToEndOfLine(builder, BerryCrushElementTypes.COMMENT, false)
                 else -> skipToEndOfLine(builder)
             }
         }
@@ -235,6 +238,7 @@ class BerryCrushParser : PsiParser {
                 BerryCrushTokenTypes.ASSERT -> parseAssertDirective(builder)
                 BerryCrushTokenTypes.BACKGROUND -> parseBackground(builder, indent)
                 BerryCrushTokenTypes.SCENARIO -> parseScenario(builder, indent)
+                BerryCrushTokenTypes.COMMENT -> skipToEndOfLine(builder, BerryCrushElementTypes.COMMENT, false)
                 else -> skipToEndOfLine(builder)
             }
         }
@@ -541,16 +545,22 @@ class BerryCrushParser : PsiParser {
         return indent
     }
 
-    private fun skipToEndOfLine(builder: PsiBuilder, type: BerryCrushPsiElementType = BerryCrushElementTypes.TEXT) {
+    private fun skipToEndOfLine(builder: PsiBuilder, type: BerryCrushPsiElementType = BerryCrushElementTypes.TEXT, checkVariable: Boolean = true) {
         val marker = builder.mark()
+        var count = 0;
         while (!builder.eof() && builder.tokenType != BerryCrushTokenTypes.NEWLINE) {
-            if (builder.tokenType == BerryCrushTokenTypes.VARIABLE) {
+            if (checkVariable && builder.tokenType == BerryCrushTokenTypes.VARIABLE) {
                 parseVariableRef(builder)
             } else {
                 builder.advanceLexer()
             }
+            count++
         }
-        marker.done(type)
+        if (count > 0) {
+            marker.done(type)
+        } else {
+            marker.rollbackTo()
+        }
         skipNewlines(builder)
     }
 

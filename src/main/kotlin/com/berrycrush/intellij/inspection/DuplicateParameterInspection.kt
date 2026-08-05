@@ -34,7 +34,7 @@ class DuplicateParameterInspection : BerryCrushInspection() {
                             holder.registerProblem(
                                 entry,
                                 "Duplicate parameter '$name' (first defined on line ${prev?.getStartLine() ?: "n/a"})",
-                                ProblemHighlightType.ERROR
+                                ProblemHighlightType.WARNING
                             )
                         }
                     }

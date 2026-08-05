@@ -377,3 +377,5 @@ class BerryCrushParameterKeyElement(node: ASTNode) : BerryCrushPsiElement(node) 
 class BerryCrushParameterValueElement(node: ASTNode) : BerryCrushPsiElement(node)
 
 class BerryCrushTextElement(node: ASTNode) : BerryCrushPsiElement(node)
+
+class BerryCrushCommentElement(node: ASTNode) : BerryCrushPsiElement(node)
