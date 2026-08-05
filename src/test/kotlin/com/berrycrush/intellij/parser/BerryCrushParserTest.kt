@@ -1,9 +1,12 @@
 package com.berrycrush.intellij.parser
 
 import com.berrycrush.intellij.BerryCrushTestCase
+import com.berrycrush.intellij.psi.BerryCrushAssertElement
 import com.berrycrush.intellij.psi.BerryCrushBackgroundElement
+import com.berrycrush.intellij.psi.BerryCrushElseElement
 import com.berrycrush.intellij.psi.BerryCrushFeatureElement
 import com.berrycrush.intellij.psi.BerryCrushFragmentElement
+import com.berrycrush.intellij.psi.BerryCrushIfElement
 import com.berrycrush.intellij.psi.BerryCrushParameterEntryElement
 import com.berrycrush.intellij.psi.BerryCrushParametersElement
 import com.berrycrush.intellij.psi.BerryCrushScenarioElement
@@ -254,5 +257,33 @@ class BerryCrushParserTest : BerryCrushTestCase() {
         val entry = entries.first()
         assertEquals("myParam", entry.parameterName)
         assertEquals("myValue", entry.parameterValue)
+    }
+
+    fun testStepConditionalIfElseParsesAsNestedDirectives() {
+        val file =
+            createScenarioFile(
+                "conditional",
+                """
+                scenario: conditional checks
+                  then verify response
+                    if status 2xx
+                      assert $.id exists
+                    else
+                      assert status 5xx
+                """.trimIndent(),
+            )
+
+        val psiFile = psiManager.findFile(file)
+        assertNotNull("PSI file should be created", psiFile)
+
+        val ifDirectives = PsiTreeUtil.findChildrenOfType(psiFile, BerryCrushIfElement::class.java)
+        val elseDirectives = PsiTreeUtil.findChildrenOfType(psiFile, BerryCrushElseElement::class.java)
+        assertEquals("Should find one if directive", 1, ifDirectives.size)
+        assertEquals("Should find one else directive", 1, elseDirectives.size)
+
+        val ifAssertions = PsiTreeUtil.findChildrenOfType(ifDirectives.first(), BerryCrushAssertElement::class.java)
+        val elseAssertions = PsiTreeUtil.findChildrenOfType(elseDirectives.first(), BerryCrushAssertElement::class.java)
+        assertEquals("If branch should contain one assert", 1, ifAssertions.size)
+        assertEquals("Else branch should contain one assert", 1, elseAssertions.size)
     }
 }

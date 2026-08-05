@@ -61,6 +61,12 @@ object BerryCrushElementTypes {
     val INCLUDE_DIRECTIVE = BerryCrushPsiElementType("INCLUDE_DIRECTIVE")
 
     @JvmField
+    val IF_DIRECTIVE = BerryCrushPsiElementType("IF_DIRECTIVE")
+
+    @JvmField
+    val ELSE_DIRECTIVE = BerryCrushPsiElementType("ELSE_DIRECTIVE")
+
+    @JvmField
     val BODY_DIRECTIVE = BerryCrushPsiElementType("BODY_DIRECTIVE")
 
     // Reference elements

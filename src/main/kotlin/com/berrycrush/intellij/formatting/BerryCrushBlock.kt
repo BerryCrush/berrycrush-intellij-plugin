@@ -2,13 +2,15 @@ package com.berrycrush.intellij.formatting
 
 import com.berrycrush.intellij.lexer.BerryCrushTokenTypes
 import com.berrycrush.intellij.psi.BerryCrushBackgroundElement
-import com.berrycrush.intellij.psi.BerryCrushElementTypes
+import com.berrycrush.intellij.psi.BerryCrushDirectiveElement
+import com.berrycrush.intellij.psi.BerryCrushExampleRowElement
 import com.berrycrush.intellij.psi.BerryCrushExamplesElement
 import com.berrycrush.intellij.psi.BerryCrushFeatureElement
 import com.berrycrush.intellij.psi.BerryCrushFragmentElement
 import com.berrycrush.intellij.psi.BerryCrushOutlineElement
 import com.berrycrush.intellij.psi.BerryCrushScenarioElement
 import com.berrycrush.intellij.psi.BerryCrushStepElement
+import com.berrycrush.intellij.psi.BerryCrushTagElement
 import com.intellij.formatting.Alignment
 import com.intellij.formatting.Block
 import com.intellij.formatting.ChildAttributes
@@ -17,6 +19,7 @@ import com.intellij.formatting.Spacing
 import com.intellij.formatting.SpacingBuilder
 import com.intellij.formatting.Wrap
 import com.intellij.lang.ASTNode
+import com.intellij.psi.PsiElement
 import com.intellij.psi.TokenType
 import com.intellij.psi.formatter.common.AbstractBlock
 import com.intellij.psi.tree.IElementType
@@ -48,10 +51,10 @@ class BerryCrushBlock(
         while (child != null) {
             if (!isWhitespaceOrNewline(child.elementType)) {
                 // Calculate this child's indent based on current context
-                val childIndent = calcContextAwareIndent(child, currentContext)
+                val childIndent = calcContextAwareIndent(child.psi, currentContext)
 
                 // Create child block with updated context
-                val childContext = updateContext(currentContext, child)
+                val childContext = updateContext(currentContext, child.psi)
 
                 blocks.add(
                     BerryCrushBlock(
@@ -78,8 +81,8 @@ class BerryCrushBlock(
      */
     private fun updateContext(
         ctx: FormattingContext,
-        node: ASTNode,
-    ): FormattingContext = when (node.psi) {
+        node: PsiElement,
+    ): FormattingContext = when (node) {
         is BerryCrushFeatureElement -> FormattingContext(inFeature = true)
         is BerryCrushScenarioElement, is BerryCrushOutlineElement ->
             ctx.copy(inScenario = true, inBackground = false, inExamples = false, inStep = false)
@@ -96,59 +99,19 @@ class BerryCrushBlock(
      */
     @Suppress("CyclomaticComplexMethod")
     private fun calcContextAwareIndent(
-        child: ASTNode,
+        child: PsiElement,
         ctx: FormattingContext,
-    ): Indent {
-        val type = child.elementType
-        val text = child.text.trim().lowercase()
-
-        return when {
-            isTopLevelElement(type, text) -> Indent.getNoneIndent()
-            isScenarioLevelElement(type, text) -> calcScenarioIndent(ctx)
-            isBackgroundElement(type, text) -> calcBackgroundIndent(ctx)
-            isTagElement(type, text) -> calcTagIndent(ctx)
-            isExamplesElement(type, text) -> calcExamplesIndent(ctx)
-            isStepElement(type) || isStepKeyword(text) -> calcStepIndent(ctx)
-            isDirectiveElement(type) || isDirectiveKeyword(text) -> calcDirectiveIndent(ctx)
-            isTableRow(type, text) -> calcTableIndent(ctx)
-            else -> Indent.getNoneIndent()
-        }
+    ): Indent = when (child) {
+        is BerryCrushFragmentElement, is BerryCrushFeatureElement -> Indent.getNoneIndent()
+        is BerryCrushScenarioElement, is BerryCrushOutlineElement -> calcScenarioIndent(ctx)
+        is BerryCrushBackgroundElement -> calcBackgroundIndent(ctx)
+        is BerryCrushExamplesElement -> calcExamplesIndent(ctx)
+        is BerryCrushStepElement -> calcStepIndent(ctx)
+        is BerryCrushDirectiveElement -> calcDirectiveIndent(ctx)
+        is BerryCrushExampleRowElement -> calcTableIndent(ctx)
+        is BerryCrushTagElement -> calcTagIndent(ctx)
+        else -> Indent.getNoneIndent()
     }
-
-    // Helper methods for element type detection
-
-    private fun isTopLevelElement(
-        type: IElementType,
-        text: String,
-    ): Boolean = isFeatureElement(type) ||
-        isFragmentElement(type) ||
-        text.startsWith("feature:") ||
-        text.startsWith("fragment:")
-
-    private fun isScenarioLevelElement(
-        type: IElementType,
-        text: String,
-    ): Boolean = isScenarioElement(type) || text.startsWith("scenario:") || text.startsWith("outline:")
-
-    private fun isBackgroundElement(
-        type: IElementType,
-        text: String,
-    ): Boolean = type == BerryCrushTokenTypes.BACKGROUND || text.startsWith("background:")
-
-    private fun isTagElement(
-        type: IElementType,
-        text: String,
-    ): Boolean = type == BerryCrushTokenTypes.TAG || text.startsWith("@")
-
-    private fun isExamplesElement(
-        type: IElementType,
-        text: String,
-    ): Boolean = type == BerryCrushTokenTypes.EXAMPLES || text.startsWith("examples:")
-
-    private fun isTableRow(
-        type: IElementType,
-        text: String,
-    ): Boolean = type == BerryCrushTokenTypes.PIPE || text.startsWith("|")
 
     // Helper methods for indent calculation
 
@@ -205,22 +168,10 @@ class BerryCrushBlock(
     override fun getChildAttributes(newChildIndex: Int): ChildAttributes {
         // When pressing Enter after a line, suggest appropriate indent
         val nextIndent =
-            when {
-                isFeatureElement(myNode.elementType) ||
-                    context.inFeature &&
-                    (myNode.text.trim().startsWith("feature:")) ->
-                    Indent.getSpaceIndent(indentSize)
-
-                isScenarioElement(myNode.elementType) ||
-                    myNode.text
-                        .trim()
-                        .lowercase()
-                        .let { it.startsWith("scenario:") || it.startsWith("outline:") } ->
-                    Indent.getSpaceIndent(if (context.inFeature) 2 * indentSize else indentSize)
-
-                isStepElement(myNode.elementType) || isStepKeyword(myNode.text.trim().lowercase()) ->
-                    Indent.getSpaceIndent(if (context.inFeature) 3 * indentSize else 2 * indentSize)
-
+            when (myNode.psi) {
+                is BerryCrushFeatureElement -> Indent.getSpaceIndent(indentSize)
+                is BerryCrushScenarioElement, is BerryCrushOutlineElement -> Indent.getSpaceIndent(if (context.inFeature) 2 * indentSize else indentSize)
+                is BerryCrushStepElement -> Indent.getSpaceIndent(if (context.inFeature) 3 * indentSize else 2 * indentSize)
                 else -> Indent.getNoneIndent()
             }
         return ChildAttributes(nextIndent, null)
@@ -231,43 +182,6 @@ class BerryCrushBlock(
     private fun isWhitespaceOrNewline(type: IElementType): Boolean = type == TokenType.WHITE_SPACE ||
         type == BerryCrushTokenTypes.WHITE_SPACE ||
         type == BerryCrushTokenTypes.NEWLINE
-
-    private fun isFeatureElement(type: IElementType): Boolean = type == BerryCrushTokenTypes.FEATURE ||
-        type == BerryCrushElementTypes.FEATURE
-
-    private fun isFragmentElement(type: IElementType): Boolean = type == BerryCrushTokenTypes.FRAGMENT ||
-        type == BerryCrushElementTypes.FRAGMENT
-
-    private fun isScenarioElement(type: IElementType): Boolean = type == BerryCrushTokenTypes.SCENARIO ||
-        type == BerryCrushTokenTypes.OUTLINE ||
-        type == BerryCrushElementTypes.SCENARIO
-
-    private fun isStepElement(type: IElementType): Boolean = type == BerryCrushTokenTypes.GIVEN ||
-        type == BerryCrushTokenTypes.WHEN ||
-        type == BerryCrushTokenTypes.THEN ||
-        type == BerryCrushTokenTypes.AND ||
-        type == BerryCrushTokenTypes.BUT ||
-        type == BerryCrushElementTypes.STEP
-
-    private fun isStepKeyword(text: String): Boolean = text.startsWith("given ") ||
-        text.startsWith("when ") ||
-        text.startsWith("then ") ||
-        text.startsWith("and ") ||
-        text.startsWith("but ")
-
-    private fun isDirectiveElement(type: IElementType): Boolean = type == BerryCrushTokenTypes.CALL ||
-        type == BerryCrushTokenTypes.ASSERT ||
-        type == BerryCrushTokenTypes.EXTRACT ||
-        type == BerryCrushTokenTypes.INCLUDE ||
-        type == BerryCrushElementTypes.CALL_DIRECTIVE ||
-        type == BerryCrushElementTypes.ASSERT_DIRECTIVE ||
-        type == BerryCrushElementTypes.INCLUDE_DIRECTIVE
-
-    private fun isDirectiveKeyword(text: String): Boolean = text.startsWith("call ") ||
-        text.startsWith("assert ") ||
-        text.startsWith("include ") ||
-        text.startsWith("extract ") ||
-        text.startsWith("body:")
 }
 
 /**

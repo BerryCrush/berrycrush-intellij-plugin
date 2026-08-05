@@ -7,6 +7,7 @@ import com.intellij.lang.ASTNode
 import com.intellij.lang.PsiBuilder
 import com.intellij.lang.PsiParser
 import com.intellij.psi.tree.IElementType
+import com.intellij.psi.util.PsiTreeUtil.mark
 
 /**
  * Parser for BerryCrush language.
@@ -57,6 +58,7 @@ class BerryCrushParser : PsiParser {
                 skipToEndOfLine(builder)
             }
             BerryCrushTokenTypes.COMMENT -> skipToEndOfLine(builder, BerryCrushElementTypes.COMMENT, false)
+            BerryCrushTokenTypes.TAG -> parseTag(builder)
             else -> builder.advanceLexer()
         }
     }
@@ -89,6 +91,8 @@ class BerryCrushParser : PsiParser {
                 BerryCrushTokenTypes.CALL -> parseCallDirective(builder, indent)
                 BerryCrushTokenTypes.WEBHOOK -> parseWebhookDirective(builder, indent)
                 BerryCrushTokenTypes.INCLUDE -> parseIncludeDirective(builder, indent)
+                BerryCrushTokenTypes.IF -> parseConditionalDirective(builder, indent, BerryCrushElementTypes.IF_DIRECTIVE)
+                BerryCrushTokenTypes.ELSE -> parseConditionalDirective(builder, indent, BerryCrushElementTypes.ELSE_DIRECTIVE)
                 BerryCrushTokenTypes.ASSERT -> parseAssertDirective(builder)
                 BerryCrushTokenTypes.EXTRACT -> parseExtractDirective(builder)
                 BerryCrushTokenTypes.GIVEN,
@@ -183,9 +187,14 @@ class BerryCrushParser : PsiParser {
                 BerryCrushTokenTypes.SCENARIO -> parseScenario(builder, indent)
                 BerryCrushTokenTypes.OUTLINE -> parseOutline(builder, indent)
                 BerryCrushTokenTypes.COMMENT -> skipToEndOfLine(builder, BerryCrushElementTypes.COMMENT, false)
+                BerryCrushTokenTypes.TAG -> parseTag(builder)
                 else -> skipToEndOfLine(builder)
             }
         }
+    }
+
+    private fun parseTag(builder: PsiBuilder) {
+        builder.mark().done(BerryCrushElementTypes.TAG)
     }
 
     private fun parseScenario(
@@ -463,6 +472,8 @@ class BerryCrushParser : PsiParser {
             BerryCrushTokenTypes.CALL -> parseCallDirective(builder, 0)
             BerryCrushTokenTypes.WEBHOOK -> parseWebhookDirective(builder, 0)
             BerryCrushTokenTypes.INCLUDE -> parseIncludeDirective(builder, 0)
+            BerryCrushTokenTypes.IF -> parseConditionalDirective(builder, 0, BerryCrushElementTypes.IF_DIRECTIVE)
+            BerryCrushTokenTypes.ELSE -> parseConditionalDirective(builder, 0, BerryCrushElementTypes.ELSE_DIRECTIVE)
             BerryCrushTokenTypes.ASSERT -> parseAssertDirective(builder)
             BerryCrushTokenTypes.OPERATION_REF -> parseOperationRef(builder)
             else -> builder.advanceLexer()
@@ -540,6 +551,21 @@ class BerryCrushParser : PsiParser {
         parseIncludeParameters(builder, parentIndent)
 
         marker.done(BerryCrushElementTypes.INCLUDE_DIRECTIVE)
+    }
+
+    private fun parseConditionalDirective(
+        builder: PsiBuilder,
+        parentIndent: Int,
+        elementType: BerryCrushPsiElementType,
+    ) {
+        val marker = builder.mark()
+        builder.advanceLexer() // consume if/else
+        skipToEndOfLine(builder)
+
+        // Parse nested branch content at deeper indentation.
+        parseStepNestedContent(builder, parentIndent)
+
+        marker.done(elementType)
     }
 
     private fun parseIndentedEntries(

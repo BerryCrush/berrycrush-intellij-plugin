@@ -1,13 +1,25 @@
 package com.berrycrush.intellij.inspection
 
+import com.berrycrush.intellij.psi.BerryCrushAssertElement
+import com.berrycrush.intellij.psi.BerryCrushBackgroundElement
+import com.berrycrush.intellij.psi.BerryCrushCallElement
 import com.berrycrush.intellij.psi.BerryCrushCommentElement
+import com.berrycrush.intellij.psi.BerryCrushElseElement
+import com.berrycrush.intellij.psi.BerryCrushExamplesElement
+import com.berrycrush.intellij.psi.BerryCrushExtractElement
 import com.berrycrush.intellij.psi.BerryCrushFeatureElement
+import com.berrycrush.intellij.psi.BerryCrushFragmentElement
+import com.berrycrush.intellij.psi.BerryCrushIfElement
+import com.berrycrush.intellij.psi.BerryCrushIncludeElement
+import com.berrycrush.intellij.psi.BerryCrushOutlineElement
 import com.berrycrush.intellij.psi.BerryCrushParameterEntryElement
 import com.berrycrush.intellij.psi.BerryCrushParametersElement
 import com.berrycrush.intellij.psi.BerryCrushPsiElement
 import com.berrycrush.intellij.psi.BerryCrushScenarioElement
+import com.berrycrush.intellij.psi.BerryCrushScenarioLikeElement
 import com.berrycrush.intellij.psi.BerryCrushStepElement
 import com.berrycrush.intellij.psi.BerryCrushTextElement
+import com.berrycrush.intellij.psi.BerryCrushWebhookElement
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
@@ -17,77 +29,181 @@ class SyntaxCheckInspection : BerryCrushInspection() {
         file: PsiFile,
         holder: ProblemsHolder,
     ) {
+        val isFragmentFile = file.name.endsWith(".fragment")
+        val isScenarioFile = file.name.endsWith(".scenario")
+
         file.children.filterIsInstance<BerryCrushPsiElement>().forEach { element ->
             when (element) {
-                is BerryCrushParametersElement -> checkParameter(element, holder)
-                is BerryCrushFeatureElement -> checkFeature(element, holder)
-                is BerryCrushScenarioElement -> checkScenario(element, holder)
-                is BerryCrushCommentElement -> doNothing()
+                is BerryCrushCommentElement -> Unit
+                is BerryCrushFragmentElement -> {
+                    if (!isFragmentFile) {
+                        holder.registerProblem(element, "Fragment block is only valid in .fragment files")
+                    }
+                    checkFragment(element, holder)
+                }
+                is BerryCrushParametersElement -> {
+                    if (!isScenarioFile) {
+                        holder.registerProblem(element, "Top-level parameters are only valid in .scenario files")
+                    }
+                    checkParameter(element, holder)
+                }
+                is BerryCrushFeatureElement -> {
+                    if (!isScenarioFile) {
+                        holder.registerProblem(element, "Feature block is only valid in .scenario files")
+                    }
+                    checkFeature(element, holder)
+                }
+                is BerryCrushScenarioLikeElement -> {
+                    if (!isScenarioFile) {
+                        holder.registerProblem(element, "Scenario/outline/background blocks are only valid in .scenario files")
+                    }
+                    checkScenarioLike(element, holder)
+                }
                 else -> holder.registerProblem(element, "Unknown element in file")
             }
         }
     }
 
-    fun checkParameter(
+    private fun checkParameter(
         parameter: BerryCrushParametersElement,
         holder: ProblemsHolder,
     ) {
-        parameter.children.filterIsInstance<BerryCrushPsiElement>().forEach { child ->
+        blockChildren(parameter).forEach { child ->
             if (child !is BerryCrushParameterEntryElement) {
                 holder.registerProblem(child, "Invalid parameter entry")
             }
         }
     }
 
-    fun checkFeature(
+    private fun checkFeature(
         feature: BerryCrushFeatureElement,
         holder: ProblemsHolder,
     ) {
-        checkText(feature.children).forEach { element ->
+        blockChildren(feature).forEach { element ->
             when (element) {
                 is BerryCrushParametersElement -> checkParameter(element, holder)
-                is BerryCrushScenarioElement -> checkScenario(element, holder)
-                is BerryCrushCommentElement -> doNothing()
+                is BerryCrushBackgroundElement -> checkScenarioLike(element, holder)
+                is BerryCrushScenarioElement -> checkScenarioLike(element, holder)
+                is BerryCrushOutlineElement -> checkScenarioLike(element, holder)
+                is BerryCrushCommentElement -> Unit
                 else ->
                     if (element.text.isNotBlank()) {
                         holder.registerProblem(
                             element,
-                            "Feature must contain only parameter, background, scenario or outline",
+                            "Feature must contain only parameters, background, scenario or outline blocks",
                         )
                     }
             }
         }
     }
 
-    fun checkScenario(
-        scenario: BerryCrushScenarioElement,
+    private fun checkScenarioLike(
+        scenario: BerryCrushScenarioLikeElement,
         holder: ProblemsHolder,
     ) {
-        checkText(scenario.children).forEach { child ->
+        val allowParameters = scenario !is BerryCrushBackgroundElement
+        val allowExamples = scenario is BerryCrushOutlineElement
+
+        blockChildren(scenario).forEach { child ->
             when (child) {
-                is BerryCrushParametersElement -> checkParameter(child, holder)
-                is BerryCrushCommentElement -> doNothing()
-                !is BerryCrushStepElement ->
-                    if (child.text.isNotBlank()) {
-                        holder.registerProblem(child, "Scenario must contain only parameter or step")
+                is BerryCrushParametersElement -> {
+                    if (allowParameters) {
+                        checkParameter(child, holder)
+                    } else {
+                        holder.registerProblem(child, "Background must not contain parameters block")
+                    }
+                }
+                is BerryCrushStepElement -> checkStep(child, holder)
+                is BerryCrushExamplesElement -> {
+                    if (!allowExamples) {
+                        holder.registerProblem(child, "Examples block is only valid in outline")
+                    }
+                }
+                is BerryCrushCommentElement -> Unit
+                else ->
+                    if (child.text.isNotBlank() && !isRecoveredOutlineRowText(child, allowExamples)) {
+                        holder.registerProblem(
+                            child,
+                            "Scenario/background/outline must contain only parameters, steps and (for outline) examples",
+                        )
                     }
             }
         }
     }
 
-    private fun checkText(elements: Array<PsiElement>): Array<PsiElement> {
-        val e = elements.filterIsInstance<BerryCrushPsiElement>()
-        return if (e.isEmpty()) {
-            emptyArray()
-        } else {
-            when (e[0]) {
-                is BerryCrushTextElement -> e.drop(1).toTypedArray()
-                else -> e.toTypedArray()
+    private fun checkStep(
+        step: BerryCrushStepElement,
+        holder: ProblemsHolder,
+    ) {
+        blockChildren(step).forEach { child ->
+            when (child) {
+                is BerryCrushCallElement,
+                is BerryCrushWebhookElement,
+                is BerryCrushIncludeElement,
+                is BerryCrushAssertElement,
+                is BerryCrushExtractElement,
+                is BerryCrushIfElement,
+                is BerryCrushElseElement,
+                is BerryCrushStepElement,
+                is BerryCrushCommentElement,
+                -> Unit
+
+                else ->
+                    if (child.text.isNotBlank()) {
+                        holder.registerProblem(
+                            child,
+                            "Step must contain only directives or nested steps",
+                        )
+                    }
             }
         }
     }
 
-    private fun doNothing() {
-        // do nothing
+    private fun checkFragment(
+        fragment: BerryCrushFragmentElement,
+        holder: ProblemsHolder,
+    ) {
+        blockChildren(fragment).forEach { child ->
+            when (child) {
+                is BerryCrushStepElement -> checkStep(child, holder)
+                is BerryCrushCallElement,
+                is BerryCrushWebhookElement,
+                is BerryCrushIncludeElement,
+                is BerryCrushAssertElement,
+                is BerryCrushExtractElement,
+                is BerryCrushIfElement,
+                is BerryCrushElseElement,
+                is BerryCrushCommentElement,
+                -> Unit
+
+                else ->
+                    if (child.text.isNotBlank()) {
+                        holder.registerProblem(
+                            child,
+                            "Fragment must contain only steps or directives",
+                        )
+                    }
+            }
+        }
     }
+
+    private fun blockChildren(element: PsiElement): List<BerryCrushPsiElement> {
+        val children = element.children.filterIsInstance<BerryCrushPsiElement>()
+        if (children.isEmpty()) {
+            return emptyList()
+        }
+
+        return if (children.first() is BerryCrushTextElement) {
+            children.drop(1)
+        } else {
+            children
+        }
+    }
+
+    private fun isRecoveredOutlineRowText(
+        element: BerryCrushPsiElement,
+        allowExamples: Boolean,
+    ): Boolean = allowExamples &&
+        element is BerryCrushTextElement &&
+        element.text.trimStart().startsWith("|")
 }

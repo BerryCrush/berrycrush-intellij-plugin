@@ -212,7 +212,7 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
             firstWord in STEP_KEYWORDS -> stepContext(resetForRoot)
             // Directives (call, assert, include, etc.)
             // Multiple directives at the same level should have the same indentation
-            isDirective(lower) -> directiveContext(resetForRoot)
+            isDirective(lower) -> directiveContext(resetForRoot, lower)
 
             // Map entries (key: value and key:)
             isMapEntry(trimmed) -> mapEntryContext(resetForRoot, trimmed)
@@ -259,9 +259,16 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
             )
     }
 
-    private fun directiveContext(resetForRoot: FormattingContext): Pair<Int, FormattingContext> {
+    private fun directiveContext(
+        resetForRoot: FormattingContext,
+        lower: String,
+    ): Pair<Int, FormattingContext> {
+        val isConditional = isConditionalDirective(lower)
+        val isAssert = isAssertDirective(lower)
+        val isElse = lower == "else" || lower.startsWith("else ") || lower == "else:"
+
         // If already at directive level, stay there
-        val indent =
+        val baseIndent =
             if (resetForRoot.inDirective) {
                 resetForRoot.directiveIndent
             } else {
@@ -276,13 +283,37 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
                     else -> INDENT_SIZE
                 }
             }
+
+        val conditionalBaseIndent =
+            when {
+                isConditional && resetForRoot.inConditionalBranch -> resetForRoot.conditionalBaseIndent
+                isConditional -> baseIndent
+                else -> resetForRoot.conditionalBaseIndent
+            }
+
+        val indent =
+            when {
+                isConditional && isElse && resetForRoot.inConditionalBranch -> conditionalBaseIndent
+                isConditional -> baseIndent
+                resetForRoot.inConditionalBranch && isAssert -> resetForRoot.directiveIndent
+                else -> baseIndent
+            }
+
+        val inConditionalBranch =
+            (isConditional || (resetForRoot.inConditionalBranch && isAssert)) &&
+                !(resetForRoot.inConditionalBranch && !isConditional && !isAssert)
+
+        val nextDirectiveIndent = if (inConditionalBranch) indent + INDENT_SIZE else indent
+
         val newContext =
             resetForRoot.copy(
                 inDirective = true,
                 inParametersBlock = false,
                 mapIndentStack = emptyList(),
                 currentIndent = indent,
-                directiveIndent = indent,
+                directiveIndent = nextDirectiveIndent,
+                inConditionalBranch = inConditionalBranch,
+                conditionalBaseIndent = if (inConditionalBranch) conditionalBaseIndent else 0,
                 previousLineBlank = false,
             )
         return indent to newContext
@@ -304,6 +335,8 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
                 mapIndentStack = emptyList(),
                 currentIndent = baseIndent,
                 directiveIndent = 0,
+                inConditionalBranch = false,
+                conditionalBaseIndent = 0,
                 previousLineBlank = false,
             )
         return baseIndent to newContext
@@ -323,6 +356,8 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
                 inExamples = false,
                 mapIndentStack = emptyList(),
                 currentIndent = indent,
+                inConditionalBranch = false,
+                conditionalBaseIndent = 0,
                 previousLineBlank = false,
             )
         return indent to newContext
@@ -343,6 +378,8 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
                 inParametersBlock = false,
                 mapIndentStack = emptyList(),
                 currentIndent = indent,
+                inConditionalBranch = false,
+                conditionalBaseIndent = 0,
                 previousLineBlank = false,
             )
         return indent to newContext
@@ -363,6 +400,8 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
                 currentIndent = indent,
                 containerIndent = indent,
                 directiveIndent = 0,
+                inConditionalBranch = false,
+                conditionalBaseIndent = 0,
                 previousLineBlank = false,
             )
         return indent to newContext
@@ -391,6 +430,8 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
                 currentIndent = indent,
                 containerIndent = indent,
                 directiveIndent = 0,
+                inConditionalBranch = false,
+                conditionalBaseIndent = 0,
                 previousLineBlank = false,
             )
         return indent to newContext
@@ -414,6 +455,8 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
             currentIndent = 0,
             containerIndent = 0,
             directiveIndent = 0,
+            inConditionalBranch = false,
+            conditionalBaseIndent = 0,
         )
 
     private fun getRootContext(
@@ -435,6 +478,8 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
             currentIndent = 0,
             containerIndent = 0,
             directiveIndent = 0,
+            inConditionalBranch = false,
+            conditionalBaseIndent = 0,
         )
     } else {
         context
@@ -444,8 +489,18 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
      * Check if the line starts with a directive keyword.
      */
     private fun isDirective(lower: String): Boolean = DIRECTIVES.any { directive ->
-        lower == "$directive:" || lower.startsWith("$directive ") || lower.startsWith("$directive:")
+        lower == directive || lower == "$directive:" || lower.startsWith("$directive ") || lower.startsWith("$directive:")
     }
+
+    private fun isConditionalDirective(lower: String): Boolean = lower == "if" ||
+        lower.startsWith("if ") ||
+        lower == "if:" ||
+        lower == "else" ||
+        lower.startsWith("else ") ||
+        lower == "else:"
+
+    private fun isAssertDirective(lower: String): Boolean = lower == "assert" ||
+        lower.startsWith("assert ")
 
     /**
      * Check if the line is a map entry (`key:` or `key: value`).
@@ -623,6 +678,8 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
         val currentIndent: Int = 0,
         val containerIndent: Int = 0,
         val directiveIndent: Int = 0,
+        val inConditionalBranch: Boolean = false,
+        val conditionalBaseIndent: Int = 0,
         val mapIndentStack: List<Int> = emptyList(),
         val previousLineBlank: Boolean = false,
     )

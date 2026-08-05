@@ -9,16 +9,18 @@ import com.berrycrush.intellij.psi.BerryCrushBackgroundElement
 import com.berrycrush.intellij.psi.BerryCrushCallElement
 import com.berrycrush.intellij.psi.BerryCrushCommentElement
 import com.berrycrush.intellij.psi.BerryCrushElementTypes
+import com.berrycrush.intellij.psi.BerryCrushElseElement
+import com.berrycrush.intellij.psi.BerryCrushExampleHeaderElement
 import com.berrycrush.intellij.psi.BerryCrushExampleRowElement
+import com.berrycrush.intellij.psi.BerryCrushExampleValueElement
 import com.berrycrush.intellij.psi.BerryCrushExamplesElement
-import com.berrycrush.intellij.psi.BerryCrushExamplesHeaderElement
-import com.berrycrush.intellij.psi.BerryCrushExamplesValueElement
 import com.berrycrush.intellij.psi.BerryCrushExtractElement
 import com.berrycrush.intellij.psi.BerryCrushFeatureElement
 import com.berrycrush.intellij.psi.BerryCrushFile
 import com.berrycrush.intellij.psi.BerryCrushFragmentElement
 import com.berrycrush.intellij.psi.BerryCrushFragmentRefElement
 import com.berrycrush.intellij.psi.BerryCrushGenericElement
+import com.berrycrush.intellij.psi.BerryCrushIfElement
 import com.berrycrush.intellij.psi.BerryCrushIncludeElement
 import com.berrycrush.intellij.psi.BerryCrushIncludeParameterElement
 import com.berrycrush.intellij.psi.BerryCrushJsonPathElement
@@ -32,6 +34,7 @@ import com.berrycrush.intellij.psi.BerryCrushParameterValueElement
 import com.berrycrush.intellij.psi.BerryCrushParametersElement
 import com.berrycrush.intellij.psi.BerryCrushScenarioElement
 import com.berrycrush.intellij.psi.BerryCrushStepElement
+import com.berrycrush.intellij.psi.BerryCrushTagElement
 import com.berrycrush.intellij.psi.BerryCrushTextElement
 import com.berrycrush.intellij.psi.BerryCrushVariableRefElement
 import com.berrycrush.intellij.psi.BerryCrushWebhookElement
@@ -72,13 +75,15 @@ class BerryCrushParserDefinition : ParserDefinition {
         BerryCrushElementTypes.OUTLINE -> BerryCrushOutlineElement(node)
         BerryCrushElementTypes.EXAMPLES -> BerryCrushExamplesElement(node)
         BerryCrushElementTypes.EXAMPLE_ROW -> BerryCrushExampleRowElement(node)
-        BerryCrushElementTypes.EXAMPLES_HEADER -> BerryCrushExamplesHeaderElement(node)
-        BerryCrushElementTypes.EXAMPLES_VALUE -> BerryCrushExamplesValueElement(node)
+        BerryCrushElementTypes.EXAMPLES_HEADER -> BerryCrushExampleHeaderElement(node)
+        BerryCrushElementTypes.EXAMPLES_VALUE -> BerryCrushExampleValueElement(node)
         BerryCrushElementTypes.BACKGROUND -> BerryCrushBackgroundElement(node)
         BerryCrushElementTypes.FRAGMENT -> BerryCrushFragmentElement(node)
         BerryCrushElementTypes.STEP -> BerryCrushStepElement(node)
         BerryCrushElementTypes.CALL_DIRECTIVE -> BerryCrushCallElement(node)
         BerryCrushElementTypes.INCLUDE_DIRECTIVE -> BerryCrushIncludeElement(node)
+        BerryCrushElementTypes.IF_DIRECTIVE -> BerryCrushIfElement(node)
+        BerryCrushElementTypes.ELSE_DIRECTIVE -> BerryCrushElseElement(node)
         BerryCrushElementTypes.ASSERT_DIRECTIVE -> BerryCrushAssertElement(node)
         BerryCrushElementTypes.EXTRACT_DIRECTIVE -> BerryCrushExtractElement(node)
         BerryCrushElementTypes.WEBHOOK_DIRECTIVE -> BerryCrushWebhookElement(node)
@@ -96,6 +101,7 @@ class BerryCrushParserDefinition : ParserDefinition {
         BerryCrushElementTypes.OPERATOR -> BerryCrushOperatorElement(node)
         BerryCrushElementTypes.TEXT -> BerryCrushTextElement(node)
         BerryCrushElementTypes.COMMENT -> BerryCrushCommentElement(node)
+        BerryCrushElementTypes.TAG -> BerryCrushTagElement(node)
         else -> BerryCrushGenericElement(node)
     }
 

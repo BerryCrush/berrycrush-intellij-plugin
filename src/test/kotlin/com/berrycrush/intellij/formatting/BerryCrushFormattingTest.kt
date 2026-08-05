@@ -491,4 +491,52 @@ class BerryCrushFormattingTest : BerryCrushTestCase() {
 
         doFormattingTest(input, expected)
     }
+
+    fun testStepConditionalIfElseIndentation() {
+        val input =
+            listOf(
+                "scenario: conditional formatting",
+                "then verify branches",
+                "if status 2xx",
+                "assert $.id exists",
+                "else",
+                "assert status 5xx",
+            ).joinToString("\n")
+
+        val expected =
+            listOf(
+                "scenario: conditional formatting",
+                "  then verify branches",
+                "    if status 2xx",
+                "      assert $.id exists",
+                "    else",
+                "      assert status 5xx",
+            ).joinToString("\n")
+
+        doFormattingTest(input, expected)
+    }
+
+    fun testStepConditionalIfElseIndentationIdempotency() {
+        val input =
+            listOf(
+                "scenario: conditional formatting",
+                "then verify branches",
+                "if status 2xx",
+                "assert $.id exists",
+                "else",
+                "assert status 5xx",
+            ).joinToString("\n")
+
+        val expected =
+            listOf(
+                "scenario: conditional formatting",
+                "  then verify branches",
+                "    if status 2xx",
+                "      assert $.id exists",
+                "    else",
+                "      assert status 5xx",
+            ).joinToString("\n")
+
+        doIdempotencyTest(input, expected)
+    }
 }

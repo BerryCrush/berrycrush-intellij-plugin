@@ -240,27 +240,11 @@ class BerryCrushBackgroundElement(node: ASTNode) : BerryCrushScenarioLikeElement
 
 class BerryCrushExamplesElement(node: ASTNode) : BerryCrushPsiElement(node)
 
-class BerryCrushExampleRowElement(
-    node: ASTNode,
-) : BerryCrushPsiElement(node) {
-    val cells: List<String>
-        get() = text
-            .lineSequence()
-            .firstOrNull()
-            ?.split('|')
-            ?.drop(1)
-            ?.dropLast(1)
-            ?.map { it.trim() }
-            ?: emptyList()
-}
+class BerryCrushExampleRowElement(node: ASTNode) : BerryCrushPsiElement(node)
+class BerryCrushExampleHeaderElement(node: ASTNode) : BerryCrushPsiElement(node)
+class BerryCrushExampleValueElement(node: ASTNode) : BerryCrushPsiElement(node)
 
-class BerryCrushExamplesHeaderElement(
-    node: ASTNode,
-) : BerryCrushPsiElement(node)
-
-class BerryCrushExamplesValueElement(
-    node: ASTNode,
-) : BerryCrushPsiElement(node)
+class BerryCrushTagElement(node: ASTNode) : BerryCrushPsiElement(node)
 
 /**
  * Fragment definition element.
@@ -342,6 +326,14 @@ class BerryCrushAssertElement(
             return match?.groupValues?.get(1)?.trim()
         }
 }
+
+class BerryCrushIfElement(
+    node: ASTNode,
+) : BerryCrushDirectiveElement("if", node)
+
+class BerryCrushElseElement(
+    node: ASTNode,
+) : BerryCrushDirectiveElement("else", node)
 
 class BerryCrushNotElement(
     node: ASTNode,
