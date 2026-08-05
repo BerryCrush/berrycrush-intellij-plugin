@@ -99,7 +99,7 @@ private fun checkAssertionOperation(
     else -> false // unknown operation, should never happen
 }
 
-private fun BerryCrushConditionElement.checkJsonPathAssertion(
+private fun checkJsonPathAssertion(
     holder: ProblemsHolder,
     element: BerryCrushJsonPathElement,
     elements: List<PsiElement>,
@@ -110,11 +110,11 @@ private fun BerryCrushConditionElement.checkJsonPathAssertion(
         checkOperatorCondition(elements)
     } catch (e: Exception) {
         holder.registerProblem(
-            this,
+            element,
             e.message ?: "JSON Path parse error",
             ProblemHighlightType.ERROR,
         )
-        false
+        true // return true so that it won't add step not found warning
     }
 }
 

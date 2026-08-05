@@ -315,7 +315,7 @@ class BerryCrushLexer : LexerBase() {
 
     private fun scanJsonPath(): IElementType {
         position++ // Skip '$'
-        while (position < bufferEnd && buffer[position].isJsonPathChar()) {
+        while (position < bufferEnd && !buffer[position].isWhitespace()) {
             position++
         }
         return BerryCrushTokenTypes.JSON_PATH
@@ -351,7 +351,5 @@ class BerryCrushLexer : LexerBase() {
 private fun Char.isIdentifierChar(): Boolean = isLetterOrDigit() || this == '_' || this == '-'
 
 private fun Char.isTagChar(): Boolean = isLetterOrDigit() || this == '_' || this == '-'
-
-private fun Char.isJsonPathChar(): Boolean = isLetterOrDigit() || this in ".[]*@_()"
 
 private fun Char.isTokenBoundary(): Boolean = isWhitespace() || this in ":#@^|,()[]{}\"'"

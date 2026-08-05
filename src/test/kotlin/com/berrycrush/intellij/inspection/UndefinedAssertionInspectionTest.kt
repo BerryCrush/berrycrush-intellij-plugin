@@ -289,6 +289,7 @@ class UndefinedAssertionInspectionTest : BerryCrushInspectionTestCase(UndefinedA
                 scenario: test
                   then: verify
                     assert header Content-Type = "application/json"
+                    assert header Content-Type: "application/json"
                 """.trimIndent(),
             )
 
@@ -351,6 +352,25 @@ class UndefinedAssertionInspectionTest : BerryCrushInspectionTestCase(UndefinedA
             "Built-in JSONPath not exists assertion should not be flagged",
             problems.isEmpty(),
         )
+    }
+
+    fun testBuiltInInvalidJsonPathFlagged() {
+        val psiFile =
+            myFixture.addFileToProject(
+                "builtin11.scenario",
+                """
+                scenario: test
+                  then: verify
+                    assert $.. not exists
+                """.trimIndent(),
+            )
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "Built-in invalid JSONPath not exists assertion should be flagged",
+            problems.isNotEmpty(),
+        )
+        assertEquals(1, problems.size)
     }
 
     fun testVariableComparisonShouldNotFlagged() {

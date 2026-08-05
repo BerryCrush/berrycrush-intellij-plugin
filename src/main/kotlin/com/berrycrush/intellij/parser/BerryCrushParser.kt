@@ -195,7 +195,7 @@ class BerryCrushParser : PsiParser {
     }
 
     private fun parseTag(builder: PsiBuilder) {
-        builder.mark().done(BerryCrushElementTypes.TAG)
+        builder.markAs(BerryCrushElementTypes.TAG)
     }
 
     private fun parseScenario(

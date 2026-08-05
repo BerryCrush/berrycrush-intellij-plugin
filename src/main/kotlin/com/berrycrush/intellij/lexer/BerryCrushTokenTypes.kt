@@ -200,6 +200,7 @@ object BerryCrushTokenTypes {
             SIZE,
             HAS_SIZE,
             ARRAY_SIZE,
+            COLON,
         )
 
     @JvmField

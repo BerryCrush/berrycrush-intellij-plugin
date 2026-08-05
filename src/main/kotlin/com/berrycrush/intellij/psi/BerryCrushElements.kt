@@ -162,9 +162,8 @@ class BerryCrushVariableRefElement(
     node: ASTNode,
 ) : BerryCrushPsiElement(node),
     PsiNameIdentifierOwner {
-    val variableName by lazy {
-        node.text.removePrefix("{{").removeSuffix("}}")
-    }
+    val variableName
+        get() = node.text.removePrefix("{{").removeSuffix("}}")
 
     override fun getName(): String? = variableName
 
@@ -344,7 +343,8 @@ class BerryCrushNotElement(
 ) : BerryCrushPsiElement(node)
 
 abstract class BerryCrushOperatorLikeElement(node: ASTNode) : BerryCrushPsiElement(node) {
-    val operatorName: String = node.text.trim()
+    val operatorName: String
+        get() = node.text.trim()
     val operatorType
         get() = node.firstChildNode.elementType
 }
@@ -355,13 +355,15 @@ class BerryCrushAssertOperationElement(node: ASTNode) : BerryCrushOperatorLikeEl
 class BerryCrushJsonPathElement(
     node: ASTNode,
 ) : BerryCrushPsiElement(node) {
-    val jsonPathText = node.text.trim()
+    val jsonPathText
+        get () = node.text.trim()
 }
 
 class BerryCrushExtractElement(
     node: ASTNode,
 ) : BerryCrushDirectiveElement("extract", node) {
-    val extractName = node.text.trim()
+    val extractName
+        get() = node.text.trim()
 }
 
 class BerryCrushWebhookElement(
@@ -450,7 +452,8 @@ class BerryCrushParameterEntryElement(
 class BerryCrushParameterKeyElement(
     node: ASTNode,
 ) : BerryCrushPsiElement(node) {
-    val keyName = node.text.removeSuffix(":").trim()
+    val keyName
+        get() = node.text.removeSuffix(":").trim()
 }
 
 // value can be text or other node...
