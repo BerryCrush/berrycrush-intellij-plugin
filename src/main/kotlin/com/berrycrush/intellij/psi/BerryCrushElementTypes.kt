@@ -31,6 +31,15 @@ object BerryCrushElementTypes {
     @JvmField
     val EXAMPLES = BerryCrushPsiElementType("EXAMPLES")
 
+    @JvmField
+    val EXAMPLE_ROW = BerryCrushPsiElementType("EXAMPLE_ROW")
+
+    @JvmField
+    val EXAMPLES_HEADER = BerryCrushPsiElementType("EXAMPLES_HEADER")
+
+    @JvmField
+    val EXAMPLES_VALUE = BerryCrushPsiElementType("EXAMPLES_VALUE")
+
     // Step elements
     @JvmField
     val STEP = BerryCrushPsiElementType("STEP")

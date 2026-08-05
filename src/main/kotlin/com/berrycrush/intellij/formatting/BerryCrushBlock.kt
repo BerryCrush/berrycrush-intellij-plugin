@@ -1,7 +1,14 @@
 package com.berrycrush.intellij.formatting
 
 import com.berrycrush.intellij.lexer.BerryCrushTokenTypes
+import com.berrycrush.intellij.psi.BerryCrushBackgroundElement
 import com.berrycrush.intellij.psi.BerryCrushElementTypes
+import com.berrycrush.intellij.psi.BerryCrushExamplesElement
+import com.berrycrush.intellij.psi.BerryCrushFeatureElement
+import com.berrycrush.intellij.psi.BerryCrushFragmentElement
+import com.berrycrush.intellij.psi.BerryCrushOutlineElement
+import com.berrycrush.intellij.psi.BerryCrushScenarioElement
+import com.berrycrush.intellij.psi.BerryCrushStepElement
 import com.intellij.formatting.Alignment
 import com.intellij.formatting.Block
 import com.intellij.formatting.ChildAttributes
@@ -72,31 +79,15 @@ class BerryCrushBlock(
     private fun updateContext(
         ctx: FormattingContext,
         node: ASTNode,
-    ): FormattingContext {
-        val type = node.elementType
-        val text = node.text.trim().lowercase()
-
-        return when {
-            isFeatureElement(type) || text.startsWith("feature:") ->
-                FormattingContext(inFeature = true)
-
-            isFragmentElement(type) || text.startsWith("fragment:") ->
-                FormattingContext(inFragment = true)
-
-            isScenarioElement(type) || text.startsWith("scenario:") || text.startsWith("outline:") ->
-                ctx.copy(inScenario = true, inBackground = false, inExamples = false, inStep = false)
-
-            type == BerryCrushTokenTypes.BACKGROUND || text.startsWith("background:") ->
-                ctx.copy(inBackground = true, inScenario = false, inExamples = false, inStep = false)
-
-            type == BerryCrushTokenTypes.EXAMPLES || text.startsWith("examples:") ->
-                ctx.copy(inExamples = true, inStep = false)
-
-            isStepElement(type) || isStepKeyword(text) ->
-                ctx.copy(inStep = true, inExamples = false)
-
-            else -> ctx
-        }
+    ): FormattingContext = when (node.psi) {
+        is BerryCrushFeatureElement -> FormattingContext(inFeature = true)
+        is BerryCrushScenarioElement, is BerryCrushOutlineElement ->
+            ctx.copy(inScenario = true, inBackground = false, inExamples = false, inStep = false)
+        is BerryCrushBackgroundElement -> ctx.copy(inBackground = true, inScenario = false, inExamples = false, inStep = false)
+        is BerryCrushFragmentElement -> FormattingContext(inFragment = true)
+        is BerryCrushStepElement -> ctx.copy(inStep = true, inExamples = false)
+        is BerryCrushExamplesElement -> ctx.copy(inExamples = true, inStep = false)
+        else -> ctx
     }
 
     /**

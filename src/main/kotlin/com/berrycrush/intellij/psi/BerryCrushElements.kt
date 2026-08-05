@@ -197,14 +197,14 @@ class BerryCrushFeatureElement(
     PsiNameIdentifierOwner {
     override val keyword = "feature"
 
-    val blocks: List<BerryCrushScenarioElement>
+    val blocks: List<BerryCrushScenarioLikeElement>
         get() = directChildrenOfType()
 
-    val backgrounds: List<BerryCrushScenarioElement>
-        get() = blocks.filter { it.keyword == "background" }
+    val backgrounds: List<BerryCrushBackgroundElement>
+        get() = directChildrenOfType()
 
     val scenarios: List<BerryCrushScenarioElement>
-        get() = blocks.filter { it.keyword == "scenario" }
+        get() = directChildrenOfType()
 
     override fun setName(name: String): PsiElement = this
 
@@ -214,8 +214,7 @@ class BerryCrushFeatureElement(
 /**
  * Scenario block element.
  */
-class BerryCrushScenarioElement(
-    override val keyword: String,
+abstract class BerryCrushScenarioLikeElement(
     node: ASTNode,
 ) : BerryCrushBlockElement(node),
     PsiNameIdentifierOwner {
@@ -226,6 +225,42 @@ class BerryCrushScenarioElement(
 
     override fun getNameIdentifier(): PsiElement? = null
 }
+
+class BerryCrushScenarioElement(node: ASTNode) : BerryCrushScenarioLikeElement(node) {
+    override val keyword = "scenario"
+}
+
+class BerryCrushOutlineElement(node: ASTNode) : BerryCrushScenarioLikeElement(node) {
+    override val keyword = "outline"
+}
+
+class BerryCrushBackgroundElement(node: ASTNode) : BerryCrushScenarioLikeElement(node) {
+    override val keyword = "background"
+}
+
+class BerryCrushExamplesElement(node: ASTNode) : BerryCrushPsiElement(node)
+
+class BerryCrushExampleRowElement(
+    node: ASTNode,
+) : BerryCrushPsiElement(node) {
+    val cells: List<String>
+        get() = text
+            .lineSequence()
+            .firstOrNull()
+            ?.split('|')
+            ?.drop(1)
+            ?.dropLast(1)
+            ?.map { it.trim() }
+            ?: emptyList()
+}
+
+class BerryCrushExamplesHeaderElement(
+    node: ASTNode,
+) : BerryCrushPsiElement(node)
+
+class BerryCrushExamplesValueElement(
+    node: ASTNode,
+) : BerryCrushPsiElement(node)
 
 /**
  * Fragment definition element.

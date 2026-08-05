@@ -213,8 +213,7 @@ class BerryCrushParser : PsiParser {
 
         // Parse optional parameters block after outline name
         tryParseParametersBlock(builder, outlineIndent)
-        parseScenarioContent(builder, outlineIndent)
-
+        parseScenarioContent(builder, outlineIndent, true)
         marker.done(BerryCrushElementTypes.OUTLINE)
     }
 
@@ -247,6 +246,7 @@ class BerryCrushParser : PsiParser {
     private fun parseScenarioContent(
         builder: PsiBuilder,
         parentIndent: Int,
+        isOutline: Boolean = false,
     ) {
         while (!builder.eof()) {
             skipNewlines(builder)
@@ -271,9 +271,74 @@ class BerryCrushParser : PsiParser {
                 BerryCrushTokenTypes.BACKGROUND -> parseBackground(builder, indent)
                 BerryCrushTokenTypes.SCENARIO -> parseScenario(builder, indent)
                 BerryCrushTokenTypes.COMMENT -> skipToEndOfLine(builder, BerryCrushElementTypes.COMMENT, false)
+                BerryCrushTokenTypes.EXAMPLES -> if (isOutline) parseExamples(builder, indent) else skipToEndOfLine(builder)
                 else -> skipToEndOfLine(builder)
             }
         }
+    }
+
+    /**
+     * Parse `example:` clause
+     * ```
+     * examples:
+     * | name0    | name1    |
+     * | value0.0 | value1.0 |
+     * ```
+     */
+    private fun parseExamples(builder: PsiBuilder, indent: Int) {
+        val marker = builder.mark()
+        builder.advanceLexer() // consume `examples:`
+        skipToEndOfLine(builder)
+
+        val parsed = parseExampleRow(builder, indent, BerryCrushElementTypes.EXAMPLES_HEADER)
+        if (parsed) {
+            parseIndentedEntries(builder, indent, ::parseExampleRow)
+        }
+        marker.done(BerryCrushElementTypes.EXAMPLES)
+    }
+
+    private fun parseExampleRow(
+        builder: PsiBuilder,
+        parentIndent: Int,
+        cellType: BerryCrushPsiElementType = BerryCrushElementTypes.EXAMPLES_VALUE,
+    ): Boolean {
+        val indent = currentLineIndent(builder)
+        if (indent <= parentIndent) {
+            return false
+        }
+
+        consumeLineIndent(builder)
+
+        if (builder.tokenType == BerryCrushTokenTypes.NEWLINE) {
+            skipNewlines(builder)
+            return true
+        }
+
+        if (builder.tokenType != BerryCrushTokenTypes.PIPE) {
+            skipToEndOfLine(builder)
+            return true
+        }
+
+        val marker = builder.mark()
+        builder.advanceLexer() // consume leading `|`
+        var cellMarker = builder.mark()
+
+        while (!builder.eof() && builder.tokenType != BerryCrushTokenTypes.NEWLINE) {
+            when (builder.tokenType) {
+                BerryCrushTokenTypes.PIPE -> {
+                    cellMarker.done(cellType)
+                    builder.advanceLexer()
+                    cellMarker = builder.mark()
+                }
+                BerryCrushTokenTypes.VARIABLE -> parseVariableRef(builder)
+                else -> builder.advanceLexer()
+            }
+        }
+
+        cellMarker.rollbackTo()
+        marker.done(BerryCrushElementTypes.EXAMPLE_ROW)
+        skipNewlines(builder)
+        return true
     }
 
     /**

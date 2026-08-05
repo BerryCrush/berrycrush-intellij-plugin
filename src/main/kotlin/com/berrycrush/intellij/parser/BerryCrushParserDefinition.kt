@@ -5,9 +5,14 @@ import com.berrycrush.intellij.lexer.BerryCrushLexer
 import com.berrycrush.intellij.lexer.BerryCrushTokenTypes
 import com.berrycrush.intellij.psi.BerryCrushAssertElement
 import com.berrycrush.intellij.psi.BerryCrushAssertOperationElement
+import com.berrycrush.intellij.psi.BerryCrushBackgroundElement
 import com.berrycrush.intellij.psi.BerryCrushCallElement
 import com.berrycrush.intellij.psi.BerryCrushCommentElement
 import com.berrycrush.intellij.psi.BerryCrushElementTypes
+import com.berrycrush.intellij.psi.BerryCrushExampleRowElement
+import com.berrycrush.intellij.psi.BerryCrushExamplesElement
+import com.berrycrush.intellij.psi.BerryCrushExamplesHeaderElement
+import com.berrycrush.intellij.psi.BerryCrushExamplesValueElement
 import com.berrycrush.intellij.psi.BerryCrushExtractElement
 import com.berrycrush.intellij.psi.BerryCrushFeatureElement
 import com.berrycrush.intellij.psi.BerryCrushFile
@@ -20,6 +25,7 @@ import com.berrycrush.intellij.psi.BerryCrushJsonPathElement
 import com.berrycrush.intellij.psi.BerryCrushNotElement
 import com.berrycrush.intellij.psi.BerryCrushOperationRefElement
 import com.berrycrush.intellij.psi.BerryCrushOperatorElement
+import com.berrycrush.intellij.psi.BerryCrushOutlineElement
 import com.berrycrush.intellij.psi.BerryCrushParameterEntryElement
 import com.berrycrush.intellij.psi.BerryCrushParameterKeyElement
 import com.berrycrush.intellij.psi.BerryCrushParameterValueElement
@@ -62,9 +68,13 @@ class BerryCrushParserDefinition : ParserDefinition {
 
     override fun createElement(node: ASTNode): PsiElement = when (node.elementType) {
         BerryCrushElementTypes.FEATURE -> BerryCrushFeatureElement(node)
-        BerryCrushElementTypes.SCENARIO -> BerryCrushScenarioElement("scenario", node)
-        BerryCrushElementTypes.OUTLINE -> BerryCrushScenarioElement("outline", node)
-        BerryCrushElementTypes.BACKGROUND -> BerryCrushScenarioElement("background", node)
+        BerryCrushElementTypes.SCENARIO -> BerryCrushScenarioElement(node)
+        BerryCrushElementTypes.OUTLINE -> BerryCrushOutlineElement(node)
+        BerryCrushElementTypes.EXAMPLES -> BerryCrushExamplesElement(node)
+        BerryCrushElementTypes.EXAMPLE_ROW -> BerryCrushExampleRowElement(node)
+        BerryCrushElementTypes.EXAMPLES_HEADER -> BerryCrushExamplesHeaderElement(node)
+        BerryCrushElementTypes.EXAMPLES_VALUE -> BerryCrushExamplesValueElement(node)
+        BerryCrushElementTypes.BACKGROUND -> BerryCrushBackgroundElement(node)
         BerryCrushElementTypes.FRAGMENT -> BerryCrushFragmentElement(node)
         BerryCrushElementTypes.STEP -> BerryCrushStepElement(node)
         BerryCrushElementTypes.CALL_DIRECTIVE -> BerryCrushCallElement(node)

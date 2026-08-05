@@ -8,6 +8,8 @@ import com.intellij.formatting.FormattingModelBuilder
 import com.intellij.formatting.FormattingModelProvider
 import com.intellij.formatting.Indent
 import com.intellij.formatting.SpacingBuilder
+import com.intellij.formatting.Wrap
+import com.intellij.formatting.WrapType
 import com.intellij.psi.codeStyle.CodeStyleSettings
 
 /**
@@ -30,7 +32,7 @@ class BerryCrushFormattingModelBuilder : FormattingModelBuilder {
         val rootBlock =
             BerryCrushBlock(
                 element.node,
-                null,
+                Wrap.createWrap(WrapType.ALWAYS, true),
                 null,
                 Indent.getNoneIndent(),
                 spacingBuilder,

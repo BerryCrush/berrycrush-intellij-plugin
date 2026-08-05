@@ -1,6 +1,7 @@
 package com.berrycrush.intellij.parser
 
 import com.berrycrush.intellij.BerryCrushTestCase
+import com.berrycrush.intellij.psi.BerryCrushBackgroundElement
 import com.berrycrush.intellij.psi.BerryCrushFeatureElement
 import com.berrycrush.intellij.psi.BerryCrushFragmentElement
 import com.berrycrush.intellij.psi.BerryCrushParameterEntryElement
@@ -79,8 +80,8 @@ class BerryCrushParserTest : BerryCrushTestCase() {
 
         val background =
             PsiTreeUtil
-                .findChildrenOfType(psiFile, BerryCrushScenarioElement::class.java)
-                .firstOrNull { it.keyword == "background" }
+                .findChildrenOfType(psiFile, BerryCrushBackgroundElement::class.java)
+                .firstOrNull()
         assertNotNull("Background element should exist", background)
 
         val steps = background?.steps.orEmpty()
