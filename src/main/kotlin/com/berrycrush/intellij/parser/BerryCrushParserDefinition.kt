@@ -8,6 +8,7 @@ import com.berrycrush.intellij.psi.BerryCrushAssertOperationElement
 import com.berrycrush.intellij.psi.BerryCrushBackgroundElement
 import com.berrycrush.intellij.psi.BerryCrushCallElement
 import com.berrycrush.intellij.psi.BerryCrushCommentElement
+import com.berrycrush.intellij.psi.BerryCrushConditionElement
 import com.berrycrush.intellij.psi.BerryCrushElementTypes
 import com.berrycrush.intellij.psi.BerryCrushElseElement
 import com.berrycrush.intellij.psi.BerryCrushExampleHeaderElement
@@ -85,6 +86,7 @@ class BerryCrushParserDefinition : ParserDefinition {
         BerryCrushElementTypes.IF_DIRECTIVE -> BerryCrushIfElement(node)
         BerryCrushElementTypes.ELSE_DIRECTIVE -> BerryCrushElseElement(node)
         BerryCrushElementTypes.ASSERT_DIRECTIVE -> BerryCrushAssertElement(node)
+        BerryCrushElementTypes.CONDITION -> BerryCrushConditionElement(node)
         BerryCrushElementTypes.EXTRACT_DIRECTIVE -> BerryCrushExtractElement(node)
         BerryCrushElementTypes.WEBHOOK_DIRECTIVE -> BerryCrushWebhookElement(node)
         BerryCrushElementTypes.OPERATION_REF -> BerryCrushOperationRefElement(node)

@@ -64,6 +64,9 @@ object BerryCrushElementTypes {
     val IF_DIRECTIVE = BerryCrushPsiElementType("IF_DIRECTIVE")
 
     @JvmField
+    val CONDITION = BerryCrushPsiElementType("CONDITION")
+
+    @JvmField
     val ELSE_DIRECTIVE = BerryCrushPsiElementType("ELSE_DIRECTIVE")
 
     @JvmField

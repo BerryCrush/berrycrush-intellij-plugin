@@ -325,6 +325,8 @@ class BerryCrushAssertElement(
             val match = Regex("""^$directiveName\s+(.+)$""").find(text)
             return match?.groupValues?.get(1)?.trim()
         }
+    val condition: BerryCrushConditionElement?
+        get() = directChildrenOfType<BerryCrushConditionElement>().firstOrNull()
 }
 
 class BerryCrushIfElement(
@@ -335,38 +337,31 @@ class BerryCrushElseElement(
     node: ASTNode,
 ) : BerryCrushDirectiveElement("else", node)
 
+class BerryCrushConditionElement(node: ASTNode) : BerryCrushPsiElement(node)
+
 class BerryCrushNotElement(
     node: ASTNode,
 ) : BerryCrushPsiElement(node)
 
-class BerryCrushOperatorElement(
-    node: ASTNode,
-) : BerryCrushPsiElement(node) {
-    val operatorName: String? = node.treeNext?.text?.trim()
-    val operatorType by lazy {
-        node.treeNext?.elementType
-    }
+abstract class BerryCrushOperatorLikeElement(node: ASTNode) : BerryCrushPsiElement(node) {
+    val operatorName: String = node.text.trim()
+    val operatorType
+        get() = node.firstChildNode.elementType
 }
+
+class BerryCrushOperatorElement(node: ASTNode) : BerryCrushOperatorLikeElement(node)
+class BerryCrushAssertOperationElement(node: ASTNode) : BerryCrushOperatorLikeElement(node)
 
 class BerryCrushJsonPathElement(
     node: ASTNode,
 ) : BerryCrushPsiElement(node) {
-    val jsonPathText = node.treeNext?.text
-}
-
-class BerryCrushAssertOperationElement(
-    node: ASTNode,
-) : BerryCrushPsiElement(node) {
-    val operationName = node.treeNext?.text
-    val operationType by lazy {
-        node.treeNext?.elementType
-    }
+    val jsonPathText = node.text.trim()
 }
 
 class BerryCrushExtractElement(
     node: ASTNode,
 ) : BerryCrushDirectiveElement("extract", node) {
-    val extractName = node.treeNext?.text?.trim()
+    val extractName = node.text.trim()
 }
 
 class BerryCrushWebhookElement(

@@ -3,6 +3,7 @@ package com.berrycrush.intellij.inspection
 import com.berrycrush.intellij.lexer.BerryCrushTokenTypes
 import com.berrycrush.intellij.psi.BerryCrushAssertElement
 import com.berrycrush.intellij.psi.BerryCrushAssertOperationElement
+import com.berrycrush.intellij.psi.BerryCrushConditionElement
 import com.berrycrush.intellij.psi.BerryCrushElementTypes
 import com.berrycrush.intellij.psi.BerryCrushJsonPathElement
 import com.berrycrush.intellij.psi.BerryCrushNotElement
@@ -40,7 +41,7 @@ class UndefinedAssertionInspection : BerryCrushInspection() {
         val project = file.project
         val scope = ModuleScopeResolver.getModuleDependencyScope(file)
         PsiTreeUtil.findChildrenOfAnyType(file, BerryCrushAssertElement::class.java).forEach { assertElement ->
-            if (!assertElement.isBuiltInAssertion(holder)) {
+            if (!assertElement.condition.isBuiltInAssertion(holder)) {
                 assertElement.assertionText?.let { assertionText ->
                     val matchingMethods =
                         BerryCrushAssertionReference.findMatchingAssertionMethodsInScope(
@@ -66,9 +67,9 @@ class UndefinedAssertionInspection : BerryCrushInspection() {
 /**
  * Check if the assertion text matches a built-in assertion pattern.
  */
-private fun BerryCrushAssertElement.isBuiltInAssertion(holder: ProblemsHolder): Boolean = checkAssertionCondition(holder, this.children.toList().filterIsInstance<BerryCrushPsiElement>())
+private fun BerryCrushConditionElement?.isBuiltInAssertion(holder: ProblemsHolder): Boolean = this == null || checkAssertionCondition(holder, this.children.toList().filterIsInstance<BerryCrushPsiElement>())
 
-private fun BerryCrushAssertElement.checkAssertionCondition(
+private fun BerryCrushConditionElement.checkAssertionCondition(
     holder: ProblemsHolder,
     elements: List<PsiElement>,
     negate: Boolean = false,
@@ -88,7 +89,7 @@ private fun BerryCrushAssertElement.checkAssertionCondition(
 private fun checkAssertionOperation(
     element: BerryCrushAssertOperationElement,
     elements: List<PsiElement>,
-): Boolean = when (element.operationType) {
+): Boolean = when (element.operatorType) {
     BerryCrushTokenTypes.CONTAINS,
     BerryCrushTokenTypes.RESPONSE_TIME,
     -> checkSimpleCondition(element, elements)
@@ -98,7 +99,7 @@ private fun checkAssertionOperation(
     else -> false // unknown operation, should never happen
 }
 
-private fun BerryCrushAssertElement.checkJsonPathAssertion(
+private fun BerryCrushConditionElement.checkJsonPathAssertion(
     holder: ProblemsHolder,
     element: BerryCrushJsonPathElement,
     elements: List<PsiElement>,
@@ -164,9 +165,7 @@ private fun checkSimpleCondition(
 
 // status(Code) 2xx thing
 private fun checkStatusCondition(elements: List<PsiElement>): Boolean {
-    fun checkStatus(element: BerryCrushPsiElement): Boolean = element.nextSibling?.text?.let { text ->
-        Regex("\\dxx|\\d{3}").matches(text)
-    } ?: false
+    fun checkStatus(element: BerryCrushPsiElement): Boolean = Regex("\\dxx|\\d{3}").matches(element.text)
     return elements.size == 1 && elements[0] is BerryCrushPsiElement && checkStatus(elements[0] as BerryCrushPsiElement)
 }
 
