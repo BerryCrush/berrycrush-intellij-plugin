@@ -13,7 +13,7 @@ import com.intellij.psi.tree.IElementType
  *
  * Creates PSI elements for navigation support (Cmd+Click).
  */
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions", "LargeClass")
 class BerryCrushParser : PsiParser {
     override fun parse(
         root: IElementType,
@@ -53,8 +53,7 @@ class BerryCrushParser : PsiParser {
             // Assert directive
             BerryCrushTokenTypes.ASSERT -> parseAssertDirective(builder)
             BerryCrushTokenTypes.INDENT -> {
-                builder.advanceLexer()
-                skipToEndOfLine(builder)
+                parseTopLevelIndentedLine(builder)
             }
             BerryCrushTokenTypes.COMMENT -> skipToEndOfLine(builder, BerryCrushElementTypes.COMMENT, false)
             BerryCrushTokenTypes.TAG -> parseTag(builder)
@@ -324,6 +323,11 @@ class BerryCrushParser : PsiParser {
             return true
         }
 
+        if (builder.tokenType == BerryCrushTokenTypes.COMMENT) {
+            skipToEndOfLine(builder, BerryCrushElementTypes.COMMENT, false)
+            return true
+        }
+
         if (builder.tokenType != BerryCrushTokenTypes.PIPE) {
             skipToEndOfLine(builder)
             return true
@@ -365,6 +369,8 @@ class BerryCrushParser : PsiParser {
         builder: PsiBuilder,
         parentIndent: Int,
     ) {
+        skipIndentedCommentLines(builder, parentIndent)
+
         // Check for INDENT followed by PARAMETERS keyword
         if (builder.tokenType != BerryCrushTokenTypes.INDENT) return
 
@@ -472,6 +478,7 @@ class BerryCrushParser : PsiParser {
             BerryCrushTokenTypes.ELSE -> parseConditionalDirective(builder, 0, BerryCrushElementTypes.ELSE_DIRECTIVE)
             BerryCrushTokenTypes.ASSERT -> parseAssertDirective(builder)
             BerryCrushTokenTypes.OPERATION_REF -> parseOperationRef(builder)
+            BerryCrushTokenTypes.COMMENT -> skipToEndOfLine(builder, BerryCrushElementTypes.COMMENT, false)
             else -> builder.advanceLexer()
         }
     }
@@ -574,9 +581,98 @@ class BerryCrushParser : PsiParser {
         parentIndent: Int,
         parseEntry: (PsiBuilder, Int) -> Boolean,
     ) {
-        while (builder.tokenType == BerryCrushTokenTypes.INDENT && parseEntry(builder, parentIndent)) {
+        while (!builder.eof()) {
+            skipNewlines(builder)
+
+            if (builder.tokenType == BerryCrushTokenTypes.COMMENT) {
+                skipToEndOfLine(builder, BerryCrushElementTypes.COMMENT, false)
+                continue
+            }
+
+            if (builder.tokenType != BerryCrushTokenTypes.INDENT) {
+                return
+            }
+
+            if (currentLineIndent(builder) <= parentIndent) {
+                return
+            }
+
+            if (consumeIndentedCommentLine(builder, parentIndent)) {
+                continue
+            }
+
+            if (!parseEntry(builder, parentIndent)) {
+                return
+            }
+        }
+    }
+
+    private fun parseTopLevelIndentedLine(builder: PsiBuilder) {
+        consumeLineIndent(builder)
+        if (builder.tokenType == BerryCrushTokenTypes.COMMENT) {
+            skipToEndOfLine(builder, BerryCrushElementTypes.COMMENT, false)
+            return
+        }
+
+        skipToEndOfLine(builder)
+    }
+
+    private fun skipIndentedCommentLines(
+        builder: PsiBuilder,
+        parentIndent: Int,
+    ) {
+        while (consumeIndentedCommentLine(builder, parentIndent)) {
             skipNewlines(builder)
         }
+    }
+
+    private fun consumeIndentedCommentLine(
+        builder: PsiBuilder,
+        parentIndent: Int,
+    ): Boolean {
+        if (!isIndentedCommentLine(builder, parentIndent)) {
+            return false
+        }
+
+        consumeLineIndent(builder)
+        skipToEndOfLine(builder, BerryCrushElementTypes.COMMENT, false)
+        return true
+    }
+
+    private fun isIndentedCommentLine(
+        builder: PsiBuilder,
+        parentIndent: Int,
+    ): Boolean {
+        if (builder.tokenType != BerryCrushTokenTypes.INDENT || currentLineIndent(builder) <= parentIndent) {
+            return false
+        }
+
+        val marker = builder.mark()
+        consumeLineIndent(builder)
+        val isComment = builder.tokenType == BerryCrushTokenTypes.COMMENT
+        marker.rollbackTo()
+        return isComment
+    }
+
+    private fun consumeCommentLineAtIndent(
+        builder: PsiBuilder,
+        indent: Int,
+    ): Boolean {
+        if (builder.tokenType != BerryCrushTokenTypes.INDENT || currentLineIndent(builder) != indent) {
+            return false
+        }
+
+        val marker = builder.mark()
+        consumeLineIndent(builder)
+        val isComment = builder.tokenType == BerryCrushTokenTypes.COMMENT
+        marker.rollbackTo()
+        if (!isComment) {
+            return false
+        }
+
+        consumeLineIndent(builder)
+        skipToEndOfLine(builder, BerryCrushElementTypes.COMMENT, false)
+        return true
     }
 
     /**
@@ -587,6 +683,14 @@ class BerryCrushParser : PsiParser {
         builder: PsiBuilder,
         parentIndent: Int,
     ) {
+        while (builder.tokenType == BerryCrushTokenTypes.COMMENT) {
+            skipToEndOfLine(builder, BerryCrushElementTypes.COMMENT, false)
+        }
+
+        while (consumeCommentLineAtIndent(builder, parentIndent)) {
+            skipNewlines(builder)
+        }
+
         if (builder.tokenType == BerryCrushTokenTypes.INDENT) {
             val marker = builder.mark()
             parseIndentedEntries(builder, parentIndent, ::tryParseParameter)
@@ -636,21 +740,47 @@ class BerryCrushParser : PsiParser {
             BerryCrushTokenTypes.TEXT,
             -> {
                 val keyMarker = builder.mark()
+                val keyText = builder.tokenText.orEmpty()
                 builder.advanceLexer()
                 skipWhiteSpaces(builder)
 
-                if (builder.tokenType != BerryCrushTokenTypes.COLON) {
+                val hasInlineColon = keyText.endsWith(":")
+                if (builder.tokenType == BerryCrushTokenTypes.COLON) {
+                    builder.advanceLexer() // consume ':'
+                } else if (!hasInlineColon) {
                     keyMarker.rollbackTo()
                     marker.rollbackTo()
                     return false
                 }
-                builder.advanceLexer() // consume ':'
                 keyMarker.done(BerryCrushElementTypes.PARAMETER_KEY)
             }
 
             else -> {
-                marker.rollbackTo()
-                return false
+                if (!allowBody) {
+                    marker.rollbackTo()
+                    return false
+                }
+
+                val tokenType = builder.tokenType
+                if (tokenType == null || tokenType == BerryCrushTokenTypes.NEWLINE || tokenType == BerryCrushTokenTypes.COMMENT) {
+                    marker.rollbackTo()
+                    return false
+                }
+
+                val keyMarker = builder.mark()
+                val keyText = builder.tokenText.orEmpty()
+                builder.advanceLexer()
+                skipWhiteSpaces(builder)
+
+                val hasInlineColon = keyText.endsWith(":")
+                if (builder.tokenType == BerryCrushTokenTypes.COLON) {
+                    builder.advanceLexer() // consume ':'
+                } else if (!hasInlineColon) {
+                    keyMarker.rollbackTo()
+                    marker.rollbackTo()
+                    return false
+                }
+                keyMarker.done(BerryCrushElementTypes.PARAMETER_KEY)
             }
         }
         skipWhiteSpaces(builder)

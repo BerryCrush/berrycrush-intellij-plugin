@@ -172,4 +172,76 @@ class SyntaxCheckInspectionTest : BerryCrushInspectionTestCase(SyntaxCheckInspec
             problems.isEmpty(),
         )
     }
+
+    fun testCommentsInDirectivePayloadAndExamplesShouldNotCauseError() {
+        val psiFile =
+            myFixture.addFileToProject(
+                "commented-structures.scenario",
+                """
+                outline: commented outline
+                  given call with comments
+                    call ^operationId
+                      id: {{petId}}
+                      # comment between payload fields
+                      body:
+                        # nested body comment
+                        name: foo
+                  examples:
+                    # comment before header row
+                    | id | name |
+                    # comment before value row
+                    | 1  | foo  |
+                """.trimIndent(),
+            )
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "valid comment-heavy outline/directive content should not be flagged",
+            problems.isEmpty(),
+        )
+    }
+
+    fun testCommentBetweenCallAndBodyShouldNotCauseError() {
+        val psiFile =
+            myFixture.addFileToProject(
+                "comment-between-call-and-body.scenario",
+                """
+                scenario: Body syntax - structured body
+                  when I create a pet with structured body
+                    call ^createPet
+                    # Uses OpenAPI schema defaults for unspecified fields
+                      body:
+                        name: StructuredBodyPet
+                        status: pending
+                """.trimIndent(),
+            )
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "body payload following an inline comment should stay in call block",
+            problems.isEmpty(),
+        )
+    }
+
+    fun testCommentsInFragmentShouldNotCauseError() {
+        val psiFile =
+            myFixture.addFileToProject(
+                "commented.fragment",
+                """
+                fragment: commented
+                  # comment before first step
+                  given setup
+                    # comment before directive
+                    call ^login
+                      # comment between parameters
+                      username: demo
+                """.trimIndent(),
+            )
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "valid comment-heavy fragment content should not be flagged",
+            problems.isEmpty(),
+        )
+    }
 }

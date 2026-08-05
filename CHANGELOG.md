@@ -13,8 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Unified scenario execution support between context-menu and gutter run paths
+- PSI Element base inspection, highlighting
+- General code cleanup
 
-## [1.0.0] - TBD
+## [1.0.0]
 
 ### Added
 - Syntax highlighting for `.scenario` and `.fragment` files
