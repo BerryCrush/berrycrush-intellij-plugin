@@ -11,7 +11,6 @@ import kotlin.test.assertTrue
  * Unit tests for BerryCrush syntax highlighter.
  */
 class BerryCrushHighlighterTest {
-
     private val highlighter = BerryCrushSyntaxHighlighter()
 
     @Test

@@ -1,58 +1,59 @@
 package com.berrycrush.intellij.completion
 
 import com.berrycrush.intellij.BerryCrushTestCase
-import com.intellij.codeInsight.completion.CompletionType
 
 /**
  * Tests for BerryCrush code completion.
  * Verifies keyword and directive completion in BerryCrush files.
  */
 class BerryCrushCompletionContributorTest : BerryCrushTestCase() {
-
     // ========== Block Keyword Completion Tests ==========
 
     fun testCompletionAtTopLevel() {
         // Create file with caret at top level
         myFixture.configureByText("test.scenario", "<caret>")
-        
+
         val completions = myFixture.completeBasic()
-        
+
         // Should offer block keywords
         assertNotNull("Should return completions", completions)
-        
+
         val lookupStrings = completions?.map { it.lookupString } ?: emptyList()
-        
+
         // Should include scenario keyword
         assertTrue(
             "Should suggest 'scenario:' at top level, got: $lookupStrings",
-            lookupStrings.any { it.contains("scenario") }
+            lookupStrings.any { it.contains("scenario") },
         )
     }
 
     fun testCompletionSuggestsFragmentKeyword() {
         myFixture.configureByText("test.fragment", "<caret>")
-        
+
         val completions = myFixture.completeBasic()
         assertNotNull(completions)
-        
+
         val lookupStrings = completions?.map { it.lookupString } ?: emptyList()
-        
+
         assertTrue(
             "Should suggest 'fragment:' in fragment file",
-            lookupStrings.any { it.contains("fragment") }
+            lookupStrings.any { it.contains("fragment") },
         )
     }
 
     // ========== Step Keyword Completion Tests ==========
 
     fun testCompletionSuggestsStepKeywords() {
-        myFixture.configureByText("test.scenario", """
+        myFixture.configureByText(
+            "test.scenario",
+            """
             scenario: Test
             <caret>
-        """.trimIndent())
-        
+            """.trimIndent(),
+        )
+
         val completions = myFixture.completeBasic()
-        
+
         // Completion may auto-complete or return a list
         // Both are valid behaviors for the completion contributor
         if (completions != null && completions.isNotEmpty()) {
@@ -60,7 +61,7 @@ class BerryCrushCompletionContributorTest : BerryCrushTestCase() {
             // Verify some completions are returned
             assertTrue(
                 "Should have some completions inside scenario",
-                lookupStrings.isNotEmpty()
+                lookupStrings.isNotEmpty(),
             )
         }
     }
@@ -68,61 +69,74 @@ class BerryCrushCompletionContributorTest : BerryCrushTestCase() {
     // ========== Directive Completion Tests ==========
 
     fun testCompletionSuggestsDirectives() {
-        myFixture.configureByText("test.scenario", """
+        myFixture.configureByText(
+            "test.scenario",
+            """
             scenario: Test
             given step
               <caret>
-        """.trimIndent())
-        
+            """.trimIndent(),
+        )
+
         val completions = myFixture.completeBasic()
         assertNotNull(completions)
-        
+
         val lookupStrings = completions?.map { it.lookupString } ?: emptyList()
-        
+
         // Should include directives
         assertTrue(
             "Should suggest directives like 'call', 'assert', got: $lookupStrings",
-            lookupStrings.any { 
-                it.contains("call") || it.contains("assert") || 
-                it.contains("include") || it.contains("extract")
-            }
+            lookupStrings.any {
+                it.contains("call") ||
+                    it.contains("assert") ||
+                    it.contains("include") ||
+                    it.contains("extract")
+            },
         )
     }
 
     // ========== Assert Condition Completion Tests ==========
 
     fun testCompletionAfterAssert() {
-        myFixture.configureByText("test.scenario", """
+        myFixture.configureByText(
+            "test.scenario",
+            """
             scenario: Test
             given step
               assert <caret>
-        """.trimIndent())
-        
+            """.trimIndent(),
+        )
+
         val completions = myFixture.completeBasic()
         assertNotNull(completions)
-        
+
         val lookupStrings = completions?.map { it.lookupString } ?: emptyList()
-        
+
         // Should include condition keywords
         assertTrue(
             "Should suggest condition keywords after 'assert', got: $lookupStrings",
-            lookupStrings.any { 
-                it.contains("status") || it.contains("header") || 
-                it.contains("contains") || it.contains("exists")
-            }
+            lookupStrings.any {
+                it.contains("status") ||
+                    it.contains("header") ||
+                    it.contains("contains") ||
+                    it.contains("exists")
+            },
         )
     }
 
     // ========== Fragment File Completion Tests ==========
 
     fun testCompletionInFragmentFile() {
-        myFixture.configureByText("test.fragment", """
+        myFixture.configureByText(
+            "test.fragment",
+            """
             fragment: test
             <caret>
-        """.trimIndent())
-        
+            """.trimIndent(),
+        )
+
         val completions = myFixture.completeBasic()
-        
+
         // Completion may auto-complete or return a list
         // Both are valid behaviors
         if (completions != null && completions.isNotEmpty()) {
@@ -130,7 +144,7 @@ class BerryCrushCompletionContributorTest : BerryCrushTestCase() {
             // Verify some completions are returned
             assertTrue(
                 "Should have some completions in fragment file",
-                lookupStrings.isNotEmpty()
+                lookupStrings.isNotEmpty(),
             )
         }
     }
@@ -139,30 +153,30 @@ class BerryCrushCompletionContributorTest : BerryCrushTestCase() {
 
     fun testCompletionInEmptyScenarioFile() {
         myFixture.configureByText("empty.scenario", "<caret>")
-        
+
         val completions = myFixture.completeBasic()
-        
+
         // Should not throw and should return some completions
         if (completions != null) {
             val lookupStrings = completions.map { it.lookupString }
             assertTrue(
                 "Should have some completions for empty scenario file",
-                lookupStrings.isNotEmpty()
+                lookupStrings.isNotEmpty(),
             )
         }
     }
 
     fun testCompletionInEmptyFragmentFile() {
         myFixture.configureByText("empty.fragment", "<caret>")
-        
+
         val completions = myFixture.completeBasic()
-        
+
         // Should not throw and should return some completions
         if (completions != null) {
             val lookupStrings = completions.map { it.lookupString }
             assertTrue(
                 "Should have some completions for empty fragment file",
-                lookupStrings.isNotEmpty()
+                lookupStrings.isNotEmpty(),
             )
         }
     }
@@ -172,10 +186,10 @@ class BerryCrushCompletionContributorTest : BerryCrushTestCase() {
     fun testCompletionContributorIsRegistered() {
         // Create a file and verify completion works (contributor is registered)
         myFixture.configureByText("contributor.scenario", "sc<caret>")
-        
+
         // Should complete without error
         val completions = myFixture.completeBasic()
-        
+
         // Either completions are returned or single completion is inserted
         // Both are valid outcomes that prove the contributor is registered
     }
@@ -183,10 +197,13 @@ class BerryCrushCompletionContributorTest : BerryCrushTestCase() {
     // ========== Scenario Parameters Completion Tests ==========
 
     fun testCompletionSuggestsParametersKeyword() {
-        myFixture.configureByText("params.scenario", """
+        myFixture.configureByText(
+            "params.scenario",
+            """
             scenario: Test
               <caret>
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         val completions = myFixture.completeBasic()
         assertNotNull(completions)
@@ -195,18 +212,21 @@ class BerryCrushCompletionContributorTest : BerryCrushTestCase() {
 
         assertTrue(
             "Should suggest 'parameters:' after scenario, got: $lookupStrings",
-            lookupStrings.any { it.contains("parameters") }
+            lookupStrings.any { it.contains("parameters") },
         )
     }
 
     fun testCompletionSuggestsKnownParameters() {
         // Note: Completion in parameters block depends on PSI structure detection.
         // This test verifies that completions are provided when the context is appropriate.
-        myFixture.configureByText("known-params.scenario", """
+        myFixture.configureByText(
+            "known-params.scenario",
+            """
             scenario: Test
               parameters:
                 ti<caret>
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         val completions = myFixture.completeBasic()
 
@@ -216,7 +236,7 @@ class BerryCrushCompletionContributorTest : BerryCrushTestCase() {
             // Check that at least some completions are provided
             assertTrue(
                 "Should have some completions, got: $lookupStrings",
-                lookupStrings.isNotEmpty()
+                lookupStrings.isNotEmpty(),
             )
         }
         // If completions is null, single completion was auto-inserted (valid behavior)
@@ -224,11 +244,14 @@ class BerryCrushCompletionContributorTest : BerryCrushTestCase() {
 
     fun testCompletionSuggestsVariableInterpolationPrefixes() {
         // Note: Variable interpolation completion is triggered by ${ context
-        myFixture.configureByText("var-interp.scenario", """
+        myFixture.configureByText(
+            "var-interp.scenario",
+            """
             scenario: Test
               parameters:
                 baseUrl: {{e<caret>
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         val completions = myFixture.completeBasic()
 
@@ -238,7 +261,7 @@ class BerryCrushCompletionContributorTest : BerryCrushTestCase() {
             // Check that some completions are provided
             assertTrue(
                 "Should have some completions, got: $lookupStrings",
-                lookupStrings.isNotEmpty()
+                lookupStrings.isNotEmpty(),
             )
         }
     }

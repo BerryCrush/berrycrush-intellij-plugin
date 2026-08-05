@@ -7,10 +7,10 @@ import com.berrycrush.intellij.psi.BerryCrushFragmentElement
 import com.berrycrush.intellij.psi.BerryCrushIncludeElement
 import com.berrycrush.intellij.psi.BerryCrushOperationRefElement
 import com.berrycrush.intellij.psi.BerryCrushStepElement
+import com.berrycrush.intellij.reference.BerryCrushAssertionReference
 import com.berrycrush.intellij.reference.BerryCrushFragmentReference
 import com.berrycrush.intellij.reference.BerryCrushOperationReference
 import com.berrycrush.intellij.reference.BerryCrushStepReference
-import com.berrycrush.intellij.reference.BerryCrushAssertionReference
 import com.intellij.codeInsight.daemon.LineMarkerInfo
 import com.intellij.codeInsight.daemon.LineMarkerProvider
 import com.intellij.codeInsight.navigation.NavigationGutterIconBuilder
@@ -31,7 +31,6 @@ import com.intellij.psi.PsiElement
  * - Assertion definitions (links to @Assertion annotated methods)
  */
 class BerryCrushLineMarkerProvider : LineMarkerProvider {
-
     override fun getLineMarkerInfo(element: PsiElement): LineMarkerInfo<*>? {
         // Line markers must be registered for leaf elements only (per IntelliJ guidelines)
         // Skip non-leaf elements to avoid performance warnings
@@ -72,7 +71,7 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
                     { "Fragment: $fragmentName (no usages)" },
                     null,
                     GutterIconRenderer.Alignment.CENTER,
-                    { "Fragment definition" }
+                    { "Fragment definition" },
                 )
             }
         }
@@ -95,59 +94,53 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
                     { "Fragment: $fragmentName (not found)" },
                     null,
                     GutterIconRenderer.Alignment.CENTER,
-                    { "Include directive" }
+                    { "Include directive" },
                 )
             }
         }
     }
 
-    private fun BerryCrushStepElement.markStep(): LineMarkerInfo<*>? {
-        return stepText?.let { text ->
-            BerryCrushStepReference.findMatchingStepMethods(project, text).let { methods ->
-                if (methods.isNotEmpty()) {
-                    NavigationGutterIconBuilder
-                        .create(AllIcons.Gutter.ImplementedMethod)
-                        .setTargets(methods)
-                        .setTooltipText("Go to @Step definition")
-                        .setPopupTitle("Step definitions")
-                        .createLineMarkerInfo(this)
-                } else {
-                    null
-                }
+    private fun BerryCrushStepElement.markStep(): LineMarkerInfo<*>? = stepText?.let { text ->
+        BerryCrushStepReference.findMatchingStepMethods(project, text).let { methods ->
+            if (methods.isNotEmpty()) {
+                NavigationGutterIconBuilder
+                    .create(AllIcons.Gutter.ImplementedMethod)
+                    .setTargets(methods)
+                    .setTooltipText("Go to @Step definition")
+                    .setPopupTitle("Step definitions")
+                    .createLineMarkerInfo(this)
+            } else {
+                null
             }
         }
     }
 
-    private fun BerryCrushAssertElement.markAssert(): LineMarkerInfo<*>? {
-        return assertionText?.let { text ->
-            BerryCrushAssertionReference.findMatchingAssertionMethods(project, text).let { methods ->
-                if (methods.isNotEmpty()) {
-                    NavigationGutterIconBuilder
-                        .create(AllIcons.Gutter.ImplementedMethod)
-                        .setTargets(methods)
-                        .setTooltipText("Go to @Assertion definition")
-                        .setPopupTitle("Assertion definitions")
-                        .createLineMarkerInfo(this)
-                } else {
-                    null
-                }
+    private fun BerryCrushAssertElement.markAssert(): LineMarkerInfo<*>? = assertionText?.let { text ->
+        BerryCrushAssertionReference.findMatchingAssertionMethods(project, text).let { methods ->
+            if (methods.isNotEmpty()) {
+                NavigationGutterIconBuilder
+                    .create(AllIcons.Gutter.ImplementedMethod)
+                    .setTargets(methods)
+                    .setTooltipText("Go to @Assertion definition")
+                    .setPopupTitle("Assertion definitions")
+                    .createLineMarkerInfo(this)
+            } else {
+                null
             }
         }
     }
 
-    private fun BerryCrushOperationRefElement.markOperationReference(): LineMarkerInfo<*>? {
-        return BerryCrushOperationReference.findOperationInOpenAPI(project, operationId)?.let { target ->
-            NavigationGutterIconBuilder
-                .create(AllIcons.Webreferences.Openapi)
-                .setTargets(listOf(target))
-                .setTooltipText("Go to OpenAPI operation: $operationId")
-                .createLineMarkerInfo(this)
-        }
+    private fun BerryCrushOperationRefElement.markOperationReference(): LineMarkerInfo<*>? = BerryCrushOperationReference.findOperationInOpenAPI(project, operationId)?.let { target ->
+        NavigationGutterIconBuilder
+            .create(AllIcons.Webreferences.Openapi)
+            .setTargets(listOf(target))
+            .setTooltipText("Go to OpenAPI operation: $operationId")
+            .createLineMarkerInfo(this)
     }
 
     override fun collectSlowLineMarkers(
         elements: MutableList<out PsiElement>,
-        result: MutableCollection<in LineMarkerInfo<*>>
+        result: MutableCollection<in LineMarkerInfo<*>>,
     ) {
         // All markers are handled in getLineMarkerInfo() for consistency
         // PSI-based markers (BerryCrushFragmentElement, etc.) are disabled
@@ -162,14 +155,14 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
     private fun isFirstElementOnLine(element: PsiElement): Boolean {
         val containingFile = element.containingFile ?: return true
         val document = PsiDocumentManager.getInstance(element.project).getDocument(containingFile) ?: return true
-        
+
         val elementOffset = element.textOffset
         val lineNumber = document.getLineNumber(elementOffset)
         val lineStartOffset = document.getLineStartOffset(lineNumber)
-        
+
         // Get text from line start to element start
         val textBeforeElement = document.getText(TextRange(lineStartOffset, elementOffset))
-        
+
         // If there's non-whitespace content before this element, it's not first on line
         return textBeforeElement.isBlank()
     }

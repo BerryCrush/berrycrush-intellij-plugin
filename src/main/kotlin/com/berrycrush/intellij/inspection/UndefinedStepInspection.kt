@@ -16,26 +16,33 @@ import com.intellij.psi.util.PsiTreeUtil
  * and don't match any @Step annotated method in the project.
  */
 class UndefinedStepInspection : BerryCrushInspection() {
-
     override fun getDisplayName(): String = "Undefined custom step"
+
     override fun getShortName(): String = "BerryCrushUndefinedStep"
+
     override fun getGroupDisplayName(): String = "BerryCrush"
+
     override fun isEnabledByDefault(): Boolean = true
 
-    override fun checkFile(file: PsiFile, holder: ProblemsHolder) {
-        PsiTreeUtil.findChildrenOfType(file, BerryCrushStepElement::class.java)
+    override fun checkFile(
+        file: PsiFile,
+        holder: ProblemsHolder,
+    ) {
+        PsiTreeUtil
+            .findChildrenOfType(file, BerryCrushStepElement::class.java)
             .filter { PsiTreeUtil.findChildrenOfType(it, BerryCrushDirectiveElement::class.java).isEmpty() }
             .filter { step -> !step.hasCustomStep(file) }
-            .forEach { step -> step.addWarning(holder)}
+            .forEach { step -> step.addWarning(holder) }
     }
 
     private fun BerryCrushStepElement.hasCustomStep(file: PsiFile): Boolean {
         val stepText = stepText ?: return false
-        return BerryCrushStepReference.findMatchingStepMethodsInScope(
-            file.project,
-            stepText,
-            ModuleScopeResolver.getModuleDependencyScope(file)
-        ).isNotEmpty()
+        return BerryCrushStepReference
+            .findMatchingStepMethodsInScope(
+                file.project,
+                stepText,
+                ModuleScopeResolver.getModuleDependencyScope(file),
+            ).isNotEmpty()
     }
 
     private fun BerryCrushStepElement.addWarning(holder: ProblemsHolder) {
@@ -44,7 +51,7 @@ class UndefinedStepInspection : BerryCrushInspection() {
             this,
             "Step '$stepText' has no matching @Step definition",
             ProblemHighlightType.WEAK_WARNING,
-            *quickFix
+            *quickFix,
         )
     }
 }

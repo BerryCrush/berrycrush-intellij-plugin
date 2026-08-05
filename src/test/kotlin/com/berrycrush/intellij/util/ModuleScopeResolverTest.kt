@@ -11,7 +11,6 @@ import kotlin.test.assertNotNull
  * are needed for comprehensive testing.
  */
 class ModuleScopeResolverTest {
-
     @Test
     fun `ModuleScopeResolver object exists`() {
         // Simple test to verify the object is accessible

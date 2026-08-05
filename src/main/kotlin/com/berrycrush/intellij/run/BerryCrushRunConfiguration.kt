@@ -23,22 +23,25 @@ import javax.swing.Icon
  */
 class BerryCrushConfigurationType : ConfigurationType {
     override fun getDisplayName(): String = "BerryCrush"
+
     override fun getConfigurationTypeDescription(): String = "BerryCrush test configuration"
+
     override fun getIcon(): Icon = BerryCrushIcons.SCENARIO_FILE
+
     override fun getId(): String = "BerryCrushConfiguration"
 
-    override fun getConfigurationFactories(): Array<ConfigurationFactory> =
-        arrayOf(BerryCrushConfigurationFactory(this))
+    override fun getConfigurationFactories(): Array<ConfigurationFactory> = arrayOf(BerryCrushConfigurationFactory(this))
 }
 
 /**
  * Factory for creating BerryCrush run configurations.
  */
-class BerryCrushConfigurationFactory(type: ConfigurationType) : ConfigurationFactory(type) {
+class BerryCrushConfigurationFactory(
+    type: ConfigurationType,
+) : ConfigurationFactory(type) {
     override fun getId(): String = "BerryCrush"
 
-    override fun createTemplateConfiguration(project: Project): RunConfiguration =
-        BerryCrushRunConfiguration(project, this, "BerryCrush")
+    override fun createTemplateConfiguration(project: Project): RunConfiguration = BerryCrushRunConfiguration(project, this, "BerryCrush")
 
     override fun getName(): String = "BerryCrush"
 }
@@ -54,8 +57,5 @@ class BerryCrushRunConfiguration(
     factory: ConfigurationFactory,
     name: String,
 ) : JUnitConfiguration(name, project, factory) {
-
-    override fun createTestConsoleProperties(executor: Executor): SMTRunnerConsoleProperties {
-        return BerryCrushConsoleProperties(this, executor)
-    }
+    override fun createTestConsoleProperties(executor: Executor): SMTRunnerConsoleProperties = BerryCrushConsoleProperties(this, executor)
 }

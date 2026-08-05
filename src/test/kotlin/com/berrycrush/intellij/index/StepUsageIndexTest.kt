@@ -1,21 +1,17 @@
 package com.berrycrush.intellij.index
 
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Nested
-import kotlin.test.assertTrue
+import org.junit.jupiter.api.Test
 import kotlin.test.assertFalse
-import kotlin.test.assertEquals
-import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /**
  * Unit tests for StepUsageIndex static methods.
  * Tests pattern matching, step text extraction, and assertion text extraction.
  */
 class StepUsageIndexTest {
-
     @Nested
     inner class PatternToRegexTests {
-
         @Test
         fun `simple pattern without placeholders`() {
             val regex = StepUsageIndex.patternToRegex("user is logged in")
@@ -92,7 +88,6 @@ class StepUsageIndexTest {
 
     @Nested
     inner class MatchesPatternTests {
-
         @Test
         fun `exact match returns true`() {
             val regex = StepUsageIndex.patternToRegex("user is logged in")
@@ -128,7 +123,6 @@ class StepUsageIndexTest {
 
     @Nested
     inner class EdgeCaseTests {
-
         @Test
         fun `empty pattern`() {
             val regex = StepUsageIndex.patternToRegex("")

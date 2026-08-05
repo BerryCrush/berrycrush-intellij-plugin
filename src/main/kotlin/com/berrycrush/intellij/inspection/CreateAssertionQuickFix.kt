@@ -14,14 +14,16 @@ import java.awt.datatransfer.StringSelection
  * into their assertion definition class.
  */
 class CreateAssertionQuickFix(
-    private val assertionText: String
+    private val assertionText: String,
 ) : LocalQuickFix {
-
     override fun getName(): String = "Copy @Assertion method template to clipboard"
 
     override fun getFamilyName(): String = "BerryCrush"
 
-    override fun applyFix(project: Project, descriptor: ProblemDescriptor) {
+    override fun applyFix(
+        project: Project,
+        descriptor: ProblemDescriptor,
+    ) {
         val template = generateAssertionTemplate()
 
         // Copy to clipboard
@@ -30,7 +32,7 @@ class CreateAssertionQuickFix(
         Messages.showInfoMessage(
             project,
             "@Assertion method template copied to clipboard.\n\nPaste it into your assertion definition class.",
-            "Assertion Template Created"
+            "Assertion Template Created",
         )
     }
 
@@ -39,28 +41,27 @@ class CreateAssertionQuickFix(
         val pattern = escapePattern(assertionText)
 
         return """
-    @Assertion("$pattern")
-    public void $methodName(Object actual) {
-        // TODO: Implement assertion
-    }
-""".trimIndent()
+            @Assertion("$pattern")
+            public void $methodName(Object actual) {
+                // TODO: Implement assertion
+            }
+        """.trimIndent()
     }
 
     /**
      * Generate a camelCase method name from the assertion text.
      */
-    private fun generateMethodName(): String {
-        return "assert" + assertionText
-            .replace(Regex("""["'].*?["']"""), " Value ")  // Replace quoted strings
-            .replace(Regex("""\d+"""), " Number ")         // Replace numbers
-            .replace(Regex("""[^a-zA-Z0-9]+"""), " ")      // Non-alphanumeric to space
+    private fun generateMethodName(): String = "assert" +
+        assertionText
+            .replace(Regex("""["'].*?["']"""), " Value ") // Replace quoted strings
+            .replace(Regex("""\d+"""), " Number ") // Replace numbers
+            .replace(Regex("""[^a-zA-Z0-9]+"""), " ") // Non-alphanumeric to space
             .trim()
             .split(Regex("""\s+"""))
             .filter { it.isNotBlank() }
             .joinToString("") { it.replaceFirstChar { c -> c.uppercase() } }
             .take(50)
             .ifEmpty { "Condition" }
-    }
 
     /**
      * Convert assertion text to a pattern with placeholders.
@@ -69,6 +70,6 @@ class CreateAssertionQuickFix(
         return text
             .replace(Regex(""""[^"]*""""), """{string}""") // Replace quoted strings
             .replace(Regex("""'[^']*'"""), """{string}""")
-            .replace(Regex("""\b\d+\b"""), """{int}""")    // Replace numbers
+            .replace(Regex("""\b\d+\b"""), """{int}""") // Replace numbers
     }
 }

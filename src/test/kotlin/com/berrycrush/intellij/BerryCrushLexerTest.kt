@@ -4,14 +4,13 @@ import com.berrycrush.intellij.lexer.BerryCrushElementType
 import com.berrycrush.intellij.lexer.BerryCrushLexer
 import com.berrycrush.intellij.lexer.BerryCrushTokenTypes
 import com.intellij.psi.tree.IElementType
-import kotlin.test.assertEquals
 import org.junit.jupiter.api.Test
+import kotlin.test.assertEquals
 
 /**
  * Unit tests for BerryCrush lexer.
  */
 class BerryCrushLexerTest {
-
     @Test
     fun `test lexer tokenizes feature keyword`() {
         val tokens = tokenize("feature: User login")
@@ -26,13 +25,14 @@ class BerryCrushLexerTest {
 
     @Test
     fun `test lexer tokenizes step keywords`() {
-        val input = """
+        val input =
+            """
             given user is on login page
             when user enters credentials
             then user is logged in
             and session is created
             but no errors shown
-        """.trimIndent()
+            """.trimIndent()
         val tokens = tokenize(input)
 
         assertContains(tokens, BerryCrushTokenTypes.GIVEN)
@@ -104,11 +104,12 @@ class BerryCrushLexerTest {
 
     @Test
     fun `test lexer tokenizes step keywords with colon syntax`() {
-        val input = """
+        val input =
+            """
             given: user is on login page
             when: user enters credentials
             then: user is logged in
-        """.trimIndent()
+            """.trimIndent()
         val tokens = tokenize(input)
 
         assertContains(tokens, BerryCrushTokenTypes.GIVEN)
@@ -133,11 +134,12 @@ class BerryCrushLexerTest {
 
     @Test
     fun `test lexer tokenizes conditional keywords`() {
-        val input = """
+        val input =
+            """
             if status = 200
             else if status = 404
             else
-        """.trimIndent()
+            """.trimIndent()
         val tokens = tokenize(input)
         assertContains(tokens, BerryCrushTokenTypes.IF)
         assertContains(tokens, BerryCrushTokenTypes.ELSE)
@@ -153,7 +155,8 @@ class BerryCrushLexerTest {
 
     @Test
     fun `test full scenario tokenization`() {
-        val scenario = """
+        val scenario =
+            """
             @api @smoke
             feature: User API
             
@@ -165,7 +168,7 @@ class BerryCrushLexerTest {
                     assert header Content-Type contains application/json
                     assert $.id equals 1 
                     extract userId => $.id
-        """.trimIndent()
+            """.trimIndent()
 
         val tokens = tokenize(scenario)
 
@@ -187,11 +190,12 @@ class BerryCrushLexerTest {
 
     @Test
     fun `test lexer tokenizes capitalized step keywords`() {
-        val input = """
+        val input =
+            """
             given user is logged in
             when user clicks button
             then result is shown
-        """.trimIndent()
+            """.trimIndent()
         val tokens = tokenize(input)
 
         assertContains(tokens, BerryCrushTokenTypes.GIVEN, "given should be tokenized")
@@ -201,11 +205,12 @@ class BerryCrushLexerTest {
 
     @Test
     fun `test lexer tokenizes capitalized Fragment keyword`() {
-        val input = """
+        val input =
+            """
             fragment: my-fragment
             given step one
             when step two
-        """.trimIndent()
+            """.trimIndent()
         val tokens = tokenize(input)
 
         assertContains(tokens, BerryCrushTokenTypes.FRAGMENT, "Fragment should be tokenized")
@@ -216,7 +221,10 @@ class BerryCrushLexerTest {
 
     @Test
     fun `test lexer additional operator support`() {
-        fun check(input: String, expected: BerryCrushElementType) {
+        fun check(
+            input: String,
+            expected: BerryCrushElementType,
+        ) {
             val tokens = tokenize(input)
             assertEquals(expected, tokens[0].first)
             assertEquals(input, tokens[0].second)
@@ -312,7 +320,7 @@ class BerryCrushLexerTest {
     private fun assertContains(
         tokens: List<Pair<IElementType?, String>>,
         expectedType: IElementType,
-        message: String = "Expected token type $expectedType not found"
+        message: String = "Expected token type $expectedType not found",
     ) {
         val found = tokens.any { it.first == expectedType }
         assert(found) { "$message\nTokens: ${tokens.map { "${it.first} '${it.second}'" }}" }
@@ -321,7 +329,7 @@ class BerryCrushLexerTest {
     private fun assertNotContains(
         tokens: List<Pair<IElementType?, String>>,
         unexpectedType: IElementType,
-        message: String = "Unexpected token type $unexpectedType found"
+        message: String = "Unexpected token type $unexpectedType found",
     ) {
         val found = tokens.any { it.first == unexpectedType }
         assert(!found) { "$message\nTokens: ${tokens.map { "${it.first} '${it.second}'" }}" }

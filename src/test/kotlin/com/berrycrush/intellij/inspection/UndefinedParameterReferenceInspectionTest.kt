@@ -1,10 +1,5 @@
 package com.berrycrush.intellij.inspection
 
-import com.berrycrush.intellij.BerryCrushTestCase
-import com.intellij.codeInspection.InspectionManager
-import com.intellij.codeInspection.ProblemDescriptor
-import com.intellij.codeInspection.ProblemsHolder
-
 /**
  * Tests for UndefinedParameterReferenceInspection.
  *
@@ -32,63 +27,79 @@ class UndefinedParameterReferenceInspectionTest : BerryCrushInspectionTestCase(U
     // ========== Parameter Reference Detection Tests ==========
 
     fun testNoProblemsForDefinedParameter() {
-        val psiFile = myFixture.addFileToProject("defined-param.scenario", """
-            scenario: test
-              parameters:
-                timeout: 5000
-              given setup
-                call GET /api?timeout=${"$"}{param.timeout}
-        """.trimIndent())
+        val psiFile =
+            myFixture.addFileToProject(
+                "defined-param.scenario",
+                """
+                scenario: test
+                  parameters:
+                    timeout: 5000
+                  given setup
+                    call GET /api?timeout=${"$"}{param.timeout}
+                """.trimIndent(),
+            )
 
         val problems = runInspection(psiFile)
         assertTrue(
             "Defined parameter should not be flagged",
-            problems.none { it.descriptionTemplate.contains("timeout") }
+            problems.none { it.descriptionTemplate.contains("timeout") },
         )
     }
 
     fun testReportsUndefinedParameterReference() {
-        val psiFile = myFixture.addFileToProject("undefined-param.scenario", """
-            scenario: test
-              given setup
-                call GET /api?timeout={{param.undefinedParam}}
-        """.trimIndent())
+        val psiFile =
+            myFixture.addFileToProject(
+                "undefined-param.scenario",
+                """
+                scenario: test
+                  given setup
+                    call GET /api?timeout={{param.undefinedParam}}
+                """.trimIndent(),
+            )
 
         val problems = runInspection(psiFile)
         assertTrue(
             "Should report undefined parameter reference, got: ${problems.map { it.descriptionTemplate }}",
-            problems.any { it.descriptionTemplate.contains("undefinedParam") }
+            problems.any { it.descriptionTemplate.contains("undefinedParam") },
         )
     }
 
     fun testNoProblemsForEnvVariable() {
-        val psiFile = myFixture.addFileToProject("env-var.scenario", """
-            scenario: test
-              parameters:
-                baseUrl: ${"$"}{env.API_URL}
-        """.trimIndent())
+        val psiFile =
+            myFixture.addFileToProject(
+                "env-var.scenario",
+                """
+                scenario: test
+                  parameters:
+                    baseUrl: ${"$"}{env.API_URL}
+                """.trimIndent(),
+            )
 
         val problems = runInspection(psiFile)
         // env variables should not be flagged (can't validate env vars in IDE)
         assertTrue(
             "env.* should not be flagged as undefined",
-            problems.none { it.descriptionTemplate.contains("API_URL") }
+            problems.none { it.descriptionTemplate.contains("API_URL") },
         )
     }
 
     fun testNoProblemsForDefinedContextVariable() {
-        val psiFile = myFixture.addFileToProject("context-var.scenario", """
-            scenario: test
-              given setup
-                extract userId = $.data.id
-              when using variable
-                call GET /api/users/${"$"}{context.userId}
-        """.trimIndent())
+        val psiFile =
+            myFixture.addFileToProject(
+                "context-var.scenario",
+                """
+                scenario: test
+                  given setup
+                    extract userId = $.data.id
+                  when using variable
+                    call GET /api/users/${"$"}{context.userId}
+                """.trimIndent(),
+            )
 
         val problems = runInspection(psiFile)
         assertTrue(
             "Defined context variable should not be flagged",
-            problems.none { it.descriptionTemplate.contains("userId") }
+            problems.none { it.descriptionTemplate.contains("userId") },
         )
     }
 }

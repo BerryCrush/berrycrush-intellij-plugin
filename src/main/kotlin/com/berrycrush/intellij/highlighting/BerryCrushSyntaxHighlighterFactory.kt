@@ -8,5 +8,8 @@ import com.intellij.openapi.vfs.VirtualFile
  * Factory for creating BerryCrush syntax highlighters.
  */
 class BerryCrushSyntaxHighlighterFactory : SyntaxHighlighterFactory() {
-    override fun getSyntaxHighlighter(project: Project?, virtualFile: VirtualFile?) = BerryCrushSyntaxHighlighter()
+    override fun getSyntaxHighlighter(
+        project: Project?,
+        virtualFile: VirtualFile?,
+    ) = BerryCrushSyntaxHighlighter()
 }

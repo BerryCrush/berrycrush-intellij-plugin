@@ -15,13 +15,18 @@ import com.intellij.psi.util.PsiTreeUtil
  * use that parameter (no {{paramName}} reference found in the fragment).
  */
 class UnusedParameterInspection : BerryCrushInspection() {
-
     override fun getDisplayName(): String = "Unused fragment parameter"
+
     override fun getShortName(): String = "BerryCrushUnusedParameter"
+
     override fun getGroupDisplayName(): String = "BerryCrush"
+
     override fun isEnabledByDefault(): Boolean = true
 
-    override fun checkFile(file: PsiFile, holder: ProblemsHolder) {
+    override fun checkFile(
+        file: PsiFile,
+        holder: ProblemsHolder,
+    ) {
         PsiTreeUtil.findChildrenOfType(file, BerryCrushIncludeElement::class.java).forEach { include ->
             include.fragmentName?.let { fragmentName ->
                 include.parameters?.let { parameters ->
@@ -35,16 +40,19 @@ class UnusedParameterInspection : BerryCrushInspection() {
         file: PsiFile,
         fragmentName: String,
         parameters: BerryCrushIncludeParameterElement,
-        holder: ProblemsHolder
+        holder: ProblemsHolder,
     ) {
         val project = file.project
-        val fragmentFile = BerryCrushFragmentReference.findFragmentByName(project, fragmentName)
-            as? PsiFile ?: return
+        val fragmentFile =
+            BerryCrushFragmentReference.findFragmentByName(project, fragmentName)
+                as? PsiFile ?: return
 
         val fragmentText = fragmentFile.text
-        val usedVariables = VARIABLE_PATTERN.findAll(fragmentText)
-            .map { it.groupValues[1] }
-            .toSet()
+        val usedVariables =
+            VARIABLE_PATTERN
+                .findAll(fragmentText)
+                .map { it.groupValues[1] }
+                .toSet()
 
         parameters.entries.forEach { element ->
             val paramName = element.parameterName
@@ -52,7 +60,7 @@ class UnusedParameterInspection : BerryCrushInspection() {
                 holder.registerProblem(
                     element,
                     "Parameter '$paramName' is not used in fragment '$fragmentName'",
-                    ProblemHighlightType.WEAK_WARNING
+                    ProblemHighlightType.WEAK_WARNING,
                 )
             }
         }

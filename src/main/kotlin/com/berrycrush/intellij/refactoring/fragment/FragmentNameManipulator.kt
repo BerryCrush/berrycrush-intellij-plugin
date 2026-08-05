@@ -2,7 +2,6 @@ package com.berrycrush.intellij.refactoring.fragment
 
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.AbstractElementManipulator
-import com.intellij.psi.PsiElement
 import com.intellij.psi.impl.source.tree.LeafPsiElement
 
 /**
@@ -12,18 +11,18 @@ import com.intellij.psi.impl.source.tree.LeafPsiElement
  * Works with LeafPsiElement tokens that represent the fragment name.
  */
 class FragmentNameManipulator : AbstractElementManipulator<LeafPsiElement>() {
-
     override fun handleContentChange(
         element: LeafPsiElement,
         range: TextRange,
         newContent: String,
     ): LeafPsiElement? {
         val oldText = element.text
-        val newText = buildString {
-            append(oldText.substring(0, range.startOffset))
-            append(newContent)
-            append(oldText.substring(range.endOffset))
-        }
+        val newText =
+            buildString {
+                append(oldText.substring(0, range.startOffset))
+                append(newContent)
+                append(oldText.substring(range.endOffset))
+            }
 
         return element.replaceWithText(newText) as? LeafPsiElement
     }

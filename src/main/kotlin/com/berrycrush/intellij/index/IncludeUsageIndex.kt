@@ -26,7 +26,6 @@ import com.intellij.util.io.KeyDescriptor
  * Used for reverse navigation from fragment definition to its usages.
  */
 class IncludeUsageIndex : ScalarIndexExtension<String>() {
-
     override fun getName(): ID<String, Void> = KEY
 
     override fun getVersion(): Int = VERSION
@@ -47,8 +46,7 @@ class IncludeUsageIndex : ScalarIndexExtension<String>() {
 
     override fun getKeyDescriptor(): KeyDescriptor<String> = EnumeratorStringDescriptor.INSTANCE
 
-    override fun getInputFilter(): FileBasedIndex.InputFilter =
-        DefaultFileTypeSpecificInputFilter(ScenarioFileType, FragmentFileType)
+    override fun getInputFilter(): FileBasedIndex.InputFilter = DefaultFileTypeSpecificInputFilter(ScenarioFileType, FragmentFileType)
 
     companion object {
         @JvmField
@@ -59,25 +57,27 @@ class IncludeUsageIndex : ScalarIndexExtension<String>() {
         /**
          * Gets all included fragment names in the project.
          */
-        fun getAllIncludedFragments(project: Project): Collection<String> {
-            return FileBasedIndex.getInstance().getAllKeys(KEY, project)
-        }
+        fun getAllIncludedFragments(project: Project): Collection<String> = FileBasedIndex.getInstance().getAllKeys(KEY, project)
 
         /**
          * Gets all files that include the given fragment.
          */
-        fun getFilesIncludingFragment(project: Project, fragmentName: String): Collection<VirtualFile> {
-            return FileBasedIndex.getInstance().getContainingFiles(
-                KEY,
-                fragmentName,
-                GlobalSearchScope.projectScope(project)
-            )
-        }
+        fun getFilesIncludingFragment(
+            project: Project,
+            fragmentName: String,
+        ): Collection<VirtualFile> = FileBasedIndex.getInstance().getContainingFiles(
+            KEY,
+            fragmentName,
+            GlobalSearchScope.projectScope(project),
+        )
 
         /**
          * Finds all PSI elements that include the given fragment.
          */
-        fun findIncludeUsages(project: Project, fragmentName: String): List<PsiElement> {
+        fun findIncludeUsages(
+            project: Project,
+            fragmentName: String,
+        ): List<PsiElement> {
             val files = getFilesIncludingFragment(project, fragmentName)
             val psiManager = PsiManager.getInstance(project)
             val results = mutableListOf<PsiElement>()
@@ -90,9 +90,11 @@ class IncludeUsageIndex : ScalarIndexExtension<String>() {
             return results
         }
 
-        private fun findIncludeDirectivesInFile(file: PsiFile, fragmentName: String): List<PsiElement> {
-            return PsiTreeUtil.findChildrenOfType(file, BerryCrushIncludeElement::class.java)
-                .filter { it.fragmentName == fragmentName }
-        }
+        private fun findIncludeDirectivesInFile(
+            file: PsiFile,
+            fragmentName: String,
+        ): List<PsiElement> = PsiTreeUtil
+            .findChildrenOfType(file, BerryCrushIncludeElement::class.java)
+            .filter { it.fragmentName == fragmentName }
     }
 }

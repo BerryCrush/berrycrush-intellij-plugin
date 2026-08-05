@@ -44,7 +44,6 @@ import com.intellij.psi.tree.TokenSet
  * Parser definition for BerryCrush language.
  */
 class BerryCrushParserDefinition : ParserDefinition {
-
     companion object {
         val FILE = IFileElementType(BerryCrushLanguage)
     }
@@ -61,35 +60,33 @@ class BerryCrushParserDefinition : ParserDefinition {
 
     override fun getStringLiteralElements(): TokenSet = BerryCrushTokenTypes.STRINGS
 
-    override fun createElement(node: ASTNode): PsiElement {
-        return when (node.elementType) {
-            BerryCrushElementTypes.FEATURE -> BerryCrushFeatureElement(node)
-            BerryCrushElementTypes.SCENARIO -> BerryCrushScenarioElement("scenario", node)
-            BerryCrushElementTypes.OUTLINE -> BerryCrushScenarioElement("outline", node)
-            BerryCrushElementTypes.BACKGROUND -> BerryCrushScenarioElement("background", node)
-            BerryCrushElementTypes.FRAGMENT -> BerryCrushFragmentElement(node)
-            BerryCrushElementTypes.STEP -> BerryCrushStepElement(node)
-            BerryCrushElementTypes.CALL_DIRECTIVE -> BerryCrushCallElement(node)
-            BerryCrushElementTypes.INCLUDE_DIRECTIVE -> BerryCrushIncludeElement(node)
-            BerryCrushElementTypes.ASSERT_DIRECTIVE -> BerryCrushAssertElement(node)
-            BerryCrushElementTypes.EXTRACT_DIRECTIVE -> BerryCrushExtractElement(node)
-            BerryCrushElementTypes.WEBHOOK_DIRECTIVE -> BerryCrushWebhookElement(node)
-            BerryCrushElementTypes.OPERATION_REF -> BerryCrushOperationRefElement(node)
-            BerryCrushElementTypes.FRAGMENT_REF -> BerryCrushFragmentRefElement(node)
-            BerryCrushElementTypes.VARIABLE_REF -> BerryCrushVariableRefElement(node)
-            BerryCrushElementTypes.INCLUDED_PARAMETER -> BerryCrushIncludeParameterElement(node)
-            BerryCrushElementTypes.PARAMETERS -> BerryCrushParametersElement(node)
-            BerryCrushElementTypes.PARAMETER_ENTRY -> BerryCrushParameterEntryElement(node)
-            BerryCrushElementTypes.PARAMETER_KEY -> BerryCrushParameterKeyElement(node)
-            BerryCrushElementTypes.PARAMETER_VALUE -> BerryCrushParameterValueElement(node)
-            BerryCrushElementTypes.JSON_PATH -> BerryCrushJsonPathElement(node)
-            BerryCrushElementTypes.ASSERTION_OPERATION -> BerryCrushAssertOperationElement(node)
-            BerryCrushElementTypes.NOT -> BerryCrushNotElement(node)
-            BerryCrushElementTypes.OPERATOR -> BerryCrushOperatorElement(node)
-            BerryCrushElementTypes.TEXT -> BerryCrushTextElement(node)
-            BerryCrushElementTypes.COMMENT -> BerryCrushCommentElement(node)
-            else -> BerryCrushGenericElement(node)
-        }
+    override fun createElement(node: ASTNode): PsiElement = when (node.elementType) {
+        BerryCrushElementTypes.FEATURE -> BerryCrushFeatureElement(node)
+        BerryCrushElementTypes.SCENARIO -> BerryCrushScenarioElement("scenario", node)
+        BerryCrushElementTypes.OUTLINE -> BerryCrushScenarioElement("outline", node)
+        BerryCrushElementTypes.BACKGROUND -> BerryCrushScenarioElement("background", node)
+        BerryCrushElementTypes.FRAGMENT -> BerryCrushFragmentElement(node)
+        BerryCrushElementTypes.STEP -> BerryCrushStepElement(node)
+        BerryCrushElementTypes.CALL_DIRECTIVE -> BerryCrushCallElement(node)
+        BerryCrushElementTypes.INCLUDE_DIRECTIVE -> BerryCrushIncludeElement(node)
+        BerryCrushElementTypes.ASSERT_DIRECTIVE -> BerryCrushAssertElement(node)
+        BerryCrushElementTypes.EXTRACT_DIRECTIVE -> BerryCrushExtractElement(node)
+        BerryCrushElementTypes.WEBHOOK_DIRECTIVE -> BerryCrushWebhookElement(node)
+        BerryCrushElementTypes.OPERATION_REF -> BerryCrushOperationRefElement(node)
+        BerryCrushElementTypes.FRAGMENT_REF -> BerryCrushFragmentRefElement(node)
+        BerryCrushElementTypes.VARIABLE_REF -> BerryCrushVariableRefElement(node)
+        BerryCrushElementTypes.INCLUDED_PARAMETER -> BerryCrushIncludeParameterElement(node)
+        BerryCrushElementTypes.PARAMETERS -> BerryCrushParametersElement(node)
+        BerryCrushElementTypes.PARAMETER_ENTRY -> BerryCrushParameterEntryElement(node)
+        BerryCrushElementTypes.PARAMETER_KEY -> BerryCrushParameterKeyElement(node)
+        BerryCrushElementTypes.PARAMETER_VALUE -> BerryCrushParameterValueElement(node)
+        BerryCrushElementTypes.JSON_PATH -> BerryCrushJsonPathElement(node)
+        BerryCrushElementTypes.ASSERTION_OPERATION -> BerryCrushAssertOperationElement(node)
+        BerryCrushElementTypes.NOT -> BerryCrushNotElement(node)
+        BerryCrushElementTypes.OPERATOR -> BerryCrushOperatorElement(node)
+        BerryCrushElementTypes.TEXT -> BerryCrushTextElement(node)
+        BerryCrushElementTypes.COMMENT -> BerryCrushCommentElement(node)
+        else -> BerryCrushGenericElement(node)
     }
 
     override fun createFile(viewProvider: FileViewProvider): PsiFile = BerryCrushFile(viewProvider)

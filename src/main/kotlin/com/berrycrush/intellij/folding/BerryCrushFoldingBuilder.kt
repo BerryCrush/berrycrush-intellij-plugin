@@ -17,8 +17,10 @@ import com.intellij.psi.tree.IElementType
  * - Doc strings (triple-quoted content)
  */
 class BerryCrushFoldingBuilder : FoldingBuilder {
-
-    override fun buildFoldRegions(node: ASTNode, document: Document): Array<FoldingDescriptor> {
+    override fun buildFoldRegions(
+        node: ASTNode,
+        document: Document,
+    ): Array<FoldingDescriptor> {
         val descriptors = mutableListOf<FoldingDescriptor>()
         collectFoldingRegions(node, document, descriptors)
         return descriptors.toTypedArray()
@@ -27,7 +29,7 @@ class BerryCrushFoldingBuilder : FoldingBuilder {
     private fun collectFoldingRegions(
         node: ASTNode,
         document: Document,
-        descriptors: MutableList<FoldingDescriptor>
+        descriptors: MutableList<FoldingDescriptor>,
     ) {
         val elementType = node.elementType
 
@@ -68,7 +70,10 @@ class BerryCrushFoldingBuilder : FoldingBuilder {
     /**
      * Find fold region for block keywords (scenario, fragment, feature, etc.)
      */
-    private fun findBlockFoldRegion(node: ASTNode, document: Document): TextRange? {
+    private fun findBlockFoldRegion(
+        node: ASTNode,
+        document: Document,
+    ): TextRange? {
         val startLine = document.getLineNumber(node.startOffset)
         val startLineEnd = document.getLineEndOffset(startLine)
 
@@ -88,7 +93,10 @@ class BerryCrushFoldingBuilder : FoldingBuilder {
     /**
      * Find fold region for step keywords (given, when, then, etc.)
      */
-    private fun findStepFoldRegion(node: ASTNode, document: Document): TextRange? {
+    private fun findStepFoldRegion(
+        node: ASTNode,
+        document: Document,
+    ): TextRange? {
         val startLine = document.getLineNumber(node.startOffset)
         val startLineEnd = document.getLineEndOffset(startLine)
 
@@ -111,7 +119,7 @@ class BerryCrushFoldingBuilder : FoldingBuilder {
     /**
      * Find fold region for doc strings (triple-quoted content).
      */
-    @Suppress("UnusedParameter")  // document may be needed for future enhancements
+    @Suppress("UnusedParameter") // document may be needed for future enhancements
     private fun findDocStringFoldRegion(node: ASTNode, document: Document): TextRange? {
         val text = node.text
         if (!text.contains('\n')) return null
@@ -131,7 +139,10 @@ class BerryCrushFoldingBuilder : FoldingBuilder {
         return TextRange(foldStart, foldEnd)
     }
 
-    private fun findBlockEnd(startNode: ASTNode, boundaries: Set<IElementType>): Int {
+    private fun findBlockEnd(
+        startNode: ASTNode,
+        boundaries: Set<IElementType>,
+    ): Int {
         var currentNode: ASTNode? = startNode.treeNext
         val startIndent = getIndentLevel(startNode)
 
@@ -164,25 +175,23 @@ class BerryCrushFoldingBuilder : FoldingBuilder {
         return spaces / 2 // 2 spaces per indent level
     }
 
-    override fun getPlaceholderText(node: ASTNode): String {
-        return when (node.elementType) {
-            // Block keywords
-            BerryCrushTokenTypes.FEATURE -> "feature: ..."
-            BerryCrushTokenTypes.SCENARIO -> "scenario: ..."
-            BerryCrushTokenTypes.OUTLINE -> "outline: ..."
-            BerryCrushTokenTypes.FRAGMENT -> "fragment: ..."
-            BerryCrushTokenTypes.BACKGROUND -> "background: ..."
-            BerryCrushTokenTypes.EXAMPLES -> "examples: ..."
-            // Step keywords
-            BerryCrushTokenTypes.GIVEN -> "given ..."
-            BerryCrushTokenTypes.WHEN -> "when ..."
-            BerryCrushTokenTypes.THEN -> "then ..."
-            BerryCrushTokenTypes.AND -> "and ..."
-            BerryCrushTokenTypes.BUT -> "but ..."
-            // Doc strings
-            BerryCrushTokenTypes.STRING -> "\"\"\""
-            else -> "..."
-        }
+    override fun getPlaceholderText(node: ASTNode): String = when (node.elementType) {
+        // Block keywords
+        BerryCrushTokenTypes.FEATURE -> "feature: ..."
+        BerryCrushTokenTypes.SCENARIO -> "scenario: ..."
+        BerryCrushTokenTypes.OUTLINE -> "outline: ..."
+        BerryCrushTokenTypes.FRAGMENT -> "fragment: ..."
+        BerryCrushTokenTypes.BACKGROUND -> "background: ..."
+        BerryCrushTokenTypes.EXAMPLES -> "examples: ..."
+        // Step keywords
+        BerryCrushTokenTypes.GIVEN -> "given ..."
+        BerryCrushTokenTypes.WHEN -> "when ..."
+        BerryCrushTokenTypes.THEN -> "then ..."
+        BerryCrushTokenTypes.AND -> "and ..."
+        BerryCrushTokenTypes.BUT -> "but ..."
+        // Doc strings
+        BerryCrushTokenTypes.STRING -> "\"\"\""
+        else -> "..."
     }
 
     override fun isCollapsedByDefault(node: ASTNode): Boolean = false
@@ -191,41 +200,46 @@ class BerryCrushFoldingBuilder : FoldingBuilder {
         private const val MIN_FOLD_LENGTH = 5
 
         // Block-level foldable elements
-        private val FOLDABLE_BLOCKS = setOf(
-            BerryCrushTokenTypes.FEATURE,
-            BerryCrushTokenTypes.SCENARIO,
-            BerryCrushTokenTypes.OUTLINE,
-            BerryCrushTokenTypes.FRAGMENT,
-            BerryCrushTokenTypes.BACKGROUND,
-            BerryCrushTokenTypes.EXAMPLES,
-        )
+        private val FOLDABLE_BLOCKS =
+            setOf(
+                BerryCrushTokenTypes.FEATURE,
+                BerryCrushTokenTypes.SCENARIO,
+                BerryCrushTokenTypes.OUTLINE,
+                BerryCrushTokenTypes.FRAGMENT,
+                BerryCrushTokenTypes.BACKGROUND,
+                BerryCrushTokenTypes.EXAMPLES,
+            )
 
         // Step-level foldable elements
-        private val FOLDABLE_STEPS = setOf(
-            BerryCrushTokenTypes.GIVEN,
-            BerryCrushTokenTypes.WHEN,
-            BerryCrushTokenTypes.THEN,
-            BerryCrushTokenTypes.AND,
-            BerryCrushTokenTypes.BUT,
-        )
+        private val FOLDABLE_STEPS =
+            setOf(
+                BerryCrushTokenTypes.GIVEN,
+                BerryCrushTokenTypes.WHEN,
+                BerryCrushTokenTypes.THEN,
+                BerryCrushTokenTypes.AND,
+                BerryCrushTokenTypes.BUT,
+            )
 
         // Boundaries for block folding (same or lower indent stops the fold)
-        private val BLOCK_BOUNDARIES = setOf(
-            BerryCrushTokenTypes.FEATURE,
-            BerryCrushTokenTypes.SCENARIO,
-            BerryCrushTokenTypes.OUTLINE,
-            BerryCrushTokenTypes.FRAGMENT,
-            BerryCrushTokenTypes.BACKGROUND,
-            BerryCrushTokenTypes.EXAMPLES,
-        )
+        private val BLOCK_BOUNDARIES =
+            setOf(
+                BerryCrushTokenTypes.FEATURE,
+                BerryCrushTokenTypes.SCENARIO,
+                BerryCrushTokenTypes.OUTLINE,
+                BerryCrushTokenTypes.FRAGMENT,
+                BerryCrushTokenTypes.BACKGROUND,
+                BerryCrushTokenTypes.EXAMPLES,
+            )
 
         // Boundaries for step folding
-        private val STEP_BOUNDARIES = BLOCK_BOUNDARIES + setOf(
-            BerryCrushTokenTypes.GIVEN,
-            BerryCrushTokenTypes.WHEN,
-            BerryCrushTokenTypes.THEN,
-            BerryCrushTokenTypes.AND,
-            BerryCrushTokenTypes.BUT,
-        )
+        private val STEP_BOUNDARIES =
+            BLOCK_BOUNDARIES +
+                setOf(
+                    BerryCrushTokenTypes.GIVEN,
+                    BerryCrushTokenTypes.WHEN,
+                    BerryCrushTokenTypes.THEN,
+                    BerryCrushTokenTypes.AND,
+                    BerryCrushTokenTypes.BUT,
+                )
     }
 }

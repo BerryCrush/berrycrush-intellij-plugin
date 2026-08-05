@@ -28,69 +28,89 @@ class MissingFragmentInspectionTest : BerryCrushInspectionTestCase(MissingFragme
 
     fun testProblemForMissingFragment() {
         // Include referencing non-existent fragment should be flagged
-        val psiFile = myFixture.addFileToProject("test.scenario", """
-            scenario: test
-              given: setup
-                include missing-fragment
-        """.trimIndent())
+        val psiFile =
+            myFixture.addFileToProject(
+                "test.scenario",
+                """
+                scenario: test
+                  given: setup
+                    include missing-fragment
+                """.trimIndent(),
+            )
 
         val problems = runInspection(psiFile)
-        val missingFragmentProblems = problems.filter {
-            it.descriptionTemplate.contains("not found")
-        }
+        val missingFragmentProblems =
+            problems.filter {
+                it.descriptionTemplate.contains("not found")
+            }
         assertTrue(
             "Missing fragment should be flagged",
-            missingFragmentProblems.isNotEmpty()
+            missingFragmentProblems.isNotEmpty(),
         )
     }
 
     fun testNoProblemsForExistingFragment() {
         // Create the fragment first
-        myFixture.addFileToProject("existing.fragment", """
+        myFixture.addFileToProject(
+            "existing.fragment",
+            """
             fragment: existing-fragment
               given: some step
                 call GET /api
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         // Create scenario that includes it
-        val psiFile = myFixture.addFileToProject("test2.scenario", """
-            scenario: test
-              given: setup
-                include existing-fragment
-        """.trimIndent())
+        val psiFile =
+            myFixture.addFileToProject(
+                "test2.scenario",
+                """
+                scenario: test
+                  given: setup
+                    include existing-fragment
+                """.trimIndent(),
+            )
 
         val problems = runInspection(psiFile)
         assertTrue(
             "Existing fragment should not be flagged",
-            problems.isEmpty()
+            problems.isEmpty(),
         )
     }
 
     fun testIncludePatternMatching() {
         // Include with various whitespace should be detected
-        val psiFile = myFixture.addFileToProject("test3.scenario", """
-            scenario: test
-              given: setup
-                include fragment-one
-                  include fragment-two
-            include fragment-three
-        """.trimIndent())
+        val psiFile =
+            myFixture.addFileToProject(
+                "test3.scenario",
+                """
+                scenario: test
+                  given: setup
+                    include fragment-one
+                      include fragment-two
+                include fragment-three
+                """.trimIndent(),
+            )
 
         val problems = runInspection(psiFile)
         assertEquals(
             "All missing fragments should be flagged",
             3,
-            problems.size
+            problems.size,
         )
     }
 
     fun testMissingFragmentHasQuickFix() {
         // Missing fragment should have a quick fix to create it
-        val psiFile = myFixture.addFileToProject("test4.scenario", """
-            scenario: test
-              given: setup
-                include new-fragment
-        """.trimIndent())
+        val psiFile =
+            myFixture.addFileToProject(
+                "test4.scenario",
+                """
+                scenario: test
+                  given: setup
+                    include new-fragment
+                """.trimIndent(),
+            )
 
         val problems = runInspection(psiFile)
         assertTrue("Should have problems", problems.isNotEmpty())
@@ -103,11 +123,15 @@ class MissingFragmentInspectionTest : BerryCrushInspectionTestCase(MissingFragme
 
     fun testMissingFragmentSeverity() {
         // Missing fragment should have ERROR severity (blocking)
-        val psiFile = myFixture.addFileToProject("test5.scenario", """
-            scenario: test
-              given: setup
-                include undefined-fragment
-        """.trimIndent())
+        val psiFile =
+            myFixture.addFileToProject(
+                "test5.scenario",
+                """
+                scenario: test
+                  given: setup
+                    include undefined-fragment
+                """.trimIndent(),
+            )
 
         val problems = runInspection(psiFile)
         assertTrue("Should have problems", problems.isNotEmpty())
@@ -116,22 +140,25 @@ class MissingFragmentInspectionTest : BerryCrushInspectionTestCase(MissingFragme
         assertEquals(
             "Missing fragment should be ERROR severity",
             com.intellij.codeInspection.ProblemHighlightType.ERROR,
-            problem.highlightType
+            problem.highlightType,
         )
     }
 
     // ========== Non-BerryCrush Files Tests ==========
 
     fun testIgnoresNonBerryCrushFiles() {
-        val psiFile = myFixture.addFileToProject("test.txt", """
-            include missing-fragment
-        """.trimIndent())
+        val psiFile =
+            myFixture.addFileToProject(
+                "test.txt",
+                """
+                include missing-fragment
+                """.trimIndent(),
+            )
 
         val problems = runInspection(psiFile)
         assertTrue(
             "Non-BerryCrush files should be ignored",
-            problems.isEmpty()
+            problems.isEmpty(),
         )
     }
 }
-

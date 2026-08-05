@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.detekt)
     alias(libs.plugins.spotbugs)
     alias(libs.plugins.cpd)
+    alias(libs.plugins.ktlint)
 }
 
 group = providers.gradleProperty("pluginGroup").get()
@@ -28,8 +29,8 @@ dependencies {
 
     testImplementation(libs.kotlin.test)
     testImplementation(libs.junit.jupiter)
-    testRuntimeOnly(libs.junit.vintage) // For JUnit 3/4 style tests (BasePlatformTestCase)
     testImplementation(libs.junit4) // Required by IntelliJ Platform test classpath
+    testRuntimeOnly(libs.junit.vintage) // For JUnit 3/4 style tests (BasePlatformTestCase)
 }
 
 kotlin {
@@ -83,6 +84,15 @@ spotbugs {
     excludeFilter.set(file("config/spotbugs/exclusions.xml"))
 }
 
+cpd {
+    language = "kotlin"
+    isIgnoreAnnotations = true
+    isIgnoreLiterals = true
+    isIgnoreIdentifiers = true
+    toolVersion = "7.26.0"
+    isIgnoreFailures = false
+}
+
 tasks.withType<com.github.spotbugs.snom.SpotBugsTask>().configureEach {
     reports {
         create("html") {
@@ -97,7 +107,7 @@ tasks.withType<com.github.spotbugs.snom.SpotBugsTask>().configureEach {
 // CPD configuration
 configure<de.aaschmid.gradle.plugins.cpd.CpdExtension> {
     language = "kotlin"
-    minimumTokenCount = 120  // Higher threshold to allow similar boilerplate patterns
+    minimumTokenCount = 120 // Higher threshold to allow similar boilerplate patterns
     isIgnoreAnnotations = true
     isIgnoreLiterals = true
     isIgnoreIdentifiers = true

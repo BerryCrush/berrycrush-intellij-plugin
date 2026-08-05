@@ -14,7 +14,6 @@ import com.intellij.psi.search.GlobalSearchScope
  * enabling more accurate navigation in multi-module projects.
  */
 object ModuleScopeResolver {
-
     /**
      * Finds the module containing the given PSI element.
      *
@@ -33,9 +32,10 @@ object ModuleScopeResolver {
      * @param project The project context
      * @return The module containing the file, or null if not found
      */
-    fun findModuleForFile(file: VirtualFile, project: Project): Module? {
-        return ModuleUtil.findModuleForFile(file, project)
-    }
+    fun findModuleForFile(
+        file: VirtualFile,
+        project: Project,
+    ): Module? = ModuleUtil.findModuleForFile(file, project)
 
     /**
      * Gets the search scope for forward navigation (scenario → @Step method).
@@ -61,7 +61,10 @@ object ModuleScopeResolver {
      * @param project The project context
      * @return A search scope limited to the module's dependencies, or project scope as fallback
      */
-    fun getModuleDependencyScope(module: Module?, project: Project): GlobalSearchScope {
+    fun getModuleDependencyScope(
+        module: Module?,
+        project: Project,
+    ): GlobalSearchScope {
         if (module == null) {
             // Fallback: search project sources only (excludes external libraries)
             // This is a reasonable fallback as @Step methods are usually in the project
@@ -96,7 +99,10 @@ object ModuleScopeResolver {
      * @param project The project context
      * @return A search scope limited to dependent modules, or project scope as fallback
      */
-    fun getDependentModulesScope(module: Module?, project: Project): GlobalSearchScope {
+    fun getDependentModulesScope(
+        module: Module?,
+        project: Project,
+    ): GlobalSearchScope {
         if (module == null) {
             // Fallback: search project sources only (excludes external libraries)
             // This is a reasonable fallback as scenarios are usually in the project
@@ -114,7 +120,10 @@ object ModuleScopeResolver {
      * @param targetModule The module being accessed
      * @return true if sourceModule has targetModule in its dependency chain
      */
-    fun canAccess(sourceModule: Module?, targetModule: Module?): Boolean {
+    fun canAccess(
+        sourceModule: Module?,
+        targetModule: Module?,
+    ): Boolean {
         if (sourceModule == null || targetModule == null) {
             return true // Fallback: allow access
         }
@@ -129,7 +138,7 @@ object ModuleScopeResolver {
 
         // If target module's scope intersects with source's dependency scope, they're connected
         return !GlobalSearchScope.EMPTY_SCOPE.equals(
-            dependencyScope.intersectWith(targetScope)
+            dependencyScope.intersectWith(targetScope),
         )
     }
 
@@ -141,7 +150,10 @@ object ModuleScopeResolver {
      * @param project The project context
      * @return A filtered scope for BerryCrush files in dependent modules
      */
-    fun getBerryCrushFilesInDependentModules(module: Module?, project: Project): GlobalSearchScope {
+    fun getBerryCrushFilesInDependentModules(
+        module: Module?,
+        project: Project,
+    ): GlobalSearchScope {
         val baseScope = getDependentModulesScope(module, project)
         // The file type filtering is handled by the index, so we just return the module scope
         return baseScope

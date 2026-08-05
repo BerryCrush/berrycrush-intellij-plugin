@@ -20,7 +20,6 @@ import com.intellij.refactoring.rename.RenamePsiElementProcessor
  * Renaming updates all occurrences (definition and usages) within the same scenario.
  */
 class VariableRenameProcessor : RenamePsiElementProcessor() {
-
     override fun canProcessElement(element: PsiElement): Boolean {
         if (element.containingFile !is BerryCrushFile) return false
 
@@ -71,7 +70,10 @@ class VariableRenameProcessor : RenamePsiElementProcessor() {
     /**
      * Find all ${param.paramName} references in the file.
      */
-    private fun findParameterReferences(file: PsiFile, paramName: String): List<PsiElement> {
+    private fun findParameterReferences(
+        file: PsiFile,
+        paramName: String,
+    ): List<PsiElement> {
         val text = file.text
         val usages = mutableListOf<PsiElement>()
 
@@ -89,7 +91,7 @@ class VariableRenameProcessor : RenamePsiElementProcessor() {
     private fun findVariableInterpolations(
         file: PsiFile,
         variableName: String,
-        scope: TextRange?
+        scope: TextRange?,
     ): List<PsiElement> {
         val text = file.text
         val usages = mutableListOf<PsiElement>()
@@ -183,11 +185,9 @@ class VariableRenameProcessor : RenamePsiElementProcessor() {
         return usages
     }
 
-    private fun isVariableUsage(text: String): Boolean =
-        VARIABLE_USAGE_PATTERN.containsMatchIn(text)
+    private fun isVariableUsage(text: String): Boolean = VARIABLE_USAGE_PATTERN.containsMatchIn(text)
 
-    private fun isVariableDefinition(lineText: String): Boolean =
-        VARIABLE_DEF_PATTERN.containsMatchIn(lineText)
+    private fun isVariableDefinition(lineText: String): Boolean = VARIABLE_DEF_PATTERN.containsMatchIn(lineText)
 
     private fun getLineText(element: PsiElement): String {
         val document = element.containingFile?.viewProvider?.document ?: return ""

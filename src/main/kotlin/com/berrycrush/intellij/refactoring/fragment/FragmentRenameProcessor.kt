@@ -22,7 +22,6 @@ import com.intellij.refactoring.rename.RenamePsiElementProcessor
  * - Include directive line
  */
 class FragmentRenameProcessor : RenamePsiElementProcessor() {
-
     override fun canProcessElement(element: PsiElement): Boolean {
         if (element.containingFile !is BerryCrushFile) return false
 
@@ -39,7 +38,8 @@ class FragmentRenameProcessor : RenamePsiElementProcessor() {
         val project = element.project
 
         // Find all include usages
-        IncludeUsageIndex.findIncludeUsages(project, fragmentName)
+        IncludeUsageIndex
+            .findIncludeUsages(project, fragmentName)
             .forEach { usage -> allRenames[usage] = newName }
 
         // If renaming from include, also rename the definition
@@ -54,22 +54,19 @@ class FragmentRenameProcessor : RenamePsiElementProcessor() {
      * Extracts fragment name from element's line.
      * Handles both "fragment: name" and "include name" syntaxes.
      */
-    private fun extractFragmentName(element: PsiElement): String? {
-        return extractFromFragmentDef(element) ?: extractFromInclude(element)
-    }
+    private fun extractFragmentName(element: PsiElement): String? = extractFromFragmentDef(element) ?: extractFromInclude(element)
 
-    private fun extractFromFragmentDef(element: PsiElement): String? =
-        PsiTreeUtil.getParentOfType(element, BerryCrushFragmentElement::class.java)?.fragmentName
+    private fun extractFromFragmentDef(element: PsiElement): String? = PsiTreeUtil.getParentOfType(element, BerryCrushFragmentElement::class.java)?.fragmentName
 
-    private fun extractFromInclude(element: PsiElement): String? =
-        PsiTreeUtil.getParentOfType(element, BerryCrushIncludeElement::class.java)?.fragmentName
+    private fun extractFromInclude(element: PsiElement): String? = PsiTreeUtil.getParentOfType(element, BerryCrushIncludeElement::class.java)?.fragmentName
 
-    private fun isFragmentDefinition(element: PsiElement): Boolean =
-        PsiTreeUtil.getParentOfType(element, BerryCrushFragmentElement::class.java) != null
+    private fun isFragmentDefinition(element: PsiElement): Boolean = PsiTreeUtil.getParentOfType(element, BerryCrushFragmentElement::class.java) != null
 
-    private fun isIncludeDirective(element: PsiElement): Boolean =
-        PsiTreeUtil.getParentOfType(element, BerryCrushIncludeElement::class.java) != null
+    private fun isIncludeDirective(element: PsiElement): Boolean = PsiTreeUtil.getParentOfType(element, BerryCrushIncludeElement::class.java) != null
 
-    private fun findFragmentDefinition(project: Project, fragmentName: String): PsiElement? =
-        com.berrycrush.intellij.index.FragmentIndex.findFragmentElement(project, fragmentName)
+    private fun findFragmentDefinition(
+        project: Project,
+        fragmentName: String,
+    ): PsiElement? = com.berrycrush.intellij.index.FragmentIndex
+        .findFragmentElement(project, fragmentName)
 }

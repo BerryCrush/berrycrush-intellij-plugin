@@ -18,60 +18,66 @@ class BerryCrushLexer : LexerBase() {
     private var lineStart: Boolean = true
 
     companion object {
-        private val KEYWORDS = mapOf(
-            "feature:" to BerryCrushTokenTypes.FEATURE,
-            "scenario:" to BerryCrushTokenTypes.SCENARIO,
-            "outline:" to BerryCrushTokenTypes.OUTLINE,
-            "fragment:" to BerryCrushTokenTypes.FRAGMENT,
-            "parameters:" to BerryCrushTokenTypes.PARAMETERS,
-            "background:" to BerryCrushTokenTypes.BACKGROUND,
-            "examples:" to BerryCrushTokenTypes.EXAMPLES,
-            "given" to BerryCrushTokenTypes.GIVEN,
-            "when" to BerryCrushTokenTypes.WHEN,
-            "then" to BerryCrushTokenTypes.THEN,
-            "and" to BerryCrushTokenTypes.AND,
-            "but" to BerryCrushTokenTypes.BUT,
-            "call" to BerryCrushTokenTypes.CALL,
-            "webhook:" to BerryCrushTokenTypes.WEBHOOK,
-            "assert" to BerryCrushTokenTypes.ASSERT,
-            "extract" to BerryCrushTokenTypes.EXTRACT,
-            "include" to BerryCrushTokenTypes.INCLUDE,
-            "body:" to BerryCrushTokenTypes.BODY,
-            "bodyFile:" to BerryCrushTokenTypes.BODY,
-            "if" to BerryCrushTokenTypes.IF,
-            "else" to BerryCrushTokenTypes.ELSE,
-            "fail" to BerryCrushTokenTypes.FAIL,
-            "status" to BerryCrushTokenTypes.STATUS,
-            "statusCode" to BerryCrushTokenTypes.STATUS,
-            "header" to BerryCrushTokenTypes.HEADER,
-            "contains" to BerryCrushTokenTypes.CONTAINS,
-            "bodyContains" to BerryCrushTokenTypes.CONTAINS,
-            "schema" to BerryCrushTokenTypes.SCHEMA,
-            "responseTime" to BerryCrushTokenTypes.RESPONSE_TIME,
-            "exists" to BerryCrushTokenTypes.EXISTS,
-            "not" to BerryCrushTokenTypes.NOT,
-            "=" to BerryCrushTokenTypes.EQUALS,
-            "equals" to BerryCrushTokenTypes.EQUALS,
-            "!=" to BerryCrushTokenTypes.NOT_EQUALS,
-            ">=" to BerryCrushTokenTypes.GREATER_OR_EQUAL,
-            "<=" to BerryCrushTokenTypes.LESS_OR_EQUAL,
-            ">" to BerryCrushTokenTypes.GREATER_THAN,
-            "greaterThan" to BerryCrushTokenTypes.GREATER_THAN,
-            "<" to BerryCrushTokenTypes.LESS_THAN,
-            "lessThan" to BerryCrushTokenTypes.LESS_THAN,
-            "matches " to BerryCrushTokenTypes.MATCHES,
-            "startsWith " to BerryCrushTokenTypes.STARTS_WITH,
-            "endsWith " to BerryCrushTokenTypes.ENDS_WITH,
-            "in" to BerryCrushTokenTypes.IN,
-            "size" to BerryCrushTokenTypes.SIZE,
-            "hasSize" to BerryCrushTokenTypes.HAS_SIZE,
-            "arraySize" to BerryCrushTokenTypes.ARRAY_SIZE,
-            "empty" to BerryCrushTokenTypes.EMPTY,
-            "notEmpty" to BerryCrushTokenTypes.NOT_EMPTY,
-        )
+        private val KEYWORDS =
+            mapOf(
+                "feature:" to BerryCrushTokenTypes.FEATURE,
+                "scenario:" to BerryCrushTokenTypes.SCENARIO,
+                "outline:" to BerryCrushTokenTypes.OUTLINE,
+                "fragment:" to BerryCrushTokenTypes.FRAGMENT,
+                "parameters:" to BerryCrushTokenTypes.PARAMETERS,
+                "background:" to BerryCrushTokenTypes.BACKGROUND,
+                "examples:" to BerryCrushTokenTypes.EXAMPLES,
+                "given" to BerryCrushTokenTypes.GIVEN,
+                "when" to BerryCrushTokenTypes.WHEN,
+                "then" to BerryCrushTokenTypes.THEN,
+                "and" to BerryCrushTokenTypes.AND,
+                "but" to BerryCrushTokenTypes.BUT,
+                "call" to BerryCrushTokenTypes.CALL,
+                "webhook:" to BerryCrushTokenTypes.WEBHOOK,
+                "assert" to BerryCrushTokenTypes.ASSERT,
+                "extract" to BerryCrushTokenTypes.EXTRACT,
+                "include" to BerryCrushTokenTypes.INCLUDE,
+                "body:" to BerryCrushTokenTypes.BODY,
+                "bodyFile:" to BerryCrushTokenTypes.BODY,
+                "if" to BerryCrushTokenTypes.IF,
+                "else" to BerryCrushTokenTypes.ELSE,
+                "fail" to BerryCrushTokenTypes.FAIL,
+                "status" to BerryCrushTokenTypes.STATUS,
+                "statusCode" to BerryCrushTokenTypes.STATUS,
+                "header" to BerryCrushTokenTypes.HEADER,
+                "contains" to BerryCrushTokenTypes.CONTAINS,
+                "bodyContains" to BerryCrushTokenTypes.CONTAINS,
+                "schema" to BerryCrushTokenTypes.SCHEMA,
+                "responseTime" to BerryCrushTokenTypes.RESPONSE_TIME,
+                "exists" to BerryCrushTokenTypes.EXISTS,
+                "not" to BerryCrushTokenTypes.NOT,
+                "=" to BerryCrushTokenTypes.EQUALS,
+                "equals" to BerryCrushTokenTypes.EQUALS,
+                "!=" to BerryCrushTokenTypes.NOT_EQUALS,
+                ">=" to BerryCrushTokenTypes.GREATER_OR_EQUAL,
+                "<=" to BerryCrushTokenTypes.LESS_OR_EQUAL,
+                ">" to BerryCrushTokenTypes.GREATER_THAN,
+                "greaterThan" to BerryCrushTokenTypes.GREATER_THAN,
+                "<" to BerryCrushTokenTypes.LESS_THAN,
+                "lessThan" to BerryCrushTokenTypes.LESS_THAN,
+                "matches " to BerryCrushTokenTypes.MATCHES,
+                "startsWith " to BerryCrushTokenTypes.STARTS_WITH,
+                "endsWith " to BerryCrushTokenTypes.ENDS_WITH,
+                "in" to BerryCrushTokenTypes.IN,
+                "size" to BerryCrushTokenTypes.SIZE,
+                "hasSize" to BerryCrushTokenTypes.HAS_SIZE,
+                "arraySize" to BerryCrushTokenTypes.ARRAY_SIZE,
+                "empty" to BerryCrushTokenTypes.EMPTY,
+                "notEmpty" to BerryCrushTokenTypes.NOT_EMPTY,
+            )
     }
 
-    override fun start(buffer: CharSequence, startOffset: Int, endOffset: Int, initialState: Int) {
+    override fun start(
+        buffer: CharSequence,
+        startOffset: Int,
+        endOffset: Int,
+        initialState: Int,
+    ) {
         this.buffer = buffer
         this.bufferEnd = endOffset
         this.position = startOffset
@@ -107,7 +113,7 @@ class BerryCrushLexer : LexerBase() {
             c == '\n' || c == '\r' -> scanNewline(c)
             c == '#' -> scanComment()
             c == ' ' && lineStart -> scanIndent()
-            (c == '"' || c == '\'') && checkString(c)  -> scanString(c)
+            (c == '"' || c == '\'') && checkString(c) -> scanString(c)
             c.isWhitespace() -> scanWhitespace()
             else -> {
                 lineStart = false
@@ -117,17 +123,50 @@ class BerryCrushLexer : LexerBase() {
                     c == '{' && peek() == '{' -> scanVariable()
                     c.isDigit() || (c == '-' && peek()?.isDigit() == true) -> scanNumber()
                     c == '$' -> scanJsonPath()
-                    c == '=' && peek() == '>' -> { position += 2; BerryCrushTokenTypes.ARROW }
-                    c == ':' -> { position++; BerryCrushTokenTypes.COLON }
-                    c == '|' -> { position++; BerryCrushTokenTypes.PIPE }
-                    c == '.' -> { position++; BerryCrushTokenTypes.DOT }
-                    c == ',' -> { position++; BerryCrushTokenTypes.COMMA }
-                    c == '(' -> { position++; BerryCrushTokenTypes.LPAREN }
-                    c == ')' -> { position++; BerryCrushTokenTypes.RPAREN }
-                    c == '[' -> { position++; BerryCrushTokenTypes.LBRACKET }
-                    c == ']' -> { position++; BerryCrushTokenTypes.RBRACKET }
-                    c == '{' -> { position++; BerryCrushTokenTypes.LBRACE }
-                    c == '}' -> { position++; BerryCrushTokenTypes.RBRACE }
+                    c == '=' && peek() == '>' -> {
+                        position += 2
+                        BerryCrushTokenTypes.ARROW
+                    }
+                    c == ':' -> {
+                        position++
+                        BerryCrushTokenTypes.COLON
+                    }
+                    c == '|' -> {
+                        position++
+                        BerryCrushTokenTypes.PIPE
+                    }
+                    c == '.' -> {
+                        position++
+                        BerryCrushTokenTypes.DOT
+                    }
+                    c == ',' -> {
+                        position++
+                        BerryCrushTokenTypes.COMMA
+                    }
+                    c == '(' -> {
+                        position++
+                        BerryCrushTokenTypes.LPAREN
+                    }
+                    c == ')' -> {
+                        position++
+                        BerryCrushTokenTypes.RPAREN
+                    }
+                    c == '[' -> {
+                        position++
+                        BerryCrushTokenTypes.LBRACKET
+                    }
+                    c == ']' -> {
+                        position++
+                        BerryCrushTokenTypes.RBRACKET
+                    }
+                    c == '{' -> {
+                        position++
+                        BerryCrushTokenTypes.LBRACE
+                    }
+                    c == '}' -> {
+                        position++
+                        BerryCrushTokenTypes.RBRACE
+                    }
                     else -> {
                         tryMatchKeyword() ?: scanIdentifierOrText()
                     }
@@ -145,12 +184,13 @@ class BerryCrushLexer : LexerBase() {
         return BerryCrushTokenTypes.NEWLINE
     }
 
-    private fun Map<String, BerryCrushElementType>.findKeyword(): IElementType? = entries.find {
-        matchesAt(it.key) && isTokenBoundary(position + it.key.length)
-    }?.let {
-        position += it.key.length
-        it.value
-    }
+    private fun Map<String, BerryCrushElementType>.findKeyword(): IElementType? = entries
+        .find {
+            matchesAt(it.key) && isTokenBoundary(position + it.key.length)
+        }?.let {
+            position += it.key.length
+            it.value
+        }
 
     private fun tryMatchKeyword(): IElementType? {
         // Try block keywords (strict lowercase per BerryCrush DSL spec)
@@ -192,8 +232,11 @@ class BerryCrushLexer : LexerBase() {
     }
 
     private fun scanWhitespace(): IElementType {
-        while (position < bufferEnd && buffer[position].isWhitespace() &&
-               buffer[position] != '\n' && buffer[position] != '\r') {
+        while (position < bufferEnd &&
+            buffer[position].isWhitespace() &&
+            buffer[position] != '\n' &&
+            buffer[position] != '\r'
+        ) {
             position++
         }
         return BerryCrushTokenTypes.WHITE_SPACE
@@ -257,8 +300,11 @@ class BerryCrushLexer : LexerBase() {
             position++
         }
         // Handle decimal
-        if (position < bufferEnd && buffer[position] == '.' &&
-            position + 1 < bufferEnd && buffer[position + 1].isDigit()) {
+        if (position < bufferEnd &&
+            buffer[position] == '.' &&
+            position + 1 < bufferEnd &&
+            buffer[position + 1].isDigit()
+        ) {
             position++
             while (position < bufferEnd && buffer[position].isDigit()) {
                 position++
@@ -295,10 +341,9 @@ class BerryCrushLexer : LexerBase() {
         return true
     }
 
-    private fun isIdentifierChar(pos: Int): Boolean =
-        pos < bufferEnd && (buffer[pos].isLetterOrDigit() || buffer[pos] == '_' || buffer[pos] == '-')
+    private fun isIdentifierChar(pos: Int): Boolean = pos < bufferEnd && (buffer[pos].isLetterOrDigit() || buffer[pos] == '_' || buffer[pos] == '-')
 
-    private fun isTokenBoundary(pos: Int): Boolean  = pos >= bufferEnd || buffer[pos].isTokenBoundary()
+    private fun isTokenBoundary(pos: Int): Boolean = pos >= bufferEnd || buffer[pos].isTokenBoundary()
 
     private fun peek(n: Int = 1) = if (position + n < bufferEnd) buffer[position + n] else null
 }

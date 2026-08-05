@@ -2,9 +2,7 @@ package com.berrycrush.intellij.inspection
 
 import com.berrycrush.intellij.psi.BerryCrushBlockElement
 import com.berrycrush.intellij.psi.BerryCrushExtractElement
-import com.berrycrush.intellij.psi.BerryCrushFeatureElement
 import com.berrycrush.intellij.psi.BerryCrushParametersElement
-import com.berrycrush.intellij.psi.BerryCrushScenarioElement
 import com.berrycrush.intellij.psi.BerryCrushVariableRefElement
 import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
@@ -19,22 +17,36 @@ import com.intellij.psi.util.PsiTreeUtil
  * doesn't exist in any parameters block in the file.
  */
 class UndefinedParameterReferenceInspection : BerryCrushInspection() {
-
     override fun getDisplayName(): String = "Undefined parameter reference"
+
     override fun getShortName(): String = "BerryCrushUndefinedParameterReference"
+
     override fun getGroupDisplayName(): String = "BerryCrush"
+
     override fun isEnabledByDefault(): Boolean = true
 
-    override fun checkFile(file: PsiFile, holder: ProblemsHolder) {
+    override fun checkFile(
+        file: PsiFile,
+        holder: ProblemsHolder,
+    ) {
         checkParameters(file, emptyList(), emptyList(), holder)
     }
 
-    private fun checkParameters(element: PsiElement, parentParameters: List<BerryCrushParametersElement>, extractedVariables: List<BerryCrushExtractElement>, holder: ProblemsHolder) {
+    private fun checkParameters(
+        element: PsiElement,
+        parentParameters: List<BerryCrushParametersElement>,
+        extractedVariables: List<BerryCrushExtractElement>,
+        holder: ProblemsHolder,
+    ) {
         element.children.forEach { element ->
             when (element) {
                 is BerryCrushBlockElement -> {
                     val parameters = element.children.filterIsInstance<BerryCrushParametersElement>()
-                    val extracted: Collection<BerryCrushExtractElement> = PsiTreeUtil.findChildrenOfType(element, BerryCrushExtractElement::class.java)
+                    val extracted: Collection<BerryCrushExtractElement> =
+                        PsiTreeUtil.findChildrenOfType(
+                            element,
+                            BerryCrushExtractElement::class.java,
+                        )
                     checkParameters(element, parameters + parentParameters, extractedVariables + extracted, holder)
                 }
                 else -> checkElement(element, parentParameters, extractedVariables, holder)
@@ -42,7 +54,12 @@ class UndefinedParameterReferenceInspection : BerryCrushInspection() {
         }
     }
 
-    private fun checkElement(element: PsiElement, parentParameters: List<BerryCrushParametersElement>,  extractedVariables: List<BerryCrushExtractElement>, holder: ProblemsHolder) {
+    private fun checkElement(
+        element: PsiElement,
+        parentParameters: List<BerryCrushParametersElement>,
+        extractedVariables: List<BerryCrushExtractElement>,
+        holder: ProblemsHolder,
+    ) {
         PsiTreeUtil.findChildrenOfAnyType(element, true, BerryCrushVariableRefElement::class.java).forEach { variable ->
             val name = variable.variableName
 
@@ -52,7 +69,7 @@ class UndefinedParameterReferenceInspection : BerryCrushInspection() {
                     holder.registerProblem(
                         variable,
                         "Parameter '$name' is not defined in any parameters block",
-                        ProblemHighlightType.WARNING
+                        ProblemHighlightType.WARNING,
                     )
                 }
             } else {
@@ -61,11 +78,10 @@ class UndefinedParameterReferenceInspection : BerryCrushInspection() {
                     holder.registerProblem(
                         variable,
                         "Variable '$name' is not extracted in this block",
-                        ProblemHighlightType.WARNING
+                        ProblemHighlightType.WARNING,
                     )
                 }
             }
         }
-
     }
 }

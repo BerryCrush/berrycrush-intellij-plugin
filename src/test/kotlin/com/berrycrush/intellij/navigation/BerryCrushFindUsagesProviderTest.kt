@@ -11,31 +11,38 @@ import com.intellij.psi.util.PsiTreeUtil
  * Verifies Find Usages (Alt+F7) functionality for fragments and elements.
  */
 class BerryCrushFindUsagesProviderTest : BerryCrushTestCase() {
-
     private val provider = BerryCrushFindUsagesProvider()
 
     // ========== canFindUsagesFor Tests ==========
 
     fun testCanFindUsagesForFile() {
-        val file = createScenarioFile("usages", """
-            scenario: Test
-            given step
-        """.trimIndent())
+        val file =
+            createScenarioFile(
+                "usages",
+                """
+                scenario: Test
+                given step
+                """.trimIndent(),
+            )
 
         val psiFile = psiManager.findFile(file) as? BerryCrushFile
         assertNotNull(psiFile)
 
         assertTrue(
             "Should allow find usages for BerryCrush files",
-            provider.canFindUsagesFor(psiFile!!)
+            provider.canFindUsagesFor(psiFile!!),
         )
     }
 
     fun testCanFindUsagesForNamedElement() {
-        val file = createFragmentFile("named", """
-            fragment: my-fragment
-            given step
-        """.trimIndent())
+        val file =
+            createFragmentFile(
+                "named",
+                """
+                fragment: my-fragment
+                given step
+                """.trimIndent(),
+            )
 
         val psiFile = psiManager.findFile(file) as? BerryCrushFile
         val fragment = PsiTreeUtil.findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
@@ -43,17 +50,21 @@ class BerryCrushFindUsagesProviderTest : BerryCrushTestCase() {
 
         assertTrue(
             "Should allow find usages for named elements",
-            provider.canFindUsagesFor(fragment!!)
+            provider.canFindUsagesFor(fragment!!),
         )
     }
 
     // ========== getType Tests ==========
 
     fun testTypeForFragmentFile() {
-        val file = createFragmentFile("typeTest", """
-            fragment: test
-            given step
-        """.trimIndent())
+        val file =
+            createFragmentFile(
+                "typeTest",
+                """
+                fragment: test
+                given step
+                """.trimIndent(),
+            )
 
         val psiFile = psiManager.findFile(file) as? BerryCrushFile
         assertNotNull(psiFile)
@@ -63,10 +74,14 @@ class BerryCrushFindUsagesProviderTest : BerryCrushTestCase() {
     }
 
     fun testTypeForScenarioFile() {
-        val file = createScenarioFile("typeTest", """
-            scenario: Test
-            given step
-        """.trimIndent())
+        val file =
+            createScenarioFile(
+                "typeTest",
+                """
+                scenario: Test
+                given step
+                """.trimIndent(),
+            )
 
         val psiFile = psiManager.findFile(file) as? BerryCrushFile
         assertNotNull(psiFile)
@@ -76,10 +91,14 @@ class BerryCrushFindUsagesProviderTest : BerryCrushTestCase() {
     }
 
     fun testTypeForOtherElement() {
-        val file = createScenarioFile("otherType", """
-            scenario: Test
-            given step
-        """.trimIndent())
+        val file =
+            createScenarioFile(
+                "otherType",
+                """
+                scenario: Test
+                given step
+                """.trimIndent(),
+            )
 
         val psiFile = psiManager.findFile(file) as? BerryCrushFile
         val scenario = PsiTreeUtil.findChildOfType(psiFile, BerryCrushScenarioElement::class.java)
@@ -92,10 +111,14 @@ class BerryCrushFindUsagesProviderTest : BerryCrushTestCase() {
     // ========== getDescriptiveName Tests ==========
 
     fun testDescriptiveNameForFile() {
-        val file = createScenarioFile("descriptive", """
-            scenario: Test
-            given step
-        """.trimIndent())
+        val file =
+            createScenarioFile(
+                "descriptive",
+                """
+                scenario: Test
+                given step
+                """.trimIndent(),
+            )
 
         val psiFile = psiManager.findFile(file) as? BerryCrushFile
         assertNotNull(psiFile)
@@ -105,10 +128,14 @@ class BerryCrushFindUsagesProviderTest : BerryCrushTestCase() {
     }
 
     fun testDescriptiveNameForNamedElement() {
-        val file = createFragmentFile("descName", """
-            fragment: my-fragment
-            given step
-        """.trimIndent())
+        val file =
+            createFragmentFile(
+                "descName",
+                """
+                fragment: my-fragment
+                given step
+                """.trimIndent(),
+            )
 
         val psiFile = psiManager.findFile(file) as? BerryCrushFile
         val fragment = PsiTreeUtil.findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
@@ -121,10 +148,14 @@ class BerryCrushFindUsagesProviderTest : BerryCrushTestCase() {
     // ========== getNodeText Tests ==========
 
     fun testNodeTextForFile() {
-        val file = createScenarioFile("nodeText", """
-            scenario: Test
-            given step
-        """.trimIndent())
+        val file =
+            createScenarioFile(
+                "nodeText",
+                """
+                scenario: Test
+                given step
+                """.trimIndent(),
+            )
 
         val psiFile = psiManager.findFile(file) as? BerryCrushFile
         assertNotNull(psiFile)
@@ -134,10 +165,14 @@ class BerryCrushFindUsagesProviderTest : BerryCrushTestCase() {
     }
 
     fun testNodeTextForFragment() {
-        val file = createFragmentFile("nodeTextFrag", """
-            fragment: test-fragment
-            given step
-        """.trimIndent())
+        val file =
+            createFragmentFile(
+                "nodeTextFrag",
+                """
+                fragment: test-fragment
+                given step
+                """.trimIndent(),
+            )
 
         val psiFile = psiManager.findFile(file) as? BerryCrushFile
         val fragment = PsiTreeUtil.findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
@@ -150,10 +185,14 @@ class BerryCrushFindUsagesProviderTest : BerryCrushTestCase() {
     // ========== getHelpId Tests ==========
 
     fun testHelpIdReturnsNull() {
-        val file = createScenarioFile("help", """
-            scenario: Test
-            given step
-        """.trimIndent())
+        val file =
+            createScenarioFile(
+                "help",
+                """
+                scenario: Test
+                given step
+                """.trimIndent(),
+            )
 
         val psiFile = psiManager.findFile(file) as? BerryCrushFile
         assertNotNull(psiFile)

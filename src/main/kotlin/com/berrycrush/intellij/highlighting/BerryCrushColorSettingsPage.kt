@@ -12,12 +12,12 @@ import javax.swing.Icon
  * Color settings page for BerryCrush syntax highlighting customization.
  */
 class BerryCrushColorSettingsPage : ColorSettingsPage {
-
     override fun getIcon(): Icon = BerryCrushIcons.SCENARIO_FILE
 
     override fun getHighlighter(): SyntaxHighlighter = BerryCrushSyntaxHighlighter()
 
-    override fun getDemoText(): String = """
+    override fun getDemoText(): String =
+        """
 # BerryCrush Scenario Demo
 @smoke @api
 feature: Pet Store API
@@ -91,23 +91,24 @@ fragment: create_pet
     override fun getDisplayName(): String = "BerryCrush"
 
     companion object {
-        private val DESCRIPTORS = arrayOf(
-            AttributesDescriptor("Block keywords", BerryCrushHighlightingColors.BLOCK_KEYWORD),
-            AttributesDescriptor("Step keywords", BerryCrushHighlightingColors.STEP_KEYWORD),
-            AttributesDescriptor("Directives", BerryCrushHighlightingColors.DIRECTIVE),
-            AttributesDescriptor("Assertion keywords", BerryCrushHighlightingColors.ASSERTION_KEYWORD),
-            AttributesDescriptor("Operators", BerryCrushHighlightingColors.OPERATOR),
-            AttributesDescriptor("Tags", BerryCrushHighlightingColors.TAG),
-            AttributesDescriptor("Operation references", BerryCrushHighlightingColors.OPERATION_REF),
-            AttributesDescriptor("Variables", BerryCrushHighlightingColors.VARIABLE),
-            AttributesDescriptor("JSON path", BerryCrushHighlightingColors.JSON_PATH),
-            AttributesDescriptor("Strings", BerryCrushHighlightingColors.STRING),
-            AttributesDescriptor("Numbers", BerryCrushHighlightingColors.NUMBER),
-            AttributesDescriptor("Comments", BerryCrushHighlightingColors.COMMENT),
-            AttributesDescriptor("Braces", BerryCrushHighlightingColors.BRACES),
-            AttributesDescriptor("Pipe", BerryCrushHighlightingColors.PIPE),
-            AttributesDescriptor("Parameter keys", BerryCrushHighlightingColors.PARAMETER_KEY),
-            AttributesDescriptor("Bad character", BerryCrushHighlightingColors.BAD_CHARACTER),
-        )
+        private val DESCRIPTORS =
+            arrayOf(
+                AttributesDescriptor("Block keywords", BerryCrushHighlightingColors.BLOCK_KEYWORD),
+                AttributesDescriptor("Step keywords", BerryCrushHighlightingColors.STEP_KEYWORD),
+                AttributesDescriptor("Directives", BerryCrushHighlightingColors.DIRECTIVE),
+                AttributesDescriptor("Assertion keywords", BerryCrushHighlightingColors.ASSERTION_KEYWORD),
+                AttributesDescriptor("Operators", BerryCrushHighlightingColors.OPERATOR),
+                AttributesDescriptor("Tags", BerryCrushHighlightingColors.TAG),
+                AttributesDescriptor("Operation references", BerryCrushHighlightingColors.OPERATION_REF),
+                AttributesDescriptor("Variables", BerryCrushHighlightingColors.VARIABLE),
+                AttributesDescriptor("JSON path", BerryCrushHighlightingColors.JSON_PATH),
+                AttributesDescriptor("Strings", BerryCrushHighlightingColors.STRING),
+                AttributesDescriptor("Numbers", BerryCrushHighlightingColors.NUMBER),
+                AttributesDescriptor("Comments", BerryCrushHighlightingColors.COMMENT),
+                AttributesDescriptor("Braces", BerryCrushHighlightingColors.BRACES),
+                AttributesDescriptor("Pipe", BerryCrushHighlightingColors.PIPE),
+                AttributesDescriptor("Parameter keys", BerryCrushHighlightingColors.PARAMETER_KEY),
+                AttributesDescriptor("Bad character", BerryCrushHighlightingColors.BAD_CHARACTER),
+            )
     }
 }

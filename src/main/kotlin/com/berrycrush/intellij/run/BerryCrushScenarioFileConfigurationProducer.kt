@@ -16,11 +16,10 @@ import com.intellij.psi.PsiElement
 /**
  * Produces run configurations when a `.scenario` file is selected in editor or project view.
  */
-class BerryCrushScenarioFileConfigurationProducer : LazyRunConfigurationProducer<BerryCrushRunConfiguration>(), DumbAware {
-
-    override fun getConfigurationFactory(): ConfigurationFactory {
-        return BerryCrushConfigurationType().configurationFactories[0]
-    }
+class BerryCrushScenarioFileConfigurationProducer :
+    LazyRunConfigurationProducer<BerryCrushRunConfiguration>(),
+    DumbAware {
+    override fun getConfigurationFactory(): ConfigurationFactory = BerryCrushConfigurationType().configurationFactories[0]
 
     override fun setupConfigurationFromContext(
         configuration: BerryCrushRunConfiguration,
@@ -31,12 +30,13 @@ class BerryCrushScenarioFileConfigurationProducer : LazyRunConfigurationProducer
         val preferredModule = ModuleScopeResolver.findModuleForFile(scenarioFile, context.project)
         val fallbackClass = System.getProperty(BerryCrushScenarioExecutionSupport.DEFAULT_TEST_CLASS_PROPERTY)
 
-        val testClass = BerryCrushScenarioExecutionSupport.resolveTestClass(
-            project = context.project,
-            preferredModule = preferredModule,
-            fallbackClassFqn = fallbackClass,
-            chooseWhenMultiple = false,
-        ) ?: return false
+        val testClass =
+            BerryCrushScenarioExecutionSupport.resolveTestClass(
+                project = context.project,
+                preferredModule = preferredModule,
+                fallbackClassFqn = fallbackClass,
+                chooseWhenMultiple = false,
+            ) ?: return false
 
         val effectiveModule = preferredModule ?: BerryCrushScenarioExecutionSupport.resolveModuleForClass(context.project, testClass)
         val vmOptions = BerryCrushScenarioExecutionSupport.buildVmOptions(scenarioFile.name)
@@ -64,7 +64,10 @@ class BerryCrushScenarioFileConfigurationProducer : LazyRunConfigurationProducer
         return configuration.name == expectedName && configuration.vmParameters.orEmpty().contains(expectedVmOption)
     }
 
-    override fun shouldReplace(self: ConfigurationFromContext, other: ConfigurationFromContext): Boolean {
+    override fun shouldReplace(
+        self: ConfigurationFromContext,
+        other: ConfigurationFromContext,
+    ): Boolean {
         val otherType = other.configuration.factory?.type ?: return false
         return otherType is JUnitConfigurationType && other.configuration !is BerryCrushRunConfiguration
     }
@@ -111,10 +114,11 @@ class BerryCrushScenarioFileConfigurationProducer : LazyRunConfigurationProducer
 
     private fun getScenarioFile(context: ConfigurationContext): VirtualFile? {
         val psiFile = CommonDataKeys.PSI_FILE.getData(context.dataContext)?.virtualFile
-        val candidate = context.location?.virtualFile
-            ?: CommonDataKeys.VIRTUAL_FILE.getData(context.dataContext)
-            ?: psiFile
-            ?: context.psiLocation?.containingFile?.virtualFile
+        val candidate =
+            context.location?.virtualFile
+                ?: CommonDataKeys.VIRTUAL_FILE.getData(context.dataContext)
+                ?: psiFile
+                ?: context.psiLocation?.containingFile?.virtualFile
 
         return candidate?.takeIf { it.extension == ScenarioFileType.EXTENSION }
     }

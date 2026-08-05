@@ -25,9 +25,9 @@ class AnnotationStringReference(
     element: PsiElement,
     rangeInElement: TextRange,
     private val pattern: String,
-    private val isAssertion: Boolean
-) : PsiReferenceBase<PsiElement>(element, rangeInElement), PsiPolyVariantReference {
-
+    private val isAssertion: Boolean,
+) : PsiReferenceBase<PsiElement>(element, rangeInElement),
+    PsiPolyVariantReference {
     override fun resolve(): PsiElement? {
         val results = multiResolve(false)
         return results.firstOrNull()?.element
@@ -37,13 +37,14 @@ class AnnotationStringReference(
         val project = element.project
         // Use dependent modules scope: find usages in modules that depend on this one
         val scope = ModuleScopeResolver.getDependentModulesScope(element)
-        
-        val usages = if (isAssertion) {
-            StepUsageIndex.findAssertionUsagesInScope(project, pattern, scope)
-        } else {
-            StepUsageIndex.findStepUsagesInScope(project, pattern, scope)
-        }
-        
+
+        val usages =
+            if (isAssertion) {
+                StepUsageIndex.findAssertionUsagesInScope(project, pattern, scope)
+            } else {
+                StepUsageIndex.findStepUsagesInScope(project, pattern, scope)
+            }
+
         return usages.map { PsiElementResolveResult(it) }.toTypedArray()
     }
 

@@ -25,7 +25,6 @@ import com.intellij.util.io.KeyDescriptor
  * This index stores operation IDs referenced in .scenario and .fragment files.
  */
 class OperationUsageIndex : ScalarIndexExtension<String>() {
-
     override fun getName(): ID<String, Void> = KEY
 
     override fun getVersion(): Int = VERSION
@@ -44,8 +43,7 @@ class OperationUsageIndex : ScalarIndexExtension<String>() {
 
     override fun getKeyDescriptor(): KeyDescriptor<String> = EnumeratorStringDescriptor.INSTANCE
 
-    override fun getInputFilter(): FileBasedIndex.InputFilter =
-        DefaultFileTypeSpecificInputFilter(ScenarioFileType, FragmentFileType)
+    override fun getInputFilter(): FileBasedIndex.InputFilter = DefaultFileTypeSpecificInputFilter(ScenarioFileType, FragmentFileType)
 
     companion object {
         @JvmField
@@ -56,25 +54,27 @@ class OperationUsageIndex : ScalarIndexExtension<String>() {
         /**
          * Gets all referenced operation IDs in the project.
          */
-        fun getAllOperationIds(project: Project): Collection<String> {
-            return FileBasedIndex.getInstance().getAllKeys(KEY, project)
-        }
+        fun getAllOperationIds(project: Project): Collection<String> = FileBasedIndex.getInstance().getAllKeys(KEY, project)
 
         /**
          * Gets all files containing references to the given operation ID.
          */
-        fun getFilesReferencingOperation(project: Project, operationId: String): Collection<VirtualFile> {
-            return FileBasedIndex.getInstance().getContainingFiles(
-                KEY,
-                operationId,
-                GlobalSearchScope.projectScope(project)
-            )
-        }
+        fun getFilesReferencingOperation(
+            project: Project,
+            operationId: String,
+        ): Collection<VirtualFile> = FileBasedIndex.getInstance().getContainingFiles(
+            KEY,
+            operationId,
+            GlobalSearchScope.projectScope(project),
+        )
 
         /**
          * Finds all PSI elements that reference the given operation ID.
          */
-        fun findOperationUsages(project: Project, operationId: String): List<PsiElement> {
+        fun findOperationUsages(
+            project: Project,
+            operationId: String,
+        ): List<PsiElement> {
             val files = getFilesReferencingOperation(project, operationId)
             val psiManager = PsiManager.getInstance(project)
             val results = mutableListOf<PsiElement>()
@@ -87,9 +87,11 @@ class OperationUsageIndex : ScalarIndexExtension<String>() {
             return results
         }
 
-        private fun findOperationReferencesInFile(file: com.intellij.psi.PsiFile, operationId: String): List<PsiElement> {
-            return PsiTreeUtil.findChildrenOfType(file, BerryCrushOperationRefElement::class.java)
-                .filter { it.operationId == operationId }
-        }
+        private fun findOperationReferencesInFile(
+            file: com.intellij.psi.PsiFile,
+            operationId: String,
+        ): List<PsiElement> = PsiTreeUtil
+            .findChildrenOfType(file, BerryCrushOperationRefElement::class.java)
+            .filter { it.operationId == operationId }
     }
 }

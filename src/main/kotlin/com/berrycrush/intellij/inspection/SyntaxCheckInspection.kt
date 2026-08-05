@@ -13,7 +13,10 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 
 class SyntaxCheckInspection : BerryCrushInspection() {
-    override fun checkFile(file: PsiFile, holder: ProblemsHolder) {
+    override fun checkFile(
+        file: PsiFile,
+        holder: ProblemsHolder,
+    ) {
         file.children.filterIsInstance<BerryCrushPsiElement>().forEach { element ->
             when (element) {
                 is BerryCrushParametersElement -> checkParameter(element, holder)
@@ -25,7 +28,10 @@ class SyntaxCheckInspection : BerryCrushInspection() {
         }
     }
 
-    fun checkParameter(parameter: BerryCrushParametersElement, holder: ProblemsHolder) {
+    fun checkParameter(
+        parameter: BerryCrushParametersElement,
+        holder: ProblemsHolder,
+    ) {
         parameter.children.filterIsInstance<BerryCrushPsiElement>().forEach { child ->
             if (child !is BerryCrushParameterEntryElement) {
                 holder.registerProblem(child, "Invalid parameter entry")
@@ -33,36 +39,47 @@ class SyntaxCheckInspection : BerryCrushInspection() {
         }
     }
 
-    fun checkFeature(feature: BerryCrushFeatureElement, holder: ProblemsHolder) {
+    fun checkFeature(
+        feature: BerryCrushFeatureElement,
+        holder: ProblemsHolder,
+    ) {
         checkText(feature.children).forEach { element ->
             when (element) {
                 is BerryCrushParametersElement -> checkParameter(element, holder)
                 is BerryCrushScenarioElement -> checkScenario(element, holder)
                 is BerryCrushCommentElement -> doNothing()
-                else -> if (element.text.isNotBlank())
-                    holder.registerProblem(
-                        element,
-                        "Feature must contain only parameter, background, scenario or outline"
-                    )
+                else ->
+                    if (element.text.isNotBlank()) {
+                        holder.registerProblem(
+                            element,
+                            "Feature must contain only parameter, background, scenario or outline",
+                        )
+                    }
             }
         }
     }
 
-    fun checkScenario(scenario: BerryCrushScenarioElement, holder: ProblemsHolder) {
+    fun checkScenario(
+        scenario: BerryCrushScenarioElement,
+        holder: ProblemsHolder,
+    ) {
         checkText(scenario.children).forEach { child ->
             when (child) {
                 is BerryCrushParametersElement -> checkParameter(child, holder)
                 is BerryCrushCommentElement -> doNothing()
-                !is BerryCrushStepElement -> if (child.text.isNotBlank())
-                    holder.registerProblem(child, "Scenario must contain only parameter or step")
+                !is BerryCrushStepElement ->
+                    if (child.text.isNotBlank()) {
+                        holder.registerProblem(child, "Scenario must contain only parameter or step")
+                    }
             }
         }
     }
 
     private fun checkText(elements: Array<PsiElement>): Array<PsiElement> {
         val e = elements.filterIsInstance<BerryCrushPsiElement>()
-        return if (e.isEmpty()) emptyArray()
-        else {
+        return if (e.isEmpty()) {
+            emptyArray()
+        } else {
             when (e[0]) {
                 is BerryCrushTextElement -> e.drop(1).toTypedArray()
                 else -> e.toTypedArray()

@@ -9,5 +9,6 @@ import com.intellij.lang.Language
  */
 object BerryCrushLanguage : Language("BerryCrush") {
     override fun getDisplayName(): String = "BerryCrush"
+
     override fun isCaseSensitive(): Boolean = true
 }

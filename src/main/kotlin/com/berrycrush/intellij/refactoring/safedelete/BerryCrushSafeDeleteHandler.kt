@@ -23,8 +23,12 @@ import com.intellij.refactoring.safeDelete.SafeDeleteHandler
  * - Entire fragment files
  */
 class BerryCrushSafeDeleteHandler : RefactoringActionHandler {
-
-    override fun invoke(project: Project, editor: Editor?, file: PsiFile?, dataContext: DataContext?) {
+    override fun invoke(
+        project: Project,
+        editor: Editor?,
+        file: PsiFile?,
+        dataContext: DataContext?,
+    ) {
         if (editor == null || file !is BerryCrushFile) return
 
         // Find fragment element at caret position
@@ -42,14 +46,20 @@ class BerryCrushSafeDeleteHandler : RefactoringActionHandler {
         }
     }
 
-    override fun invoke(project: Project, elements: Array<out PsiElement>, dataContext: DataContext?) {
+    override fun invoke(
+        project: Project,
+        elements: Array<out PsiElement>,
+        dataContext: DataContext?,
+    ) {
         if (elements.isEmpty()) return
 
         // Filter to supported elements
-        val supportedElements = elements.filter { element ->
-            element is BerryCrushFragmentElement ||
-                (element is PsiFile && element.virtualFile?.extension == FragmentFileType.EXTENSION)
-        }.toTypedArray()
+        val supportedElements =
+            elements
+                .filter { element ->
+                    element is BerryCrushFragmentElement ||
+                        (element is PsiFile && element.virtualFile?.extension == FragmentFileType.EXTENSION)
+                }.toTypedArray()
 
         if (supportedElements.isNotEmpty()) {
             // Pass true to enable safe delete checking (shows usage preview)

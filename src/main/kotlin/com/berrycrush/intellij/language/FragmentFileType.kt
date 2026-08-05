@@ -11,8 +11,12 @@ object FragmentFileType : LanguageFileType(BerryCrushLanguage) {
     const val EXTENSION = "fragment"
 
     override fun getName(): String = "BerryCrush Fragment"
+
     override fun getDisplayName(): String = "BerryCrush Fragment"
+
     override fun getDescription(): String = "BerryCrush reusable step fragment file"
+
     override fun getDefaultExtension(): String = EXTENSION
+
     override fun getIcon(): Icon = BerryCrushIcons.FRAGMENT_FILE
 }

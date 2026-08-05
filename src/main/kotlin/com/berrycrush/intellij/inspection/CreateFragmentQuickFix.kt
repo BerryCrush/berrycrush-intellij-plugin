@@ -1,8 +1,8 @@
 package com.berrycrush.intellij.inspection
 
+import com.intellij.codeInsight.intention.preview.IntentionPreviewInfo
 import com.intellij.codeInspection.LocalQuickFix
 import com.intellij.codeInspection.ProblemDescriptor
-import com.intellij.codeInsight.intention.preview.IntentionPreviewInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.fileChooser.FileChooser
@@ -31,22 +31,25 @@ import javax.swing.JComponent
  * - Append to an existing fragment file
  */
 class CreateFragmentQuickFix(
-    private val fragmentName: String
+    private val fragmentName: String,
 ) : LocalQuickFix {
-
     override fun getName(): String = "Create fragment '$fragmentName'..."
 
     override fun getFamilyName(): String = "BerryCrush"
 
     override fun startInWriteAction(): Boolean = false
 
-    override fun generatePreview(project: Project, previewDescriptor: ProblemDescriptor): IntentionPreviewInfo {
-        return IntentionPreviewInfo.Html(
-            "Creates a new <code>$fragmentName.fragment</code> file or appends to an existing fragment file."
-        )
-    }
+    override fun generatePreview(
+        project: Project,
+        previewDescriptor: ProblemDescriptor,
+    ): IntentionPreviewInfo = IntentionPreviewInfo.Html(
+        "Creates a new <code>$fragmentName.fragment</code> file or appends to an existing fragment file.",
+    )
 
-    override fun applyFix(project: Project, descriptor: ProblemDescriptor) {
+    override fun applyFix(
+        project: Project,
+        descriptor: ProblemDescriptor,
+    ) {
         val containingFile = descriptor.psiElement?.containingFile ?: return
         val defaultDir = containingFile.containingDirectory?.virtualFile
 
@@ -72,7 +75,11 @@ class CreateFragmentQuickFix(
         }
     }
 
-    private fun createNewFragmentFile(project: Project, directory: VirtualFile, fileName: String) {
+    private fun createNewFragmentFile(
+        project: Project,
+        directory: VirtualFile,
+        fileName: String,
+    ) {
         WriteCommandAction.runWriteCommandAction(project) {
             try {
                 val file = directory.createChildData(this, fileName)
@@ -84,12 +91,16 @@ class CreateFragmentQuickFix(
         }
     }
 
-    private fun appendToExistingFile(project: Project, file: VirtualFile) {
+    private fun appendToExistingFile(
+        project: Project,
+        file: VirtualFile,
+    ) {
         WriteCommandAction.runWriteCommandAction(project) {
             try {
                 val psiFile = PsiManager.getInstance(project).findFile(file) ?: return@runWriteCommandAction
-                val document = PsiDocumentManager.getInstance(project).getDocument(psiFile)
-                    ?: return@runWriteCommandAction
+                val document =
+                    PsiDocumentManager.getInstance(project).getDocument(psiFile)
+                        ?: return@runWriteCommandAction
 
                 val appendContent = "\n\n" + generateFragmentDefinition()
                 document.insertString(document.textLength, appendContent)
@@ -101,22 +112,18 @@ class CreateFragmentQuickFix(
         }
     }
 
-    private fun generateFragmentTemplate(): String {
-        return """# Fragment: $fragmentName
+    private fun generateFragmentTemplate(): String = """# Fragment: $fragmentName
 #
 # Reusable step fragment. Include in scenarios with:
 #   include $fragmentName
 
 ${generateFragmentDefinition()}
 """
-    }
 
-    private fun generateFragmentDefinition(): String {
-        return """fragment: $fragmentName
+    private fun generateFragmentDefinition(): String = """fragment: $fragmentName
   # TODO: Add steps here
   given: setup
     # Add directives"""
-    }
 
     enum class CreateMode { NEW_FILE, APPEND }
 }
@@ -127,9 +134,8 @@ ${generateFragmentDefinition()}
 private class CreateFragmentDialog(
     private val project: Project,
     private val fragmentName: String,
-    private val defaultDir: VirtualFile?
+    private val defaultDir: VirtualFile?,
 ) : DialogWrapper(project) {
-
     private var mode = CreateFragmentQuickFix.CreateMode.NEW_FILE
     private var fileName = "$fragmentName.fragment"
     private var selectedDir: VirtualFile? = defaultDir
@@ -161,9 +167,12 @@ private class CreateFragmentDialog(
         val dirLabel = javax.swing.JLabel(selectedDir?.path ?: "Select directory...")
         val browseButton = javax.swing.JButton("Browse...")
 
-        val existingFilesCombo = JComboBox(DefaultComboBoxModel(
-            existingFiles.map { it.name }.toTypedArray()
-        ))
+        val existingFilesCombo =
+            JComboBox(
+                DefaultComboBoxModel(
+                    existingFiles.map { it.name }.toTypedArray(),
+                ),
+            )
         existingFilesCombo.isEnabled = false
 
         newFileRadio.addActionListener {
@@ -198,11 +207,21 @@ private class CreateFragmentDialog(
             }
         }
 
-        fileNameField.document.addDocumentListener(object : javax.swing.event.DocumentListener {
-            override fun insertUpdate(e: javax.swing.event.DocumentEvent) { fileName = fileNameField.text }
-            override fun removeUpdate(e: javax.swing.event.DocumentEvent) { fileName = fileNameField.text }
-            override fun changedUpdate(e: javax.swing.event.DocumentEvent) { fileName = fileNameField.text }
-        })
+        fileNameField.document.addDocumentListener(
+            object : javax.swing.event.DocumentListener {
+                override fun insertUpdate(e: javax.swing.event.DocumentEvent) {
+                    fileName = fileNameField.text
+                }
+
+                override fun removeUpdate(e: javax.swing.event.DocumentEvent) {
+                    fileName = fileNameField.text
+                }
+
+                override fun changedUpdate(e: javax.swing.event.DocumentEvent) {
+                    fileName = fileNameField.text
+                }
+            },
+        )
 
         // Build panel using traditional Swing
         val radioPanel1 = javax.swing.JPanel(java.awt.FlowLayout(java.awt.FlowLayout.LEFT))
@@ -235,7 +254,10 @@ private class CreateFragmentDialog(
     }
 
     fun getSelectedMode(): CreateFragmentQuickFix.CreateMode = mode
+
     fun getFileName(): String = if (fileName.endsWith(".fragment")) fileName else "$fileName.fragment"
+
     fun getSelectedDirectory(): VirtualFile? = selectedDir
+
     fun getSelectedExistingFile(): VirtualFile? = selectedExistingFile
 }

@@ -33,7 +33,6 @@ private const val ASSERT_PREFIX = "ASSERT:"
  * Used for reverse navigation from @Step/@Assertion methods to usages.
  */
 class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
-
     companion object {
         val NAME: ID<String, StepUsageData> = ID.create("com.berrycrush.intellij.index.StepUsageIndex")
 
@@ -51,7 +50,7 @@ class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
         fun findStepUsagesInScope(
             project: Project,
             stepPattern: String,
-            scope: GlobalSearchScope
+            scope: GlobalSearchScope,
         ): List<PsiElement> {
             val usages = mutableListOf<PsiElement>()
             val psiManager = PsiManager.getInstance(project)
@@ -73,10 +72,12 @@ class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
             key: String,
             psiManager: PsiManager,
             usages: MutableList<PsiElement>,
-            scope: GlobalSearchScope
+            scope: GlobalSearchScope,
         ) {
             FileBasedIndex.getInstance().processValues(
-                NAME, key, null,
+                NAME,
+                key,
+                null,
                 { file, data ->
                     val psiFile = psiManager.findFile(file)
                     if (psiFile != null) {
@@ -88,7 +89,7 @@ class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
                     }
                     true
                 },
-                scope
+                scope,
             )
         }
 
@@ -106,7 +107,7 @@ class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
         fun findAssertionUsagesInScope(
             project: Project,
             assertionPattern: String,
-            scope: GlobalSearchScope
+            scope: GlobalSearchScope,
         ): List<PsiElement> {
             val usages = mutableListOf<PsiElement>()
             val psiManager = PsiManager.getInstance(project)
@@ -131,17 +132,18 @@ class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
         internal fun patternToRegex(pattern: String): Regex {
             // Convert pattern placeholders to regex
             // Use Regex.escapeReplacement to prevent backslash interpretation
-            val regexPattern = pattern
-                // Handle curly-brace placeholders
-                .replace(Regex("""\{int}"""), Regex.escapeReplacement("""(-?\d+)"""))
-                .replace(Regex("""\{string}"""), Regex.escapeReplacement("""("[^"]*"|'[^']*'|[^\s]+)"""))
-                .replace(Regex("""\{word}"""), Regex.escapeReplacement("""(\w+)"""))
-                .replace(Regex("""\{float}"""), Regex.escapeReplacement("""(-?\d+\.?\d*)"""))
-                .replace(Regex("""\{number}"""), Regex.escapeReplacement("""(-?\d+\.?\d*)"""))
-                .replace(Regex("""\{any}"""), Regex.escapeReplacement("""(.+?)"""))
-                // Anchor the pattern
-                .let { "^$it$" }
-            
+            val regexPattern =
+                pattern
+                    // Handle curly-brace placeholders
+                    .replace(Regex("""\{int}"""), Regex.escapeReplacement("""(-?\d+)"""))
+                    .replace(Regex("""\{string}"""), Regex.escapeReplacement("""("[^"]*"|'[^']*'|[^\s]+)"""))
+                    .replace(Regex("""\{word}"""), Regex.escapeReplacement("""(\w+)"""))
+                    .replace(Regex("""\{float}"""), Regex.escapeReplacement("""(-?\d+\.?\d*)"""))
+                    .replace(Regex("""\{number}"""), Regex.escapeReplacement("""(-?\d+\.?\d*)"""))
+                    .replace(Regex("""\{any}"""), Regex.escapeReplacement("""(.+?)"""))
+                    // Anchor the pattern
+                    .let { "^$it$" }
+
             return try {
                 Regex(regexPattern, RegexOption.IGNORE_CASE)
             } catch (_: Exception) {
@@ -158,54 +160,53 @@ class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
         /**
          * Check if text matches a pattern regex
          */
-        internal fun matchesPattern(text: String, regex: Regex): Boolean {
-            return regex.matches(text)
-        }
+        internal fun matchesPattern(
+            text: String,
+            regex: Regex,
+        ): Boolean = regex.matches(text)
     }
 
     override fun getName(): ID<String, StepUsageData> = NAME
 
-    override fun getVersion(): Int = 5  // Bumped to force reindex after shared step parser adoption
+    override fun getVersion(): Int = 5 // Bumped to force reindex after shared step parser adoption
 
     override fun dependsOnFileContent(): Boolean = true
 
-    override fun getInputFilter(): FileBasedIndex.InputFilter {
-        return FileBasedIndex.InputFilter { file ->
-            file.extension == ScenarioFileType.EXTENSION ||
+    override fun getInputFilter(): FileBasedIndex.InputFilter = FileBasedIndex.InputFilter { file ->
+        file.extension == ScenarioFileType.EXTENSION ||
             file.extension == FragmentFileType.EXTENSION
-        }
     }
 
     override fun getKeyDescriptor(): KeyDescriptor<String> = EnumeratorStringDescriptor.INSTANCE
 
     override fun getValueExternalizer(): DataExternalizer<StepUsageData> = StepUsageDataExternalizer()
 
-    override fun getIndexer(): DataIndexer<String, StepUsageData, FileContent> {
-        return DataIndexer { inputData ->
-            val result = mutableMapOf<String, StepUsageData>()
-            PsiTreeUtil.findChildrenOfType(inputData.psiFile, BerryCrushStepElement::class.java).forEach { step ->
-                val stepText = step.stepText
-                if (!stepText.isNullOrBlank()) {
-                    result[stepText] = StepUsageData(
+    override fun getIndexer(): DataIndexer<String, StepUsageData, FileContent> = DataIndexer { inputData ->
+        val result = mutableMapOf<String, StepUsageData>()
+        PsiTreeUtil.findChildrenOfType(inputData.psiFile, BerryCrushStepElement::class.java).forEach { step ->
+            val stepText = step.stepText
+            if (!stepText.isNullOrBlank()) {
+                result[stepText] =
+                    StepUsageData(
                         offset = step.startOffset,
                         lineNumber = step.getStartLine() + 1,
-                        stepType = step.keyword ?: "step"
+                        stepType = step.keyword ?: "step",
                     )
-                }
             }
-            PsiTreeUtil.findChildrenOfType(inputData.psiFile, BerryCrushAssertElement::class.java).forEach { assert ->
-                val assertionText = assert.assertionText
-                if (!assertionText.isNullOrBlank()) {
-                    // Prefix with ASSERT: to distinguish from steps
-                    result["ASSERT:$assertionText"] = StepUsageData(
-                        offset = assert.startOffset,
-                        lineNumber = assert.getStartLine() + 1,
-                        stepType = "assert"
-                    )
-                }
-            }
-            result
         }
+        PsiTreeUtil.findChildrenOfType(inputData.psiFile, BerryCrushAssertElement::class.java).forEach { assertElement ->
+            val assertionText = assertElement.assertionText
+            if (!assertionText.isNullOrBlank()) {
+                // Prefix with ASSERT: to distinguish from steps
+                result["ASSERT:$assertionText"] =
+                    StepUsageData(
+                        offset = assertElement.startOffset,
+                        lineNumber = assertElement.getStartLine() + 1,
+                        stepType = "assert",
+                    )
+            }
+        }
+        result
     }
 }
 
@@ -215,24 +216,25 @@ class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
 data class StepUsageData(
     val offset: Int,
     val lineNumber: Int,
-    val stepType: String
+    val stepType: String,
 )
 
 /**
  * Externalizer for StepUsageData
  */
 class StepUsageDataExternalizer : DataExternalizer<StepUsageData> {
-    override fun save(out: DataOutput, value: StepUsageData) {
+    override fun save(
+        out: DataOutput,
+        value: StepUsageData,
+    ) {
         out.writeInt(value.offset)
         out.writeInt(value.lineNumber)
         out.writeUTF(value.stepType)
     }
 
-    override fun read(input: DataInput): StepUsageData {
-        return StepUsageData(
-            offset = input.readInt(),
-            lineNumber = input.readInt(),
-            stepType = input.readUTF()
-        )
-    }
+    override fun read(input: DataInput): StepUsageData = StepUsageData(
+        offset = input.readInt(),
+        lineNumber = input.readInt(),
+        stepType = input.readUTF(),
+    )
 }

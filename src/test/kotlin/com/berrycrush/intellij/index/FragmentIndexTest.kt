@@ -8,28 +8,33 @@ import com.berrycrush.intellij.BerryCrushTestCase
  * Tests fragment definition indexing and lookup functionality.
  */
 class FragmentIndexTest : BerryCrushTestCase() {
-
     fun testIndexesFragmentDefinition() {
-        createFragmentFile("login", """
+        createFragmentFile(
+            "login",
+            """
             fragment: login-steps
             
             given user is on login page
             when user enters credentials
             then user is logged in
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         val fragmentNames = FragmentIndex.getAllFragmentNames(project)
         assertTrue(fragmentNames.contains("login-steps"))
     }
 
     fun testIndexesMultipleFragmentsInSameFile() {
-        createFragmentFile("common", """
+        createFragmentFile(
+            "common",
+            """
             fragment: setup-steps
             given system is initialized
             
             fragment: cleanup-steps
             then system is cleaned up
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         val fragmentNames = FragmentIndex.getAllFragmentNames(project)
         assertTrue(fragmentNames.contains("setup-steps"))
@@ -37,10 +42,13 @@ class FragmentIndexTest : BerryCrushTestCase() {
     }
 
     fun testFindsFragmentFilesByName() {
-        createFragmentFile("auth", """
+        createFragmentFile(
+            "auth",
+            """
             fragment: auth-flow
             given user has valid token
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         val files = FragmentIndex.getFragmentFiles(project, "auth-flow")
         assertEquals(1, files.size)
@@ -48,10 +56,13 @@ class FragmentIndexTest : BerryCrushTestCase() {
     }
 
     fun testHandlesCaseInsensitiveFragmentKeyword() {
-        createFragmentFile("mixed", """
+        createFragmentFile(
+            "mixed",
+            """
             fragment: lowercase-fragment
             given test step
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         val fragmentNames = FragmentIndex.getAllFragmentNames(project)
         assertTrue(fragmentNames.contains("lowercase-fragment"))
@@ -67,11 +78,14 @@ class FragmentIndexTest : BerryCrushTestCase() {
     }
 
     fun testFileWithoutFragmentDirectiveReturnsNoFragments() {
-        createFragmentFile("no-directive", """
+        createFragmentFile(
+            "no-directive",
+            """
             # This is just a comment
             given some step
             then some assertion
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         // Should have no fragments from this file
         // (checking that fragment: pattern is required)

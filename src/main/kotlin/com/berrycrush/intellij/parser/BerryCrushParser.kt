@@ -15,8 +15,10 @@ import com.intellij.psi.tree.IElementType
  */
 @Suppress("TooManyFunctions")
 class BerryCrushParser : PsiParser {
-
-    override fun parse(root: IElementType, builder: PsiBuilder): ASTNode {
+    override fun parse(
+        root: IElementType,
+        builder: PsiBuilder,
+    ): ASTNode {
         val rootMarker = builder.mark()
 
         while (!builder.eof()) {
@@ -46,7 +48,8 @@ class BerryCrushParser : PsiParser {
             BerryCrushTokenTypes.WHEN,
             BerryCrushTokenTypes.THEN,
             BerryCrushTokenTypes.AND,
-            BerryCrushTokenTypes.BUT -> parseStep(builder, 0)
+            BerryCrushTokenTypes.BUT,
+            -> parseStep(builder, 0)
             // Assert directive
             BerryCrushTokenTypes.ASSERT -> parseAssertDirective(builder)
             BerryCrushTokenTypes.INDENT -> {
@@ -58,7 +61,10 @@ class BerryCrushParser : PsiParser {
         }
     }
 
-    private fun parseStep(builder: PsiBuilder, stepIndent: Int?) {
+    private fun parseStep(
+        builder: PsiBuilder,
+        stepIndent: Int?,
+    ) {
         val marker = builder.mark()
         builder.advanceLexer() // consume step keyword (Given/When/Then/And/But)
         skipToEndOfLine(builder)
@@ -66,7 +72,10 @@ class BerryCrushParser : PsiParser {
         marker.done(BerryCrushElementTypes.STEP)
     }
 
-    private fun parseStepNestedContent(builder: PsiBuilder, stepIndent: Int) {
+    private fun parseStepNestedContent(
+        builder: PsiBuilder,
+        stepIndent: Int,
+    ) {
         while (!builder.eof()) {
             skipNewlines(builder)
 
@@ -86,7 +95,8 @@ class BerryCrushParser : PsiParser {
                 BerryCrushTokenTypes.WHEN,
                 BerryCrushTokenTypes.THEN,
                 BerryCrushTokenTypes.AND,
-                BerryCrushTokenTypes.BUT -> parseStep(builder, indent)
+                BerryCrushTokenTypes.BUT,
+                -> parseStep(builder, indent)
                 BerryCrushTokenTypes.COMMENT -> skipToEndOfLine(builder, BerryCrushElementTypes.COMMENT, false)
                 else -> skipToEndOfLine(builder)
             }
@@ -138,7 +148,10 @@ class BerryCrushParser : PsiParser {
         }
     }
 
-    private fun parseFeature(builder: PsiBuilder, featureIndent: Int) {
+    private fun parseFeature(
+        builder: PsiBuilder,
+        featureIndent: Int,
+    ) {
         val marker = builder.mark()
         builder.advanceLexer()
         skipToEndOfLine(builder)
@@ -152,7 +165,10 @@ class BerryCrushParser : PsiParser {
         marker.done(BerryCrushElementTypes.FEATURE)
     }
 
-    private fun parseFeatureChildren(builder: PsiBuilder, featureIndent: Int) {
+    private fun parseFeatureChildren(
+        builder: PsiBuilder,
+        featureIndent: Int,
+    ) {
         while (!builder.eof()) {
             skipNewlines(builder)
 
@@ -172,7 +188,10 @@ class BerryCrushParser : PsiParser {
         }
     }
 
-    private fun parseScenario(builder: PsiBuilder, scenarioIndent: Int) {
+    private fun parseScenario(
+        builder: PsiBuilder,
+        scenarioIndent: Int,
+    ) {
         val marker = builder.mark()
         builder.advanceLexer()
         skipToEndOfLine(builder)
@@ -184,7 +203,10 @@ class BerryCrushParser : PsiParser {
         marker.done(BerryCrushElementTypes.SCENARIO)
     }
 
-    private fun parseOutline(builder: PsiBuilder, outlineIndent: Int) {
+    private fun parseOutline(
+        builder: PsiBuilder,
+        outlineIndent: Int,
+    ) {
         val marker = builder.mark()
         builder.advanceLexer()
         skipToEndOfLine(builder)
@@ -196,7 +218,10 @@ class BerryCrushParser : PsiParser {
         marker.done(BerryCrushElementTypes.OUTLINE)
     }
 
-    private fun parseBackground(builder: PsiBuilder, backgroundIndent: Int) {
+    private fun parseBackground(
+        builder: PsiBuilder,
+        backgroundIndent: Int,
+    ) {
         val marker = builder.mark()
         builder.advanceLexer()
         skipToEndOfLine(builder)
@@ -204,7 +229,10 @@ class BerryCrushParser : PsiParser {
         marker.done(BerryCrushElementTypes.BACKGROUND)
     }
 
-    private fun parseParameters(builder: PsiBuilder, indent: Int) {
+    private fun parseParameters(
+        builder: PsiBuilder,
+        indent: Int,
+    ) {
         // It's a parameters block
         val blockMarker = builder.mark()
 
@@ -216,7 +244,10 @@ class BerryCrushParser : PsiParser {
         blockMarker.done(BerryCrushElementTypes.PARAMETERS)
     }
 
-    private fun parseScenarioContent(builder: PsiBuilder, parentIndent: Int) {
+    private fun parseScenarioContent(
+        builder: PsiBuilder,
+        parentIndent: Int,
+    ) {
         while (!builder.eof()) {
             skipNewlines(builder)
 
@@ -231,7 +262,8 @@ class BerryCrushParser : PsiParser {
                 BerryCrushTokenTypes.WHEN,
                 BerryCrushTokenTypes.THEN,
                 BerryCrushTokenTypes.AND,
-                BerryCrushTokenTypes.BUT -> parseStep(builder, indent)
+                BerryCrushTokenTypes.BUT,
+                -> parseStep(builder, indent)
                 BerryCrushTokenTypes.CALL -> parseCallDirective(builder, indent)
                 BerryCrushTokenTypes.WEBHOOK -> parseWebhookDirective(builder, indent)
                 BerryCrushTokenTypes.INCLUDE -> parseIncludeDirective(builder, indent)
@@ -254,7 +286,10 @@ class BerryCrushParser : PsiParser {
      * ```
      * possibly indentation before
      */
-    private fun tryParseParametersBlock(builder: PsiBuilder, parentIndent: Int) {
+    private fun tryParseParametersBlock(
+        builder: PsiBuilder,
+        parentIndent: Int,
+    ) {
         // Check for INDENT followed by PARAMETERS keyword
         if (builder.tokenType != BerryCrushTokenTypes.INDENT) return
 
@@ -283,16 +318,23 @@ class BerryCrushParser : PsiParser {
      * Try to parse a single parameter entry: `  key: value`
      * Returns true if successfully parsed.
      */
-    private fun tryParseParameterEntry(builder: PsiBuilder, parentIndent: Int): Boolean = tryParseParameterLike(
+    private fun tryParseParameterEntry(
+        builder: PsiBuilder,
+        parentIndent: Int,
+    ): Boolean = tryParseParameterLike(
         builder,
         parentIndent,
-        allowBody = false
+        allowBody = false,
     )
 
     /**
      * Parse parameter value which may contain variable interpolations.
      */
-    private fun parseParameterValue(builder: PsiBuilder, indent: Int, allowBody: Boolean) {
+    private fun parseParameterValue(
+        builder: PsiBuilder,
+        indent: Int,
+        allowBody: Boolean,
+    ) {
         val hasInlineValue = builder.tokenType != BerryCrushTokenTypes.NEWLINE && !builder.eof()
         val valueMarker = builder.mark()
         if (hasInlineValue) {
@@ -340,8 +382,7 @@ class BerryCrushParser : PsiParser {
      * Checks if the token type represents a top-level block keyword.
      * These keywords mark the start of a new block and end the current fragment.
      */
-    private fun isTopLevelKeyword(tokenType: IElementType?): Boolean =
-        tokenType in TOP_LEVEL_KEYWORDS
+    private fun isTopLevelKeyword(tokenType: IElementType?): Boolean = tokenType in TOP_LEVEL_KEYWORDS
 
     /**
      * Parses content within a fragment block (steps, directives, etc.).
@@ -352,7 +393,8 @@ class BerryCrushParser : PsiParser {
             BerryCrushTokenTypes.WHEN,
             BerryCrushTokenTypes.THEN,
             BerryCrushTokenTypes.AND,
-            BerryCrushTokenTypes.BUT -> parseStep(builder, null)
+            BerryCrushTokenTypes.BUT,
+            -> parseStep(builder, null)
             BerryCrushTokenTypes.CALL -> parseCallDirective(builder, 0)
             BerryCrushTokenTypes.WEBHOOK -> parseWebhookDirective(builder, 0)
             BerryCrushTokenTypes.INCLUDE -> parseIncludeDirective(builder, 0)
@@ -362,7 +404,10 @@ class BerryCrushParser : PsiParser {
         }
     }
 
-    private fun parseCallDirective(builder: PsiBuilder, parentIndent: Int) {
+    private fun parseCallDirective(
+        builder: PsiBuilder,
+        parentIndent: Int,
+    ) {
         val marker = builder.mark()
         builder.advanceLexer() // consume "call"
 
@@ -384,7 +429,10 @@ class BerryCrushParser : PsiParser {
         marker.done(BerryCrushElementTypes.CALL_DIRECTIVE)
     }
 
-    private fun parseWebhookDirective(builder: PsiBuilder, parentIndent: Int) {
+    private fun parseWebhookDirective(
+        builder: PsiBuilder,
+        parentIndent: Int,
+    ) {
         val marker = builder.mark()
         builder.advanceLexer() // advance webhook
         while (!builder.eof() && !isLineEnd(builder.tokenType)) {
@@ -400,7 +448,10 @@ class BerryCrushParser : PsiParser {
         marker.done(BerryCrushElementTypes.WEBHOOK_DIRECTIVE)
     }
 
-    private fun parseIncludeDirective(builder: PsiBuilder, parentIndent: Int) {
+    private fun parseIncludeDirective(
+        builder: PsiBuilder,
+        parentIndent: Int,
+    ) {
         val marker = builder.mark()
         builder.advanceLexer() // consume "include"
 
@@ -426,16 +477,24 @@ class BerryCrushParser : PsiParser {
         marker.done(BerryCrushElementTypes.INCLUDE_DIRECTIVE)
     }
 
-    private fun parseIndentedEntries(builder: PsiBuilder, parentIndent: Int, parseEntry: (PsiBuilder, Int) -> Boolean) {
+    private fun parseIndentedEntries(
+        builder: PsiBuilder,
+        parentIndent: Int,
+        parseEntry: (PsiBuilder, Int) -> Boolean,
+    ) {
         while (builder.tokenType == BerryCrushTokenTypes.INDENT && parseEntry(builder, parentIndent)) {
             skipNewlines(builder)
         }
     }
+
     /**
      * Parse parameter block for include directive.
      * Parameters are indented key: value pairs following the include line.
      */
-    private fun parseIncludeParameters(builder: PsiBuilder, parentIndent: Int) {
+    private fun parseIncludeParameters(
+        builder: PsiBuilder,
+        parentIndent: Int,
+    ) {
         if (builder.tokenType == BerryCrushTokenTypes.INDENT) {
             val marker = builder.mark()
             parseIndentedEntries(builder, parentIndent, ::tryParseParameter)
@@ -447,10 +506,13 @@ class BerryCrushParser : PsiParser {
      * Try to parse a single parameter entry.
      * Returns true if a parameter was successfully parsed, false otherwise.
      */
-    private fun tryParseParameter(builder: PsiBuilder, parentIndent: Int): Boolean = tryParseParameterLike(
+    private fun tryParseParameter(
+        builder: PsiBuilder,
+        parentIndent: Int,
+    ): Boolean = tryParseParameterLike(
         builder,
         parentIndent,
-        allowBody = true
+        allowBody = true,
     )
 
     private fun tryParseParameterLike(
@@ -479,7 +541,8 @@ class BerryCrushParser : PsiParser {
             }
 
             BerryCrushTokenTypes.IDENTIFIER,
-            BerryCrushTokenTypes.TEXT -> {
+            BerryCrushTokenTypes.TEXT,
+            -> {
                 val keyMarker = builder.mark()
                 builder.advanceLexer()
                 while (builder.tokenType == BerryCrushTokenTypes.WHITE_SPACE) {
@@ -545,9 +608,13 @@ class BerryCrushParser : PsiParser {
         return indent
     }
 
-    private fun skipToEndOfLine(builder: PsiBuilder, type: BerryCrushPsiElementType = BerryCrushElementTypes.TEXT, checkVariable: Boolean = true) {
+    private fun skipToEndOfLine(
+        builder: PsiBuilder,
+        type: BerryCrushPsiElementType = BerryCrushElementTypes.TEXT,
+        checkVariable: Boolean = true,
+    ) {
         val marker = builder.mark()
-        var count = 0;
+        var count = 0
         while (!builder.eof() && builder.tokenType != BerryCrushTokenTypes.NEWLINE) {
             if (checkVariable && builder.tokenType == BerryCrushTokenTypes.VARIABLE) {
                 parseVariableRef(builder)
@@ -575,14 +642,14 @@ class BerryCrushParser : PsiParser {
          * Keywords that mark the start of a new top-level block.
          * Used to determine fragment boundaries.
          */
-        private val TOP_LEVEL_KEYWORDS = setOf(
-            BerryCrushTokenTypes.FEATURE,
-            BerryCrushTokenTypes.SCENARIO,
-            BerryCrushTokenTypes.OUTLINE,
-            BerryCrushTokenTypes.FRAGMENT,
-        )
+        private val TOP_LEVEL_KEYWORDS =
+            setOf(
+                BerryCrushTokenTypes.FEATURE,
+                BerryCrushTokenTypes.SCENARIO,
+                BerryCrushTokenTypes.OUTLINE,
+                BerryCrushTokenTypes.FRAGMENT,
+            )
     }
 }
 
-private fun isLineEnd(tokenType: IElementType?): Boolean =
-    tokenType == BerryCrushTokenTypes.NEWLINE || tokenType == null
+private fun isLineEnd(tokenType: IElementType?): Boolean = tokenType == BerryCrushTokenTypes.NEWLINE || tokenType == null

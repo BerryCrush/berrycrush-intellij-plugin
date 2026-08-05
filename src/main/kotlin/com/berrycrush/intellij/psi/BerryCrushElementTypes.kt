@@ -112,4 +112,6 @@ object BerryCrushElementTypes {
 /**
  * Custom element type for BerryCrush PSI elements.
  */
-class BerryCrushPsiElementType(debugName: String) : IElementType(debugName, BerryCrushLanguage)
+class BerryCrushPsiElementType(
+    debugName: String,
+) : IElementType(debugName, BerryCrushLanguage)

@@ -12,7 +12,6 @@ import java.lang.reflect.Method
  * to the correct file types.
  */
 class BerryCrushFileChangeListenerTest : BerryCrushTestCase() {
-
     private lateinit var listener: BerryCrushFileChangeListener
     private lateinit var isRelevantFileChangeMethod: Method
 
@@ -21,10 +20,12 @@ class BerryCrushFileChangeListenerTest : BerryCrushTestCase() {
         listener = BerryCrushFileChangeListener()
 
         // Access private methods via reflection for testing
-        isRelevantFileChangeMethod = listener.javaClass.getDeclaredMethod(
-            "isRelevantFileChange",
-            VFileEvent::class.java
-        ).apply { isAccessible = true }
+        isRelevantFileChangeMethod =
+            listener.javaClass
+                .getDeclaredMethod(
+                    "isRelevantFileChange",
+                    VFileEvent::class.java,
+                ).apply { isAccessible = true }
     }
 
     fun testFragmentFilesAreRelevant() {
@@ -33,7 +34,7 @@ class BerryCrushFileChangeListenerTest : BerryCrushTestCase() {
 
         assertTrue(
             "Fragment files should be relevant",
-            isRelevantFileChange(event)
+            isRelevantFileChange(event),
         )
     }
 
@@ -43,7 +44,7 @@ class BerryCrushFileChangeListenerTest : BerryCrushTestCase() {
 
         assertTrue(
             "Scenario files should be relevant for refresh",
-            isRelevantFileChange(event)
+            isRelevantFileChange(event),
         )
     }
 
@@ -53,7 +54,7 @@ class BerryCrushFileChangeListenerTest : BerryCrushTestCase() {
 
         assertTrue(
             "Java files should be relevant",
-            isRelevantFileChange(event)
+            isRelevantFileChange(event),
         )
     }
 
@@ -63,41 +64,49 @@ class BerryCrushFileChangeListenerTest : BerryCrushTestCase() {
 
         assertTrue(
             "Kotlin files should be relevant",
-            isRelevantFileChange(event)
+            isRelevantFileChange(event),
         )
     }
 
     fun testOpenApiYamlFilesAreRelevant() {
         // Create a file with OpenAPI-like filename (triggers filename heuristic)
-        val file = myFixture.addFileToProject("openapi.yaml", """
-            openapi: 3.0.0
-            info:
-              title: Test API
-              version: 1.0.0
-            paths: {}
-        """.trimIndent())
+        val file =
+            myFixture.addFileToProject(
+                "openapi.yaml",
+                """
+                openapi: 3.0.0
+                info:
+                  title: Test API
+                  version: 1.0.0
+                paths: {}
+                """.trimIndent(),
+            )
         val event = createContentChangeEvent(file.virtualFile)
 
         assertTrue(
             "OpenAPI YAML files should be relevant",
-            isRelevantFileChange(event)
+            isRelevantFileChange(event),
         )
     }
 
     fun testSwaggerJsonFilesAreRelevant() {
         // Create a file with Swagger-like filename (triggers filename heuristic)
-        val file = myFixture.addFileToProject("swagger.json", """
-            {
-              "swagger": "2.0",
-              "info": { "title": "Test", "version": "1.0" },
-              "paths": {}
-            }
-        """.trimIndent())
+        val file =
+            myFixture.addFileToProject(
+                "swagger.json",
+                """
+                {
+                  "swagger": "2.0",
+                  "info": { "title": "Test", "version": "1.0" },
+                  "paths": {}
+                }
+                """.trimIndent(),
+            )
         val event = createContentChangeEvent(file.virtualFile)
 
         assertTrue(
             "Swagger JSON files should be relevant",
-            isRelevantFileChange(event)
+            isRelevantFileChange(event),
         )
     }
 
@@ -107,7 +116,7 @@ class BerryCrushFileChangeListenerTest : BerryCrushTestCase() {
 
         assertFalse(
             "Regular YAML files should not be relevant",
-            isRelevantFileChange(event)
+            isRelevantFileChange(event),
         )
     }
 
@@ -117,7 +126,7 @@ class BerryCrushFileChangeListenerTest : BerryCrushTestCase() {
 
         assertFalse(
             "Text files should not be relevant",
-            isRelevantFileChange(event)
+            isRelevantFileChange(event),
         )
     }
 
@@ -144,15 +153,13 @@ class BerryCrushFileChangeListenerTest : BerryCrushTestCase() {
     private fun createContentChangeEvent(file: com.intellij.openapi.vfs.VirtualFile): VFileEvent {
         @Suppress("DEPRECATION")
         return VFileContentChangeEvent(
-            this,          // requestor
-            file,          // file
-            0L,            // oldModificationStamp
-            1L,            // newModificationStamp
-            false          // isFromRefresh
+            this, // requestor
+            file, // file
+            0L, // oldModificationStamp
+            1L, // newModificationStamp
+            false, // isFromRefresh
         )
     }
 
-    private fun isRelevantFileChange(event: VFileEvent): Boolean {
-        return isRelevantFileChangeMethod.invoke(listener, event) as Boolean
-    }
+    private fun isRelevantFileChange(event: VFileEvent): Boolean = isRelevantFileChangeMethod.invoke(listener, event) as Boolean
 }

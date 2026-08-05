@@ -1,7 +1,6 @@
 package com.berrycrush.intellij.reference
 
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
@@ -17,9 +16,8 @@ import com.intellij.psi.search.GlobalSearchScope
 class BerryCrushOperationReference(
     element: PsiElement,
     textRange: TextRange,
-    private val operationId: String
+    private val operationId: String,
 ) : PsiReferenceBase<PsiElement>(element, textRange, true) {
-
     override fun resolve(): PsiElement? {
         val project = element.project
         return findOperationInOpenAPI(project, operationId)
@@ -35,7 +33,10 @@ class BerryCrushOperationReference(
          * Find an operation in OpenAPI spec files.
          * Returns null if operation is not found (no fallback).
          */
-        fun findOperationInOpenAPI(project: Project, operationId: String): PsiElement? {
+        fun findOperationInOpenAPI(
+            project: Project,
+            operationId: String,
+        ): PsiElement? {
             val psiManager = PsiManager.getInstance(project)
 
             // Find all OpenAPI spec files
@@ -94,14 +95,17 @@ class BerryCrushOperationReference(
 
             val fileName = psiFile.name.lowercase()
             val text = psiFile.text
-            
+
             // Filename heuristic: if filename contains "openapi" or "swagger", relax length check
             val hasOpenAPIFilename = fileName.contains("openapi") || fileName.contains("swagger")
-            
+
             return isOpenAPISpec(text, relaxedLengthCheck = hasOpenAPIFilename)
         }
 
-        fun isOpenAPISpec(text: String, relaxedLengthCheck: Boolean = false): Boolean {
+        fun isOpenAPISpec(
+            text: String,
+            relaxedLengthCheck: Boolean = false,
+        ): Boolean {
             // Apply length check unless relaxed (e.g., for files with openapi/swagger in name)
             val minLength = if (relaxedLengthCheck) 20 else 100
             if (text.length < minLength) return false
@@ -130,15 +134,19 @@ class BerryCrushOperationReference(
         /**
          * Find operation ID in a single OpenAPI file.
          */
-        private fun findOperationInFile(psiFile: PsiFile, operationId: String): PsiElement? {
+        private fun findOperationInFile(
+            psiFile: PsiFile,
+            operationId: String,
+        ): PsiElement? {
             val text = psiFile.text
 
             // Search for operationId in YAML/JSON
             // Look for patterns like: operationId: getUserById or "operationId": "getUserById"
-            val patterns = listOf(
-                Regex("""operationId:\s*['"]?($operationId)['"]?"""),
-                Regex(""""operationId"\s*:\s*"($operationId)"""")
-            )
+            val patterns =
+                listOf(
+                    Regex("""operationId:\s*['"]?($operationId)['"]?"""),
+                    Regex(""""operationId"\s*:\s*"($operationId)""""),
+                )
 
             for (pattern in patterns) {
                 val match = pattern.find(text)
@@ -174,7 +182,10 @@ class BerryCrushOperationReference(
         /**
          * Extract operation IDs from file content.
          */
-        private fun extractOperationIdsFromFile(text: String, result: MutableList<String>) {
+        private fun extractOperationIdsFromFile(
+            text: String,
+            result: MutableList<String>,
+        ) {
             // YAML format: operationId: someId
             Regex("""operationId:\s*['"]?(\w+)['"]?""").findAll(text).forEach {
                 result.add(it.groupValues[1])

@@ -22,7 +22,6 @@ import com.intellij.ui.breadcrumbs.BreadcrumbsProvider
  * File > Scenario/Fragment > Step > Directive
  */
 class BerryCrushBreadcrumbsProvider : BreadcrumbsProvider {
-
     override fun getLanguages(): Array<Language> = arrayOf(BerryCrushLanguage)
 
     override fun acceptElement(element: PsiElement): Boolean {
@@ -51,11 +50,15 @@ class BerryCrushBreadcrumbsProvider : BreadcrumbsProvider {
 
     override fun getElementInfo(element: PsiElement): String {
         // If element is not a semantic element, use its semantic parent for info
-        val semanticElement = if (isBlockElement(element) || isStepElement(element) || isDirectiveElement(element)) {
-            element
-        } else {
-            findSemanticParent(element) ?: return element.text.trim().takeWhile { it != '\n' }.take(30)
-        }
+        val semanticElement =
+            if (isBlockElement(element) || isStepElement(element) || isDirectiveElement(element)) {
+                element
+            } else {
+                findSemanticParent(element) ?: return element.text
+                    .trim()
+                    .takeWhile { it != '\n' }
+                    .take(30)
+            }
 
         return when (semanticElement) {
             is BerryCrushScenarioElement -> "scenario: ${semanticElement.description ?: ""}".take(40)
@@ -64,7 +67,11 @@ class BerryCrushBreadcrumbsProvider : BreadcrumbsProvider {
             is BerryCrushStepElement ->
                 "${semanticElement.keyword?.lowercase() ?: ""} ${semanticElement.stepText ?: ""}".trim().take(40)
             is BerryCrushCallElement -> "call ^${semanticElement.operationId ?: ""}"
-            is BerryCrushAssertElement -> semanticElement.text.trim().takeWhile { it != '\n' }.take(40)
+            is BerryCrushAssertElement ->
+                semanticElement.text
+                    .trim()
+                    .takeWhile { it != '\n' }
+                    .take(40)
             is BerryCrushIncludeElement -> "include ${semanticElement.fragmentName ?: ""}"
             else -> {
                 // Fallback: check element type
@@ -75,18 +82,34 @@ class BerryCrushBreadcrumbsProvider : BreadcrumbsProvider {
                     BerryCrushElementTypes.FEATURE -> extractBlockName(semanticElement, "feature")
                     BerryCrushElementTypes.STEP -> extractStepName(semanticElement)
                     BerryCrushElementTypes.CALL_DIRECTIVE ->
-                        semanticElement.text.trim().takeWhile { it != '\n' }.take(40)
+                        semanticElement.text
+                            .trim()
+                            .takeWhile { it != '\n' }
+                            .take(40)
                     BerryCrushElementTypes.ASSERT_DIRECTIVE ->
-                        semanticElement.text.trim().takeWhile { it != '\n' }.take(40)
+                        semanticElement.text
+                            .trim()
+                            .takeWhile { it != '\n' }
+                            .take(40)
                     BerryCrushElementTypes.INCLUDE_DIRECTIVE ->
-                        semanticElement.text.trim().takeWhile { it != '\n' }.take(40)
-                    else -> semanticElement.text.trim().takeWhile { it != '\n' }.take(30)
+                        semanticElement.text
+                            .trim()
+                            .takeWhile { it != '\n' }
+                            .take(40)
+                    else ->
+                        semanticElement.text
+                            .trim()
+                            .takeWhile { it != '\n' }
+                            .take(30)
                 }
             }
         }
     }
 
-    private fun extractBlockName(element: PsiElement, prefix: String): String {
+    private fun extractBlockName(
+        element: PsiElement,
+        prefix: String,
+    ): String {
         val text = element.text
         val colonIndex = text.indexOf(':')
         return if (colonIndex >= 0) {
@@ -154,7 +177,10 @@ class BerryCrushBreadcrumbsProvider : BreadcrumbsProvider {
      * Find the nearest ancestor element matching the predicate.
      * Since BerryCrush PSI is flat (siblings), we search backwards through siblings.
      */
-    private fun findParentElement(element: PsiElement, predicate: (PsiElement) -> Boolean): PsiElement? {
+    private fun findParentElement(
+        element: PsiElement,
+        predicate: (PsiElement) -> Boolean,
+    ): PsiElement? {
         // Search backwards through siblings
         var current: PsiElement? = element.prevSibling
         while (current != null) {
@@ -166,37 +192,36 @@ class BerryCrushBreadcrumbsProvider : BreadcrumbsProvider {
         return null
     }
 
-    private fun isBlockElement(element: PsiElement): Boolean =
-        element is BerryCrushScenarioElement ||
-            element is BerryCrushFragmentElement ||
-            element is BerryCrushFeatureElement ||
-            element.node?.elementType in BLOCK_ELEMENT_TYPES
+    private fun isBlockElement(element: PsiElement): Boolean = element is BerryCrushScenarioElement ||
+        element is BerryCrushFragmentElement ||
+        element is BerryCrushFeatureElement ||
+        element.node?.elementType in BLOCK_ELEMENT_TYPES
 
-    private fun isStepElement(element: PsiElement): Boolean =
-        element is BerryCrushStepElement ||
-            element.node?.elementType == BerryCrushElementTypes.STEP
+    private fun isStepElement(element: PsiElement): Boolean = element is BerryCrushStepElement ||
+        element.node?.elementType == BerryCrushElementTypes.STEP
 
-    private fun isDirectiveElement(element: PsiElement): Boolean =
-        element is BerryCrushCallElement ||
-            element is BerryCrushAssertElement ||
-            element is BerryCrushIncludeElement ||
-            element.node?.elementType in DIRECTIVE_ELEMENT_TYPES
+    private fun isDirectiveElement(element: PsiElement): Boolean = element is BerryCrushCallElement ||
+        element is BerryCrushAssertElement ||
+        element is BerryCrushIncludeElement ||
+        element.node?.elementType in DIRECTIVE_ELEMENT_TYPES
 
     companion object {
-        private val BLOCK_ELEMENT_TYPES = setOf(
-            BerryCrushElementTypes.FEATURE,
-            BerryCrushElementTypes.SCENARIO,
-            BerryCrushElementTypes.OUTLINE,
-            BerryCrushElementTypes.FRAGMENT,
-            BerryCrushElementTypes.BACKGROUND,
-            BerryCrushElementTypes.EXAMPLES,
-        )
+        private val BLOCK_ELEMENT_TYPES =
+            setOf(
+                BerryCrushElementTypes.FEATURE,
+                BerryCrushElementTypes.SCENARIO,
+                BerryCrushElementTypes.OUTLINE,
+                BerryCrushElementTypes.FRAGMENT,
+                BerryCrushElementTypes.BACKGROUND,
+                BerryCrushElementTypes.EXAMPLES,
+            )
 
-        private val DIRECTIVE_ELEMENT_TYPES = setOf(
-            BerryCrushElementTypes.CALL_DIRECTIVE,
-            BerryCrushElementTypes.ASSERT_DIRECTIVE,
-            BerryCrushElementTypes.EXTRACT_DIRECTIVE,
-            BerryCrushElementTypes.INCLUDE_DIRECTIVE,
-        )
+        private val DIRECTIVE_ELEMENT_TYPES =
+            setOf(
+                BerryCrushElementTypes.CALL_DIRECTIVE,
+                BerryCrushElementTypes.ASSERT_DIRECTIVE,
+                BerryCrushElementTypes.EXTRACT_DIRECTIVE,
+                BerryCrushElementTypes.INCLUDE_DIRECTIVE,
+            )
     }
 }

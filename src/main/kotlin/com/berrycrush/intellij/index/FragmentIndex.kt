@@ -27,7 +27,6 @@ import com.intellij.util.io.KeyDescriptor
  * "Fragment: name" syntax.
  */
 class FragmentIndex : ScalarIndexExtension<String>() {
-
     override fun getName(): ID<String, Void> = KEY
 
     override fun getVersion(): Int = VERSION
@@ -49,8 +48,7 @@ class FragmentIndex : ScalarIndexExtension<String>() {
 
     override fun getKeyDescriptor(): KeyDescriptor<String> = EnumeratorStringDescriptor.INSTANCE
 
-    override fun getInputFilter(): FileBasedIndex.InputFilter =
-        DefaultFileTypeSpecificInputFilter(FragmentFileType)
+    override fun getInputFilter(): FileBasedIndex.InputFilter = DefaultFileTypeSpecificInputFilter(FragmentFileType)
 
     companion object {
         @JvmField
@@ -73,21 +71,27 @@ class FragmentIndex : ScalarIndexExtension<String>() {
          * Gets all files containing a fragment with the given name.
          * Returns empty collection if indexing is in progress (dumb mode).
          */
-        fun getFragmentFiles(project: Project, fragmentName: String): Collection<VirtualFile> {
+        fun getFragmentFiles(
+            project: Project,
+            fragmentName: String,
+        ): Collection<VirtualFile> {
             if (DumbService.isDumb(project)) {
                 return emptyList()
             }
             return FileBasedIndex.getInstance().getContainingFiles(
                 KEY,
                 fragmentName,
-                GlobalSearchScope.projectScope(project)
+                GlobalSearchScope.projectScope(project),
             )
         }
 
         /**
          * Finds the PSI element for a fragment definition.
          */
-        fun findFragmentElement(project: Project, fragmentName: String): PsiElement? {
+        fun findFragmentElement(
+            project: Project,
+            fragmentName: String,
+        ): PsiElement? {
             val files = getFragmentFiles(project, fragmentName)
             val psiManager = PsiManager.getInstance(project)
 
@@ -100,9 +104,11 @@ class FragmentIndex : ScalarIndexExtension<String>() {
             return null
         }
 
-        private fun findFragmentDefinitionInFile(file: PsiFile, fragmentName: String): PsiElement? {
-            return PsiTreeUtil.findChildrenOfType(file, BerryCrushFragmentElement::class.java)
-                .find { fragment -> fragment.fragmentName == fragmentName }
-        }
+        private fun findFragmentDefinitionInFile(
+            file: PsiFile,
+            fragmentName: String,
+        ): PsiElement? = PsiTreeUtil
+            .findChildrenOfType(file, BerryCrushFragmentElement::class.java)
+            .find { fragment -> fragment.fragmentName == fragmentName }
     }
 }

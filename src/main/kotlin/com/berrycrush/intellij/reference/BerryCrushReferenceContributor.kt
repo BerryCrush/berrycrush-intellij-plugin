@@ -16,12 +16,11 @@ import com.intellij.util.ProcessingContext
  * Handles navigation from leaf tokens by checking text patterns.
  */
 class BerryCrushReferenceContributor : PsiReferenceContributor() {
-
     override fun registerReferenceProviders(registrar: PsiReferenceRegistrar) {
         // Register for ALL elements and filter by file extension in the provider
         registrar.registerReferenceProvider(
             PlatformPatterns.psiElement(),
-            BerryCrushLeafReferenceProvider()
+            BerryCrushLeafReferenceProvider(),
         )
     }
 }
@@ -32,7 +31,7 @@ class BerryCrushReferenceContributor : PsiReferenceContributor() {
 class BerryCrushLeafReferenceProvider : PsiReferenceProvider() {
     override fun getReferencesByElement(
         element: PsiElement,
-        context: ProcessingContext
+        context: ProcessingContext,
     ): Array<PsiReference> {
         // Only process BerryCrush files
         val file = element.containingFile ?: return PsiReference.EMPTY_ARRAY
@@ -51,8 +50,8 @@ class BerryCrushLeafReferenceProvider : PsiReferenceProvider() {
                     BerryCrushOperationReference(
                         element,
                         TextRange(1, text.length), // Skip the ^
-                        operationId
-                    )
+                        operationId,
+                    ),
                 )
             }
         }
@@ -65,8 +64,8 @@ class BerryCrushLeafReferenceProvider : PsiReferenceProvider() {
                 BerryCrushFragmentReference(
                     element,
                     TextRange(0, text.length),
-                    fragmentName
-                )
+                    fragmentName,
+                ),
             )
         }
 
@@ -81,8 +80,8 @@ class BerryCrushLeafReferenceProvider : PsiReferenceProvider() {
                         BerryCrushFragmentReference(
                             element,
                             TextRange(0, text.length),
-                            fragmentName
-                        )
+                            fragmentName,
+                        ),
                     )
                 }
             }

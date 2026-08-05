@@ -2,12 +2,8 @@ package com.berrycrush.intellij.navigation
 
 import com.berrycrush.intellij.BerryCrushTestCase
 import com.berrycrush.intellij.psi.BerryCrushIncludeElement
-import com.intellij.codeInsight.daemon.impl.DaemonCodeAnalyzerImpl
-import com.intellij.codeInsight.daemon.impl.HighlightInfo
-import com.intellij.openapi.editor.markup.GutterIconRenderer
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
-import java.util.function.Consumer
 
 /**
  * Integration tests for BerryCrushLineMarkerProvider.
@@ -16,41 +12,48 @@ import java.util.function.Consumer
  * fragment definitions, and step keywords.
  */
 class BerryCrushLineMarkerProviderIntegrationTest : BerryCrushTestCase() {
-
     /**
      * Test that the parser creates BerryCrushIncludeElement for include directives.
      */
     fun testParserCreatesIncludeElement() {
-        val file = createScenarioFile("test-include", """
-            scenario: Test include
-            include login-steps
-        """.trimIndent())
+        val file =
+            createScenarioFile(
+                "test-include",
+                """
+                scenario: Test include
+                include login-steps
+                """.trimIndent(),
+            )
 
         val psiFile = myFixture.psiManager.findFile(file)
         assertNotNull("PSI file should exist", psiFile)
 
         // Debug: print PSI tree
-        val psiTree = buildString {
-            fun printPsi(element: PsiElement, indent: Int) {
-                repeat(indent) { append("  ") }
-                appendLine("${element.javaClass.simpleName}: '${element.text.take(50).replace("\n", "\\n")}'")
-                element.children.forEach { printPsi(it, indent + 1) }
+        val psiTree =
+            buildString {
+                fun printPsi(
+                    element: PsiElement,
+                    indent: Int,
+                ) {
+                    repeat(indent) { append("  ") }
+                    appendLine("${element.javaClass.simpleName}: '${element.text.take(50).replace("\n", "\\n")}'")
+                    element.children.forEach { printPsi(it, indent + 1) }
+                }
+                psiFile?.let { printPsi(it, 0) }
             }
-            psiFile?.let { printPsi(it, 0) }
-        }
         println("PSI Tree:\n$psiTree")
-        
+
         // Find all BerryCrushIncludeElement instances
         val includeElements = PsiTreeUtil.findChildrenOfType(psiFile, BerryCrushIncludeElement::class.java)
-        
+
         // This test documents the current state - if no include elements are found,
         // the parser is not creating them correctly
         println("Found ${includeElements.size} BerryCrushIncludeElement instances")
-        
+
         // For now, just print the tree - we can fix the parser later
         assertTrue(
             "PSI tree printed above for debugging. Found ${includeElements.size} include elements.",
-            true  // Always pass to see debug output
+            true, // Always pass to see debug output
         )
     }
 
@@ -58,14 +61,18 @@ class BerryCrushLineMarkerProviderIntegrationTest : BerryCrushTestCase() {
      * Test that include directive fragment name is extracted correctly.
      */
     fun testIncludeElementFragmentName() {
-        val file = createScenarioFile("test-include-name", """
-            scenario: Test include
-            include auth-fragment
-        """.trimIndent())
+        val file =
+            createScenarioFile(
+                "test-include-name",
+                """
+                scenario: Test include
+                include auth-fragment
+                """.trimIndent(),
+            )
 
         val psiFile = myFixture.psiManager.findFile(file)
         val includeElement = PsiTreeUtil.findChildOfType(psiFile, BerryCrushIncludeElement::class.java)
-        
+
         if (includeElement != null) {
             assertEquals("auth-fragment", includeElement.fragmentName)
         }
@@ -76,29 +83,35 @@ class BerryCrushLineMarkerProviderIntegrationTest : BerryCrushTestCase() {
      */
     fun testLineMarkersForIncludeDirective() {
         // Create a fragment that the include directive will reference
-        createFragmentFile("login", """
+        createFragmentFile(
+            "login",
+            """
             fragment: login-steps
             given user is on login page
             when user enters credentials
             then user is logged in
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         // Create a scenario file with an include directive
-        createScenarioFile("test-markers", """
+        createScenarioFile(
+            "test-markers",
+            """
             scenario: Test markers
             include login-steps
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         // Configure the file for testing
         myFixture.configureByFile("test-markers.scenario")
 
         // Get all line markers (gutter icons)
         val gutterMarks = myFixture.findAllGutters()
-        
+
         // Check that at least one gutter mark exists
         assertTrue(
             "Should have at least one gutter mark for include or scenario. Found: ${gutterMarks.size}",
-            gutterMarks.isNotEmpty()
+            gutterMarks.isNotEmpty(),
         )
     }
 
@@ -107,21 +120,24 @@ class BerryCrushLineMarkerProviderIntegrationTest : BerryCrushTestCase() {
      */
     fun testIncludeDirectiveShowsGutterIconWhenFragmentNotFound() {
         // Create a scenario file with include directive referencing non-existent fragment
-        createScenarioFile("test-missing-fragment", """
+        createScenarioFile(
+            "test-missing-fragment",
+            """
             scenario: Test missing
             include non-existent-fragment
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         // Configure the file for testing
         myFixture.configureByFile("test-missing-fragment.scenario")
 
         // Get all line markers
         val gutterMarks = myFixture.findAllGutters()
-        
+
         // At least some gutter mark should exist (for scenario or include)
         assertTrue(
             "Should have a gutter mark. All marks: ${gutterMarks.map { it.tooltipText }}",
-            gutterMarks.isNotEmpty()
+            gutterMarks.isNotEmpty(),
         )
     }
 }

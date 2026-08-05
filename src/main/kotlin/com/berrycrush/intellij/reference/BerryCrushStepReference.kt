@@ -6,11 +6,11 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiAnnotation
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiElementResolveResult
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiPolyVariantReference
 import com.intellij.psi.PsiReferenceBase
 import com.intellij.psi.ResolveResult
-import com.intellij.psi.PsiElementResolveResult
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.searches.AnnotatedElementsSearch
 
@@ -26,9 +26,9 @@ import com.intellij.psi.search.searches.AnnotatedElementsSearch
 class BerryCrushStepReference(
     element: PsiElement,
     rangeInElement: TextRange,
-    private val stepText: String
-) : PsiReferenceBase<PsiElement>(element, rangeInElement), PsiPolyVariantReference {
-
+    private val stepText: String,
+) : PsiReferenceBase<PsiElement>(element, rangeInElement),
+    PsiPolyVariantReference {
     override fun resolve(): PsiElement? {
         val results = multiResolve(false)
         return results.firstOrNull()?.element
@@ -63,22 +63,26 @@ class BerryCrushStepReference(
         fun findMatchingStepMethodsInScope(
             project: Project,
             stepText: String,
-            scope: GlobalSearchScope
+            scope: GlobalSearchScope,
         ): List<PsiMethod> {
             val stepAnnotationClass = findStepAnnotationClass(project) ?: return emptyList()
             val methods = AnnotatedElementsSearch.searchPsiMethods(stepAnnotationClass, scope)
 
-            return methods.filter { method ->
-                val pattern = getStepPattern(method)
-                pattern != null && matchesPattern(stepText, pattern)
-            }.toList()
+            return methods
+                .filter { method ->
+                    val pattern = getStepPattern(method)
+                    pattern != null && matchesPattern(stepText, pattern)
+                }.toList()
         }
 
         /**
          * Finds all @Step annotated methods that match the given step text.
          * Searches the entire project (backward compatibility).
          */
-        fun findMatchingStepMethods(project: Project, stepText: String): List<PsiMethod> {
+        fun findMatchingStepMethods(
+            project: Project,
+            stepText: String,
+        ): List<PsiMethod> {
             val scope = GlobalSearchScope.allScope(project)
             return findMatchingStepMethodsInScope(project, stepText, scope)
         }
@@ -86,7 +90,10 @@ class BerryCrushStepReference(
         /**
          * Gets all @Step annotated methods within the given scope.
          */
-        fun getAllStepMethodsInScope(project: Project, scope: GlobalSearchScope): List<PsiMethod> {
+        fun getAllStepMethodsInScope(
+            project: Project,
+            scope: GlobalSearchScope,
+        ): List<PsiMethod> {
             val stepAnnotationClass = findStepAnnotationClass(project) ?: return emptyList()
             return AnnotatedElementsSearch.searchPsiMethods(stepAnnotationClass, scope).toList()
         }
@@ -102,16 +109,15 @@ class BerryCrushStepReference(
         /**
          * Gets all step patterns within the given scope.
          */
-        fun getAllStepPatternsInScope(project: Project, scope: GlobalSearchScope): List<String> {
-            return getAllStepMethodsInScope(project, scope).mapNotNull { getStepPattern(it) }
-        }
+        fun getAllStepPatternsInScope(
+            project: Project,
+            scope: GlobalSearchScope,
+        ): List<String> = getAllStepMethodsInScope(project, scope).mapNotNull { getStepPattern(it) }
 
         /**
          * Gets all step patterns defined in the project.
          */
-        fun getAllStepPatterns(project: Project): List<String> {
-            return getAllStepMethods(project).mapNotNull { getStepPattern(it) }
-        }
+        fun getAllStepPatterns(project: Project): List<String> = getAllStepMethods(project).mapNotNull { getStepPattern(it) }
 
         /**
          * Finds the Step annotation class in the project.
@@ -134,7 +140,10 @@ class BerryCrushStepReference(
         /**
          * Extracts a string attribute value from an annotation.
          */
-        private fun getAnnotationStringValue(annotation: PsiAnnotation, attributeName: String): String? {
+        private fun getAnnotationStringValue(
+            annotation: PsiAnnotation,
+            attributeName: String,
+        ): String? {
             val attributeValue = annotation.findAttributeValue(attributeName) ?: return null
             val text = attributeValue.text
             // Remove surrounding quotes if present
@@ -150,15 +159,19 @@ class BerryCrushStepReference(
          *
          * Patterns support placeholders like {int}, {string}, {word}, etc.
          */
-        private fun matchesPattern(stepText: String, pattern: String): Boolean {
+        private fun matchesPattern(
+            stepText: String,
+            pattern: String,
+        ): Boolean {
             // Convert pattern placeholders to regex
-            val regexPattern = pattern
-                .replace(Regex("""\{int\}"""), """(-?\d+)""")
-                .replace(Regex("""\{string\}"""), """("[^"]*"|'[^']*')""")
-                .replace(Regex("""\{word\}"""), """(\w+)""")
-                .replace(Regex("""\{float\}"""), """(-?\d+\.?\d*)""")
-                .replace(Regex("""\{any\}"""), """(.+?)""")
-                .let { "^$it$" }
+            val regexPattern =
+                pattern
+                    .replace(Regex("""\{int\}"""), """(-?\d+)""")
+                    .replace(Regex("""\{string\}"""), """("[^"]*"|'[^']*')""")
+                    .replace(Regex("""\{word\}"""), """(\w+)""")
+                    .replace(Regex("""\{float\}"""), """(-?\d+\.?\d*)""")
+                    .replace(Regex("""\{any\}"""), """(.+?)""")
+                    .let { "^$it$" }
 
             return try {
                 Regex(regexPattern, RegexOption.IGNORE_CASE).matches(stepText)

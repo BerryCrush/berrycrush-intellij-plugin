@@ -13,47 +13,47 @@ import com.intellij.psi.codeStyle.LanguageCodeStyleSettingsProvider
  * Enables the "BerryCrush" tab in Settings → Code Style.
  */
 class BerryCrushLanguageCodeStyleSettingsProvider : LanguageCodeStyleSettingsProvider() {
-
     override fun getLanguage(): Language = BerryCrushLanguage
 
-    override fun getCodeSample(settingsType: SettingsType): String {
-        return when (settingsType) {
-            SettingsType.INDENT_SETTINGS -> INDENT_SAMPLE
-            SettingsType.SPACING_SETTINGS -> SPACING_SAMPLE
-            else -> GENERAL_SAMPLE
-        }
+    override fun getCodeSample(settingsType: SettingsType): String = when (settingsType) {
+        SettingsType.INDENT_SETTINGS -> INDENT_SAMPLE
+        SettingsType.SPACING_SETTINGS -> SPACING_SAMPLE
+        else -> GENERAL_SAMPLE
     }
 
-    override fun customizeSettings(consumer: CodeStyleSettingsCustomizable, settingsType: SettingsType) {
+    override fun customizeSettings(
+        consumer: CodeStyleSettingsCustomizable,
+        settingsType: SettingsType,
+    ) {
         when (settingsType) {
             SettingsType.INDENT_SETTINGS -> {
                 consumer.showStandardOptions(
                     CodeStyleSettingsCustomizable.IndentOption.INDENT_SIZE.name,
                     CodeStyleSettingsCustomizable.IndentOption.TAB_SIZE.name,
-                    CodeStyleSettingsCustomizable.IndentOption.USE_TAB_CHARACTER.name
+                    CodeStyleSettingsCustomizable.IndentOption.USE_TAB_CHARACTER.name,
                 )
             }
             SettingsType.SPACING_SETTINGS -> {
                 consumer.showStandardOptions(
-                    CodeStyleSettingsCustomizable.SpacingOption.SPACE_AROUND_ASSIGNMENT_OPERATORS.name
+                    CodeStyleSettingsCustomizable.SpacingOption.SPACE_AROUND_ASSIGNMENT_OPERATORS.name,
                 )
                 consumer.showCustomOption(
                     BerryCrushCodeStyleSettings::class.java,
                     "ALIGN_TABLE_COLUMNS",
                     "Align table columns",
-                    CodeStyleSettingsCustomizableOptions.getInstance().SPACES_OTHER
+                    CodeStyleSettingsCustomizableOptions.getInstance().SPACES_OTHER,
                 )
                 consumer.showCustomOption(
                     BerryCrushCodeStyleSettings::class.java,
                     "ALIGN_PARAMETERS",
                     "Align parameter values",
-                    CodeStyleSettingsCustomizableOptions.getInstance().SPACES_OTHER
+                    CodeStyleSettingsCustomizableOptions.getInstance().SPACES_OTHER,
                 )
                 consumer.showCustomOption(
                     BerryCrushCodeStyleSettings::class.java,
                     "RIGHT_ALIGN_NUMBERS",
                     "Right-align numeric values in tables",
-                    CodeStyleSettingsCustomizableOptions.getInstance().SPACES_OTHER
+                    CodeStyleSettingsCustomizableOptions.getInstance().SPACES_OTHER,
                 )
             }
             else -> {}
@@ -64,7 +64,7 @@ class BerryCrushLanguageCodeStyleSettingsProvider : LanguageCodeStyleSettingsPro
 
     override fun customizeDefaults(
         commonSettings: CommonCodeStyleSettings,
-        indentOptions: CommonCodeStyleSettings.IndentOptions
+        indentOptions: CommonCodeStyleSettings.IndentOptions,
     ) {
         indentOptions.INDENT_SIZE = 2
         indentOptions.TAB_SIZE = 2
@@ -73,7 +73,8 @@ class BerryCrushLanguageCodeStyleSettingsProvider : LanguageCodeStyleSettingsPro
     }
 
     companion object {
-        private val INDENT_SAMPLE = """
+        private val INDENT_SAMPLE =
+            """
             feature: Pet Store API
               background:
                 given authenticated user
@@ -85,9 +86,10 @@ class BerryCrushLanguageCodeStyleSettingsProvider : LanguageCodeStyleSettingsPro
                 then pets are returned
                   assert status 200
                   assert $.data notEmpty
-        """.trimIndent()
+            """.trimIndent()
 
-        private val SPACING_SAMPLE = """
+        private val SPACING_SAMPLE =
+            """
             scenario: Test spacing
               when making a call
                 call ^operation
@@ -100,9 +102,10 @@ class BerryCrushLanguageCodeStyleSettingsProvider : LanguageCodeStyleSettingsPro
                 | name   | value |
                 | first  | 1     |
                 | second | 2     |
-        """.trimIndent()
+            """.trimIndent()
 
-        private val GENERAL_SAMPLE = """
+        private val GENERAL_SAMPLE =
+            """
             @api @smoke feature: Pet Store API Tests
               # This is a comment
               background:
@@ -144,6 +147,6 @@ class BerryCrushLanguageCodeStyleSettingsProvider : LanguageCodeStyleSettingsPro
                 | name   | status    |
                 | Fluffy | available |
                 | Max    | pending   |
-        """.trimIndent()
+            """.trimIndent()
     }
 }

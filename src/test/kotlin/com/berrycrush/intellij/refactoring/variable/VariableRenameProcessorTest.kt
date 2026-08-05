@@ -7,18 +7,21 @@ import com.berrycrush.intellij.BerryCrushTestCase
  * Verifies variable renaming within scenario scope.
  */
 class VariableRenameProcessorTest : BerryCrushTestCase() {
-
     private val processor = VariableRenameProcessor()
 
     // ========== canProcessElement Tests ==========
 
     fun testCanProcessVariableUsage() {
-        val file = createScenarioFile("varUsage", """
-            scenario: Test
-            given a value
-              extract $.id => petId
-            when using {{petId}}
-        """.trimIndent())
+        val file =
+            createScenarioFile(
+                "varUsage",
+                """
+                scenario: Test
+                given a value
+                  extract $.id => petId
+                when using {{petId}}
+                """.trimIndent(),
+            )
 
         val psiFile = psiManager.findFile(file)
         assertNotNull(psiFile)
@@ -38,11 +41,15 @@ class VariableRenameProcessorTest : BerryCrushTestCase() {
     }
 
     fun testCanProcessVariableDefinition() {
-        val file = createScenarioFile("varDef", """
-            scenario: Test
-            given a value
-              extract $.id => petId
-        """.trimIndent())
+        val file =
+            createScenarioFile(
+                "varDef",
+                """
+                scenario: Test
+                given a value
+                  extract $.id => petId
+                """.trimIndent(),
+            )
 
         val psiFile = psiManager.findFile(file)
         assertNotNull(psiFile)
@@ -72,10 +79,14 @@ class VariableRenameProcessorTest : BerryCrushTestCase() {
     }
 
     fun testCannotProcessRegularText() {
-        val file = createScenarioFile("regular", """
-            scenario: Test
-            given some regular text
-        """.trimIndent())
+        val file =
+            createScenarioFile(
+                "regular",
+                """
+                scenario: Test
+                given some regular text
+                """.trimIndent(),
+            )
 
         val psiFile = psiManager.findFile(file)
         assertNotNull(psiFile)
@@ -100,15 +111,19 @@ class VariableRenameProcessorTest : BerryCrushTestCase() {
     }
 
     fun testVariablePatternInScenario() {
-        val file = createScenarioFile("pattern", """
-            scenario: Test Variables
-            given I extract a value
-              extract $.response.id => myVariable
-            when I use the value
-              call ^someOperation
-                body:
-                  id: {{myVariable}}
-        """.trimIndent())
+        val file =
+            createScenarioFile(
+                "pattern",
+                """
+                scenario: Test Variables
+                given I extract a value
+                  extract $.response.id => myVariable
+                when I use the value
+                  call ^someOperation
+                    body:
+                      id: {{myVariable}}
+                """.trimIndent(),
+            )
 
         val psiFile = psiManager.findFile(file)
         assertNotNull(psiFile)
@@ -120,16 +135,20 @@ class VariableRenameProcessorTest : BerryCrushTestCase() {
     }
 
     fun testMultipleVariablesInScenario() {
-        val file = createScenarioFile("multiVar", """
-            scenario: Multiple Variables
-            given I extract values
-              extract $.id => firstVar
-              extract $.name => secondVar
-            when I use them
-              body:
-                id: {{firstVar}}
-                name: {{secondVar}}
-        """.trimIndent())
+        val file =
+            createScenarioFile(
+                "multiVar",
+                """
+                scenario: Multiple Variables
+                given I extract values
+                  extract $.id => firstVar
+                  extract $.name => secondVar
+                when I use them
+                  body:
+                    id: {{firstVar}}
+                    name: {{secondVar}}
+                """.trimIndent(),
+            )
 
         val psiFile = psiManager.findFile(file)
         assertNotNull(psiFile)
