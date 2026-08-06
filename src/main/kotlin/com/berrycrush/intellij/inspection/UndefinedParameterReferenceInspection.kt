@@ -8,6 +8,7 @@ import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.util.PsiTreeUtil
 
 /**
@@ -35,17 +36,17 @@ class UndefinedParameterReferenceInspection : BerryCrushInspection() {
     private fun checkParameters(
         element: PsiElement,
         parentParameters: List<BerryCrushParametersElement>,
-        extractedVariables: List<BerryCrushExtractElement>,
+        extractedVariables: List<PsiNamedElement>,
         holder: ProblemsHolder,
     ) {
         element.children.forEach { element ->
             when (element) {
                 is BerryCrushBlockElement -> {
                     val parameters = element.children.filterIsInstance<BerryCrushParametersElement>()
-                    val extracted: Collection<BerryCrushExtractElement> =
+                    val extracted: Collection<PsiNamedElement> =
                         PsiTreeUtil.findChildrenOfType(
                             element,
-                            BerryCrushExtractElement::class.java,
+                            PsiNamedElement::class.java,
                         )
                     checkParameters(element, parameters + parentParameters, extractedVariables + extracted, holder)
                 }
@@ -57,7 +58,7 @@ class UndefinedParameterReferenceInspection : BerryCrushInspection() {
     private fun checkElement(
         element: PsiElement,
         parentParameters: List<BerryCrushParametersElement>,
-        extractedVariables: List<BerryCrushExtractElement>,
+        extractedVariables: List<PsiNamedElement>,
         holder: ProblemsHolder,
     ) {
         PsiTreeUtil.findChildrenOfAnyType(element, true, BerryCrushVariableRefElement::class.java).forEach { variable ->
@@ -73,7 +74,7 @@ class UndefinedParameterReferenceInspection : BerryCrushInspection() {
                     )
                 }
             } else {
-                val result = extractedVariables.find { name == it.extractName }
+                val result = extractedVariables.find { name == it.name }
                 if (result == null) {
                     holder.registerProblem(
                         variable,

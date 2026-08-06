@@ -5,9 +5,11 @@ import com.berrycrush.intellij.reference.BerryCrushFragmentReference
 import com.berrycrush.intellij.reference.BerryCrushOperationReference
 import com.intellij.extapi.psi.ASTWrapperPsiElement
 import com.intellij.lang.ASTNode
+import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNameIdentifierOwner
+import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.PsiReference
 import com.intellij.psi.impl.source.resolve.reference.ReferenceProvidersRegistry
 import com.intellij.psi.util.PsiTreeUtil
@@ -240,7 +242,10 @@ class BerryCrushBackgroundElement(node: ASTNode) : BerryCrushScenarioLikeElement
 class BerryCrushExamplesElement(node: ASTNode) : BerryCrushPsiElement(node)
 
 class BerryCrushExampleRowElement(node: ASTNode) : BerryCrushPsiElement(node)
-class BerryCrushExampleHeaderElement(node: ASTNode) : BerryCrushPsiElement(node)
+class BerryCrushExampleHeaderElement(node: ASTNode) : BerryCrushPsiElement(node), PsiNamedElement {
+    override fun getName(): String = node.text
+    override fun setName(name: String): PsiElement = this
+}
 class BerryCrushExampleValueElement(node: ASTNode) : BerryCrushPsiElement(node)
 
 class BerryCrushTagElement(node: ASTNode) : BerryCrushPsiElement(node)
@@ -361,9 +366,12 @@ class BerryCrushJsonPathElement(
 
 class BerryCrushExtractElement(
     node: ASTNode,
-) : BerryCrushDirectiveElement("extract", node) {
+) : BerryCrushDirectiveElement("extract", node), PsiNamedElement {
     val extractName
         get() = node.text.trim()
+
+    override fun getName(): String = extractName
+    override fun setName(name: String): PsiElement = this
 }
 
 class BerryCrushWebhookElement(
@@ -451,9 +459,12 @@ class BerryCrushParameterEntryElement(
 
 class BerryCrushParameterKeyElement(
     node: ASTNode,
-) : BerryCrushPsiElement(node) {
+) : BerryCrushPsiElement(node), PsiNamedElement {
     val keyName
         get() = node.text.removeSuffix(":").trim()
+
+    override fun getName(): String = keyName
+    override fun setName(name: String): PsiElement = this
 }
 
 // value can be text or other node...
