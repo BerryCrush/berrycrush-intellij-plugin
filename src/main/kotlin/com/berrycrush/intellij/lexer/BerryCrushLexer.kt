@@ -322,7 +322,16 @@ class BerryCrushLexer : LexerBase() {
                 position++
             }
         }
-        return BerryCrushTokenTypes.NUMBER
+        return if (position >= bufferEnd || buffer[position].isWhitespace()) {
+            BerryCrushTokenTypes.NUMBER
+        } else {
+            // 2xx or other text. not number
+            // scan until white space
+            while (position < bufferEnd && !buffer[position].isWhitespace()) {
+                position++
+            }
+            BerryCrushTokenTypes.TEXT
+        }
     }
 
     private fun scanJsonPath(): IElementType {

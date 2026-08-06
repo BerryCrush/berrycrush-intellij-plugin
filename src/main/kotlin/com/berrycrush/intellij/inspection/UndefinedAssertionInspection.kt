@@ -135,6 +135,7 @@ private fun checkOperatorCondition(elements: List<PsiElement>): Boolean {
                 BerryCrushTokenTypes.LESS_THAN,
                 BerryCrushTokenTypes.MATCHES,
                 BerryCrushTokenTypes.STARTS_WITH,
+                BerryCrushTokenTypes.ENDS_WITH,
                 BerryCrushTokenTypes.IN,
                 BerryCrushTokenTypes.CONTAINS,
                 BerryCrushTokenTypes.SIZE,

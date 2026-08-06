@@ -163,6 +163,7 @@ class UndefinedAssertionInspectionTest : BerryCrushInspectionTestCase(UndefinedA
                 scenario: test
                   then: verify
                     assert status 200
+                    assert status 2xx
                 """.trimIndent(),
             )
 
