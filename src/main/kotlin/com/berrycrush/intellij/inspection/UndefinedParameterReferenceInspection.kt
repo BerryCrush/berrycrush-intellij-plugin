@@ -1,7 +1,6 @@
 package com.berrycrush.intellij.inspection
 
 import com.berrycrush.intellij.psi.BerryCrushBlockElement
-import com.berrycrush.intellij.psi.BerryCrushExtractElement
 import com.berrycrush.intellij.psi.BerryCrushParametersElement
 import com.berrycrush.intellij.psi.BerryCrushVariableRefElement
 import com.intellij.codeInspection.ProblemHighlightType

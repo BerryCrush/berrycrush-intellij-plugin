@@ -272,7 +272,7 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 "includeCaret",
                 """
                 scenario: Test
-                include ^my-fragment
+                include my-fragment
                 """.trimIndent(),
             )
 
@@ -446,7 +446,7 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 "fragRef",
                 """
                 scenario: Test
-                include ^my-fragment
+                include my-fragment
                 """.trimIndent(),
             )
 

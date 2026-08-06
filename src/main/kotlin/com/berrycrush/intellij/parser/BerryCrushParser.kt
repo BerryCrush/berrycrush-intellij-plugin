@@ -176,7 +176,8 @@ class BerryCrushParser : PsiParser {
 
             val indent = currentLineIndent(builder)
             if (indent <= featureIndent &&
-                builder.tokenType != BerryCrushTokenTypes.TAG) {
+                builder.tokenType != BerryCrushTokenTypes.TAG
+            ) {
                 return
             }
 

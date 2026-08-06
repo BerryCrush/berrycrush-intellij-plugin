@@ -276,5 +276,4 @@ class SyntaxCheckInspectionTest : BerryCrushInspectionTestCase(SyntaxCheckInspec
             problems.isEmpty(),
         )
     }
-
 }

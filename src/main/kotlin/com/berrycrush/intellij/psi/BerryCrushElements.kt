@@ -1,11 +1,9 @@
 package com.berrycrush.intellij.psi
 
-import com.berrycrush.intellij.lexer.BerryCrushTokenTypes
 import com.berrycrush.intellij.reference.BerryCrushFragmentReference
 import com.berrycrush.intellij.reference.BerryCrushOperationReference
 import com.intellij.extapi.psi.ASTWrapperPsiElement
 import com.intellij.lang.ASTNode
-import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNameIdentifierOwner
@@ -77,11 +75,7 @@ class BerryCrushIncludeElement(
 ) : BerryCrushIncludeLikeElement("include", node),
     PsiNameIdentifierOwner {
     val fragmentName: String?
-        get() {
-            val text = node.text
-            val match = Regex("""$directiveName\s+\^?([a-zA-Z_][a-zA-Z0-9_.\-]*)""").find(text)
-            return match?.groupValues?.get(1)
-        }
+        get() = directChildrenOfType<BerryCrushFragmentRefElement>().firstOrNull()?.name
 
     override fun getName(): String? = fragmentName
 
@@ -99,8 +93,9 @@ class BerryCrushIncludeElement(
 class BerryCrushFragmentRefElement(
     node: ASTNode,
 ) : BerryCrushPsiElement(node),
-    PsiNameIdentifierOwner {
-    override fun getName(): String = node.text.removePrefix("^")
+    PsiNameIdentifierOwner,
+    PsiNamedElement {
+    override fun getName(): String = node.text
 
     override fun setName(name: String): PsiElement = this
 
@@ -180,11 +175,7 @@ abstract class BerryCrushBlockElement(
     PsiNameIdentifierOwner {
     abstract val keyword: String
     val description: String?
-        get() {
-            val text = node.text
-            val match = Regex("""$keyword:\s*(.+)""").find(text.lines().first())
-            return match?.groupValues?.get(1)?.trim()
-        }
+        get() = directChildrenOfType<BerryCrushTextElement>().firstOrNull()?.text
 
     override fun getName(): String? = description
 }
@@ -242,7 +233,9 @@ class BerryCrushBackgroundElement(node: ASTNode) : BerryCrushScenarioLikeElement
 class BerryCrushExamplesElement(node: ASTNode) : BerryCrushPsiElement(node)
 
 class BerryCrushExampleRowElement(node: ASTNode) : BerryCrushPsiElement(node)
-class BerryCrushExampleHeaderElement(node: ASTNode) : BerryCrushPsiElement(node), PsiNamedElement {
+class BerryCrushExampleHeaderElement(node: ASTNode) :
+    BerryCrushPsiElement(node),
+    PsiNamedElement {
     override fun getName(): String = node.text
     override fun setName(name: String): PsiElement = this
 }
@@ -264,21 +257,7 @@ class BerryCrushFragmentElement(
 
     override fun setName(name: String): PsiElement = this
 
-    override fun getNameIdentifier(): PsiElement? {
-        // Find the TEXT token after the FRAGMENT keyword that contains the name
-        var child = node.firstChildNode
-        while (child != null) {
-            if (child.elementType == BerryCrushTokenTypes.TEXT) {
-                return child.psi
-            }
-            // Stop searching after first NEWLINE (name is on the first line)
-            if (child.elementType == BerryCrushTokenTypes.NEWLINE) {
-                break
-            }
-            child = child.treeNext
-        }
-        return null
-    }
+    override fun getNameIdentifier(): PsiElement? = directChildrenOfType<BerryCrushTextElement>().firstOrNull()
 }
 
 /**
@@ -301,13 +280,7 @@ class BerryCrushStepElement(
         }
 
     val stepText: String?
-        get() {
-            val text = node.text.trim()
-            val kw = keyword ?: return null
-            // Remove the keyword prefix (case-insensitive)
-            val prefixLength = kw.length
-            return text.substring(prefixLength).trim()
-        }
+        get() = directChildrenOfType<BerryCrushTextElement>().firstOrNull()?.text
 
     val callDirectives: List<BerryCrushCallElement>
         get() = directChildrenOfType()
@@ -361,12 +334,13 @@ class BerryCrushJsonPathElement(
     node: ASTNode,
 ) : BerryCrushPsiElement(node) {
     val jsonPathText
-        get () = node.text.trim()
+        get() = node.text.trim()
 }
 
 class BerryCrushExtractElement(
     node: ASTNode,
-) : BerryCrushDirectiveElement("extract", node), PsiNamedElement {
+) : BerryCrushDirectiveElement("extract", node),
+    PsiNamedElement {
     val extractName
         get() = node.text.trim()
 
@@ -459,7 +433,8 @@ class BerryCrushParameterEntryElement(
 
 class BerryCrushParameterKeyElement(
     node: ASTNode,
-) : BerryCrushPsiElement(node), PsiNamedElement {
+) : BerryCrushPsiElement(node),
+    PsiNamedElement {
     val keyName
         get() = node.text.removeSuffix(":").trim()
 

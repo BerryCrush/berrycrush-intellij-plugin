@@ -211,6 +211,42 @@ class UndefinedStepInspectionTest : BerryCrushInspectionTestCase(UndefinedStepIn
         )
     }
 
+    // custom step test
+    fun testExistingCustomStep() {
+        myFixture.addFileToProject("Step.kt",
+            """
+                package org.berrycrush.step
+                
+                @Target(AnnotationTarget.FUNCTION)
+                @Retention(AnnotationRetention.RUNTIME)
+                @MustBeDocumented
+                annotation class Step(
+                    val pattern: String,
+                    val description: String = "",
+                )
+            """.trimIndent())
+        myFixture.addFileToProject("CustomStep.java",
+            """
+                class CustomStep {
+                    @org.berrycrush.step.Step(pattern = "I should have {int} pets with status {word}")
+                    public void validatePetData(String expected) { }
+                }
+            """)
+        val psiFile =
+            myFixture.addFileToProject(
+                "test.scenario",
+                """
+                scenario: test
+                  then I should have 1 pets with status pending
+                """.trimIndent(),
+            )
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "The custom step must be found",
+            problems.isEmpty(),
+        )
+    }
+
     // ========== Non-BerryCrush Files Tests ==========
 
     fun testIgnoresNonBerryCrushFiles() {

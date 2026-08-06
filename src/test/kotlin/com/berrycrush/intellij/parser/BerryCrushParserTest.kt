@@ -498,4 +498,28 @@ class BerryCrushParserTest : BerryCrushTestCase() {
         val entries = includedElement.first().entries
         assertEquals("Should find 2 included parameter entries", 2, entries.size)
     }
+
+    fun testCommentRightAfterStep() {
+        val file =
+            createScenarioFile(
+                "test",
+                """
+                scenario: comment check
+                  when custom step
+                  then custom step
+                # ----------------
+                # comment line
+                # ----------------
+                """.trimIndent(),
+            )
+
+        val psiFile = psiManager.findFile(file)
+        assertNotNull("PSI file should be created", psiFile)
+
+        val stepElements = PsiTreeUtil.findChildrenOfType(psiFile, BerryCrushStepElement::class.java)
+        assertEquals("Should find one step", 2, stepElements.size)
+
+        val stepText = stepElements.toList()[1].stepText
+        assertEquals("Must only contain step text", "custom step", stepText)
+    }
 }

@@ -1,10 +1,11 @@
 package com.berrycrush.intellij.reference
 
+import com.berrycrush.intellij.util.AnnotationReference
 import com.berrycrush.intellij.util.ModuleScopeResolver
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.JavaPsiFacade
-import com.intellij.psi.PsiAnnotation
+import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementResolveResult
 import com.intellij.psi.PsiMethod
@@ -71,7 +72,7 @@ class BerryCrushAssertionReference(
             return methods
                 .filter { method ->
                     val pattern = getAssertionPattern(method)
-                    pattern != null && matchesPattern(assertionText, pattern)
+                    pattern != null && AnnotationReference.matchesPattern(assertionText, pattern)
                 }.toList()
         }
 
@@ -115,70 +116,14 @@ class BerryCrushAssertionReference(
         ): List<String> = getAllAssertionMethodsInScope(project, scope).mapNotNull { getAssertionPattern(it) }
 
         /**
-         * Gets all assertion patterns defined in the project.
-         */
-        fun getAllAssertionPatterns(project: Project): List<String> = getAllAssertionMethods(project).mapNotNull { getAssertionPattern(it) }
-
-        /**
          * Finds the Assertion annotation class in the project.
          */
-        private fun findAssertionAnnotationClass(project: Project): com.intellij.psi.PsiClass? {
-            val javaPsiFacade = JavaPsiFacade.getInstance(project)
-            val scope = GlobalSearchScope.allScope(project)
-            return javaPsiFacade.findClass(ASSERTION_ANNOTATION_FQN, scope)
-        }
+        private fun findAssertionAnnotationClass(project: Project): PsiClass? = AnnotationReference.findAnnotationClass(project, ASSERTION_ANNOTATION_FQN)
 
         /**
          * Gets the pattern value from an @Assertion annotation on a method.
          */
-        private fun getAssertionPattern(method: PsiMethod): String? {
-            val annotation = method.getAnnotation(ASSERTION_ANNOTATION_FQN) ?: return null
-            return getAnnotationStringValue(annotation, "pattern")
-                ?: getAnnotationStringValue(annotation, "value")
-        }
+        private fun getAssertionPattern(method: PsiMethod): String? = AnnotationReference.getAnnotationPattern(method, ASSERTION_ANNOTATION_FQN)
 
-        /**
-         * Extracts a string attribute value from an annotation.
-         */
-        private fun getAnnotationStringValue(
-            annotation: PsiAnnotation,
-            attributeName: String,
-        ): String? {
-            val attributeValue = annotation.findAttributeValue(attributeName) ?: return null
-            val text = attributeValue.text
-            // Remove surrounding quotes if present
-            return if (text.startsWith("\"") && text.endsWith("\"") && text.length >= 2) {
-                text.substring(1, text.length - 1)
-            } else {
-                text
-            }
-        }
-
-        /**
-         * Checks if the assertion text matches the pattern.
-         *
-         * Patterns support placeholders like {int}, {string}, {word}, etc.
-         */
-        private fun matchesPattern(
-            assertionText: String,
-            pattern: String,
-        ): Boolean {
-            // Convert pattern placeholders to regex
-            val regexPattern =
-                pattern
-                    .replace(Regex("""\{int\}"""), """(-?\d+)""")
-                    .replace(Regex("""\{string\}"""), """("[^"]*"|'[^']*')""")
-                    .replace(Regex("""\{word\}"""), """(\w+)""")
-                    .replace(Regex("""\{float\}"""), """(-?\d+\.?\d*)""")
-                    .replace(Regex("""\{any\}"""), """(.+?)""")
-                    .let { "^$it$" }
-
-            return try {
-                Regex(regexPattern, RegexOption.IGNORE_CASE).matches(assertionText)
-            } catch (e: Exception) {
-                // If regex compilation fails, fall back to simple contains check
-                assertionText.contains(pattern, ignoreCase = true)
-            }
-        }
     }
 }

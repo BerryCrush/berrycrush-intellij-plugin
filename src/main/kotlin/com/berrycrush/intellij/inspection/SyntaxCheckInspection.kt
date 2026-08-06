@@ -70,16 +70,15 @@ class SyntaxCheckInspection : BerryCrushInspection() {
     }
 
     private fun checkTag(element: BerryCrushTagElement, holder: ProblemsHolder) {
-        fun skipTagAndComment(element: PsiElement?): PsiElement? {
-            return when (element) {
-                is BerryCrushTagElement,
-                is PsiComment,
-                is PsiWhiteSpace -> skipTagAndComment(element.nextSibling)
-                else -> if (element.elementType == BerryCrushTokenTypes.NEWLINE || element.elementType == BerryCrushTokenTypes.INDENT) {
-                    skipTagAndComment(element?.nextSibling)
-                } else {
-                    element
-                }
+        fun skipTagAndComment(element: PsiElement?): PsiElement? = when (element) {
+            is BerryCrushTagElement,
+            is PsiComment,
+            is PsiWhiteSpace,
+            -> skipTagAndComment(element.nextSibling)
+            else -> if (element.elementType == BerryCrushTokenTypes.NEWLINE || element.elementType == BerryCrushTokenTypes.INDENT) {
+                skipTagAndComment(element?.nextSibling)
+            } else {
+                element
             }
         }
         when (val e = skipTagAndComment(element)) {
@@ -170,7 +169,7 @@ class SyntaxCheckInspection : BerryCrushInspection() {
                 is BerryCrushIfElement,
                 is BerryCrushElseElement,
                 is BerryCrushStepElement,
-                is PsiComment
+                is PsiComment,
                 -> Unit
 
                 else ->
