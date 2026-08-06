@@ -74,8 +74,11 @@ class BerryCrushIncludeElement(
     node: ASTNode,
 ) : BerryCrushIncludeLikeElement("include", node),
     PsiNameIdentifierOwner {
+    val fragmentRef: BerryCrushFragmentRefElement?
+        get() = directChildrenOfType<BerryCrushFragmentRefElement>().firstOrNull()
+
     val fragmentName: String?
-        get() = directChildrenOfType<BerryCrushFragmentRefElement>().firstOrNull()?.name
+        get() = fragmentRef?.name
 
     override fun getName(): String? = fragmentName
 

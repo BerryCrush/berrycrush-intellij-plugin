@@ -50,7 +50,7 @@ class UndefinedStepInspection : BerryCrushInspection() {
         holder.registerProblem(
             this,
             "Step '$stepText' has no matching @Step definition",
-            ProblemHighlightType.WEAK_WARNING,
+            ProblemHighlightType.GENERIC_ERROR,
             *quickFix,
         )
     }

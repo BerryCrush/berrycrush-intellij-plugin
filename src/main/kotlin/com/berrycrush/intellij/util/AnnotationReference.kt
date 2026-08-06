@@ -29,7 +29,7 @@ object AnnotationReference {
 
         return try {
             Regex(regexPattern, RegexOption.IGNORE_CASE).matches(stepText)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             // If regex compilation fails, fall back to simple contains check
             stepText.contains(pattern, ignoreCase = true)
         }
@@ -40,6 +40,7 @@ object AnnotationReference {
         val scope = GlobalSearchScope.allScope(project)
         return javaPsiFacade.findClass(fqn, scope)
     }
+
     /**
      * Gets the pattern value from a @Step annotation on a method.
      */

@@ -4,7 +4,6 @@ import com.berrycrush.intellij.util.AnnotationReference
 import com.berrycrush.intellij.util.ModuleScopeResolver
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
-import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementResolveResult

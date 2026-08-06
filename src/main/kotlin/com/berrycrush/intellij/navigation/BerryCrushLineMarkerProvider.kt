@@ -6,19 +6,20 @@ import com.berrycrush.intellij.psi.BerryCrushAssertElement
 import com.berrycrush.intellij.psi.BerryCrushFragmentElement
 import com.berrycrush.intellij.psi.BerryCrushIncludeElement
 import com.berrycrush.intellij.psi.BerryCrushOperationRefElement
+import com.berrycrush.intellij.psi.BerryCrushPsiElement
 import com.berrycrush.intellij.psi.BerryCrushStepElement
 import com.berrycrush.intellij.reference.BerryCrushAssertionReference
 import com.berrycrush.intellij.reference.BerryCrushFragmentReference
 import com.berrycrush.intellij.reference.BerryCrushOperationReference
 import com.berrycrush.intellij.reference.BerryCrushStepReference
 import com.intellij.codeInsight.daemon.LineMarkerInfo
-import com.intellij.codeInsight.daemon.LineMarkerProvider
+import com.intellij.codeInsight.daemon.RelatedItemLineMarkerInfo
+import com.intellij.codeInsight.daemon.RelatedItemLineMarkerProvider
 import com.intellij.codeInsight.navigation.NavigationGutterIconBuilder
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.editor.markup.GutterIconRenderer
-import com.intellij.openapi.util.TextRange
-import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElement
+import com.intellij.psi.util.PsiTreeUtil
 
 /**
  * Provides gutter icons for BerryCrush navigation.
@@ -30,30 +31,32 @@ import com.intellij.psi.PsiElement
  * - Step definitions (links to @Step annotated methods)
  * - Assertion definitions (links to @Assertion annotated methods)
  */
-class BerryCrushLineMarkerProvider : LineMarkerProvider {
-    override fun getLineMarkerInfo(element: PsiElement): LineMarkerInfo<*>? {
-        // Line markers must be registered for leaf elements only (per IntelliJ guidelines)
-        // Skip non-leaf elements to avoid performance warnings
-        if (element.firstChild != null) {
-            return null
-        }
-
-        // Only create markers for elements that are the FIRST significant element on their line
-        // This prevents duplicate markers when multiple elements on the same line match patterns
-        if (!isFirstElementOnLine(element)) {
-            return null
-        }
-        return when (element) {
-            is BerryCrushFragmentElement -> element.markFragment()
-            is BerryCrushIncludeElement -> element.markInclude()
-            is BerryCrushStepElement -> element.markStep()
-            is BerryCrushAssertElement -> element.markAssert()
-            is BerryCrushOperationRefElement -> element.markOperationReference()
+private val CLASS_LIST: Array<Class<out BerryCrushPsiElement>> = arrayOf(BerryCrushFragmentElement::class.java, BerryCrushIncludeElement::class.java, BerryCrushStepElement::class.java, BerryCrushAssertElement::class.java, BerryCrushOperationRefElement::class.java)
+class BerryCrushLineMarkerProvider : RelatedItemLineMarkerProvider() {
+    override fun collectNavigationMarkers(
+        element: PsiElement,
+        result: MutableCollection<in RelatedItemLineMarkerInfo<*>>
+    ) {
+        val marker = when (val e = getOneOfParent(element)) {
+            is BerryCrushFragmentElement -> e.markFragment(element)
+            is BerryCrushIncludeElement -> e.markInclude(element)
+            is BerryCrushStepElement -> e.markStep(element)
+            is BerryCrushAssertElement -> e.markAssert(element)
+            is BerryCrushOperationRefElement -> e.markOperationReference(element)
             else -> null
+        }
+        if (marker != null) {
+            result += marker
         }
     }
 
-    private fun BerryCrushFragmentElement.markFragment(): LineMarkerInfo<*>? {
+    private fun getOneOfParent(element: PsiElement): PsiElement? {
+        return CLASS_LIST.mapNotNull {
+            PsiTreeUtil.getParentOfType(element, it, true)
+        }.firstOrNull { it.firstChild == element }
+    }
+
+    private fun BerryCrushFragmentElement.markFragment(element: PsiElement): RelatedItemLineMarkerInfo<*>? {
         return fragmentName?.let { name ->
             val usages = IncludeUsageIndex.findIncludeUsages(this.project, name)
             return if (usages.isNotEmpty()) {
@@ -62,22 +65,19 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
                     .setTargets(usages)
                     .setTooltipText("Fragment '$name' - ${usages.size} usage(s)")
                     .setPopupTitle("Usages of fragment '$name'")
-                    .createLineMarkerInfo(this)
+                    .createLineMarkerInfo(element)
             } else {
-                LineMarkerInfo(
-                    this,
-                    this.textRange,
-                    BerryCrushIcons.FRAGMENT_FILE,
-                    { "Fragment: $fragmentName (no usages)" },
-                    null,
-                    GutterIconRenderer.Alignment.CENTER,
-                    { "Fragment definition" },
-                )
+                NavigationGutterIconBuilder
+                    .create(BerryCrushIcons.FRAGMENT_FILE)
+                    .setTargets(usages)
+                    .setTooltipText("Fragment: $fragmentName (no usages)")
+                    .setPopupTitle("Fragment '$name'")
+                    .createLineMarkerInfo(element)
             }
         }
     }
 
-    private fun BerryCrushIncludeElement.markInclude(): LineMarkerInfo<*>? {
+    private fun BerryCrushIncludeElement.markInclude(element: PsiElement): RelatedItemLineMarkerInfo<*>? {
         return fragmentName?.let { name ->
             val target = BerryCrushFragmentReference.findFragmentByName(project, name)
             return if (target != null) {
@@ -85,22 +85,18 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
                     .create(AllIcons.Gutter.ImplementedMethod)
                     .setTargets(listOf(target))
                     .setTooltipText("Go to fragment: $name")
-                    .createLineMarkerInfo(this)
+                    .createLineMarkerInfo(element)
             } else {
-                LineMarkerInfo(
-                    this,
-                    this.textRange,
-                    BerryCrushIcons.FRAGMENT_FILE,
-                    { "Fragment: $fragmentName (not found)" },
-                    null,
-                    GutterIconRenderer.Alignment.CENTER,
-                    { "Include directive" },
-                )
+                NavigationGutterIconBuilder
+                    .create(BerryCrushIcons.FRAGMENT_FILE)
+                    .setTargets(listOf())
+                    .setTooltipText("Fragment: $fragmentName (not found)")
+                    .createLineMarkerInfo(element)
             }
         }
     }
 
-    private fun BerryCrushStepElement.markStep(): LineMarkerInfo<*>? = stepText?.let { text ->
+    private fun BerryCrushStepElement.markStep(element: PsiElement): RelatedItemLineMarkerInfo<*>? = stepText?.let { text ->
         BerryCrushStepReference.findMatchingStepMethods(project, text).let { methods ->
             if (methods.isNotEmpty()) {
                 NavigationGutterIconBuilder
@@ -108,14 +104,14 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
                     .setTargets(methods)
                     .setTooltipText("Go to @Step definition")
                     .setPopupTitle("Step definitions")
-                    .createLineMarkerInfo(this)
+                    .createLineMarkerInfo(element)
             } else {
                 null
             }
         }
     }
 
-    private fun BerryCrushAssertElement.markAssert(): LineMarkerInfo<*>? = assertionText?.let { text ->
+    private fun BerryCrushAssertElement.markAssert(element: PsiElement): RelatedItemLineMarkerInfo<*>? = assertionText?.let { text ->
         BerryCrushAssertionReference.findMatchingAssertionMethods(project, text).let { methods ->
             if (methods.isNotEmpty()) {
                 NavigationGutterIconBuilder
@@ -123,47 +119,18 @@ class BerryCrushLineMarkerProvider : LineMarkerProvider {
                     .setTargets(methods)
                     .setTooltipText("Go to @Assertion definition")
                     .setPopupTitle("Assertion definitions")
-                    .createLineMarkerInfo(this)
+                    .createLineMarkerInfo(element)
             } else {
                 null
             }
         }
     }
 
-    private fun BerryCrushOperationRefElement.markOperationReference(): LineMarkerInfo<*>? = BerryCrushOperationReference.findOperationInOpenAPI(project, operationId)?.let { target ->
+    private fun BerryCrushOperationRefElement.markOperationReference(element: PsiElement): RelatedItemLineMarkerInfo<*>? = BerryCrushOperationReference.findOperationInOpenAPI(project, operationId)?.let { target ->
         NavigationGutterIconBuilder
             .create(AllIcons.Webreferences.Openapi)
             .setTargets(listOf(target))
             .setTooltipText("Go to OpenAPI operation: $operationId")
-            .createLineMarkerInfo(this)
-    }
-
-    override fun collectSlowLineMarkers(
-        elements: MutableList<out PsiElement>,
-        result: MutableCollection<in LineMarkerInfo<*>>,
-    ) {
-        // All markers are handled in getLineMarkerInfo() for consistency
-        // PSI-based markers (BerryCrushFragmentElement, etc.) are disabled
-        // because the parser doesn't reliably create these types and
-        // text-based detection in getLineMarkerInfo() handles all cases
-    }
-
-    /**
-     * Checks if this element is the first significant (non-whitespace) element on its line.
-     * Uses document-based line number detection for accuracy.
-     */
-    private fun isFirstElementOnLine(element: PsiElement): Boolean {
-        val containingFile = element.containingFile ?: return true
-        val document = PsiDocumentManager.getInstance(element.project).getDocument(containingFile) ?: return true
-
-        val elementOffset = element.textOffset
-        val lineNumber = document.getLineNumber(elementOffset)
-        val lineStartOffset = document.getLineStartOffset(lineNumber)
-
-        // Get text from line start to element start
-        val textBeforeElement = document.getText(TextRange(lineStartOffset, elementOffset))
-
-        // If there's non-whitespace content before this element, it's not first on line
-        return textBeforeElement.isBlank()
+            .createLineMarkerInfo(element)
     }
 }

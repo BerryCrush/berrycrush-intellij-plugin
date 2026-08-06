@@ -28,13 +28,13 @@ class MissingFragmentInspection : BerryCrushInspection() {
     ) {
         val knownFragments = FragmentIndex.getAllFragmentNames(file.project)
         PsiTreeUtil.findChildrenOfType(file, BerryCrushIncludeElement::class.java).forEach { include ->
-            val fragmentName = include.fragmentName ?: return@forEach
-            if (fragmentName !in knownFragments) {
+            val ref = include.fragmentRef ?: return@forEach
+            if (ref.name !in knownFragments) {
                 holder.registerProblem(
-                    include,
-                    "Fragment '$fragmentName' not found",
-                    ProblemHighlightType.ERROR,
-                    CreateFragmentQuickFix(fragmentName),
+                    ref,
+                    "Fragment '${ref.name}' not found",
+                    ProblemHighlightType.GENERIC_ERROR,
+                    CreateFragmentQuickFix(ref.name),
                 )
             }
         }

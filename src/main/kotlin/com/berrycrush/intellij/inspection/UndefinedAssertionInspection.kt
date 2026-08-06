@@ -166,7 +166,7 @@ private fun checkSimpleCondition(
 
 // status(Code) 2xx thing
 private fun checkStatusCondition(elements: List<PsiElement>): Boolean {
-    fun checkStatus(element: BerryCrushPsiElement): Boolean = Regex("\\dxx|\\d{3}").matches(element.text)
+    fun checkStatus(element: BerryCrushPsiElement): Boolean = Regex("\\dxx|-?\\d+").matches(element.text)
     return elements.size == 1 && elements[0] is BerryCrushPsiElement && checkStatus(elements[0] as BerryCrushPsiElement)
 }
 

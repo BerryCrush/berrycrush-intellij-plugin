@@ -5,6 +5,9 @@ import com.berrycrush.intellij.reference.BerryCrushOperationReference
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.application.NonBlockingReadAction
+import com.intellij.openapi.application.ReadAction
+import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.DumbService
@@ -16,7 +19,10 @@ import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiManager
 import com.intellij.util.indexing.FileBasedIndex
+import java.util.concurrent.Callable
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Listens for file system changes that affect BerryCrush inspections.
@@ -128,7 +134,7 @@ class BerryCrushFileChangeListener : AsyncFileListener {
             val analyzer = DaemonCodeAnalyzer.getInstance(project)
 
             // Find all open scenario/fragment files and restart analysis
-            ApplicationManager.getApplication().runReadAction {
+            ReadAction.nonBlocking(Callable {
                 fileEditorManager.openFiles
                     .filter { it.extension == "scenario" || it.extension == "fragment" }
                     .forEach { file ->
@@ -137,7 +143,7 @@ class BerryCrushFileChangeListener : AsyncFileListener {
                             analyzer.restart(psiFile, "Restart analysis")
                         }
                     }
-            }
+            })
         }.onFailure { e ->
             LOG.debug("Error restarting analysis for BerryCrush files", e)
         }

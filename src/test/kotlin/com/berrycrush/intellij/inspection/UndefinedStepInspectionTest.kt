@@ -213,7 +213,8 @@ class UndefinedStepInspectionTest : BerryCrushInspectionTestCase(UndefinedStepIn
 
     // custom step test
     fun testExistingCustomStep() {
-        myFixture.addFileToProject("Step.kt",
+        myFixture.addFileToProject(
+            "Step.kt",
             """
                 package org.berrycrush.step
                 
@@ -224,14 +225,17 @@ class UndefinedStepInspectionTest : BerryCrushInspectionTestCase(UndefinedStepIn
                     val pattern: String,
                     val description: String = "",
                 )
-            """.trimIndent())
-        myFixture.addFileToProject("CustomStep.java",
+            """.trimIndent(),
+        )
+        myFixture.addFileToProject(
+            "CustomStep.java",
             """
                 class CustomStep {
                     @org.berrycrush.step.Step(pattern = "I should have {int} pets with status {word}")
                     public void validatePetData(String expected) { }
                 }
-            """)
+            """,
+        )
         val psiFile =
             myFixture.addFileToProject(
                 "test.scenario",
