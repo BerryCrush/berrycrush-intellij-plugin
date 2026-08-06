@@ -75,6 +75,20 @@ then validate user status    # Warning if no @Assertion method matches
 2. Use built-in assertions instead
 3. Fix the assertion name
 
+### Syntax Validation For Conditional Assertions
+
+Valid `if` / `else` conditional assertion blocks nested under steps are treated as valid syntax and should not be reported as syntax-check errors.
+
+**Example (valid):**
+```berrycrush
+scenario: conditional assertions
+  then validate response
+    if status 2xx
+      assert $.id exists
+    else
+      assert status 5xx
+```
+
 ## Managing Inspections
 
 ### Enable/Disable Inspections

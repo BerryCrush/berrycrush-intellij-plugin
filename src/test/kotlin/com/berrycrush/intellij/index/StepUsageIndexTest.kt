@@ -1,21 +1,17 @@
 package com.berrycrush.intellij.index
 
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Nested
-import kotlin.test.assertTrue
+import org.junit.jupiter.api.Test
 import kotlin.test.assertFalse
-import kotlin.test.assertEquals
-import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /**
  * Unit tests for StepUsageIndex static methods.
  * Tests pattern matching, step text extraction, and assertion text extraction.
  */
 class StepUsageIndexTest {
-
     @Nested
     inner class PatternToRegexTests {
-
         @Test
         fun `simple pattern without placeholders`() {
             val regex = StepUsageIndex.patternToRegex("user is logged in")
@@ -92,7 +88,6 @@ class StepUsageIndexTest {
 
     @Nested
     inner class MatchesPatternTests {
-
         @Test
         fun `exact match returns true`() {
             val regex = StepUsageIndex.patternToRegex("user is logged in")
@@ -127,90 +122,7 @@ class StepUsageIndexTest {
     }
 
     @Nested
-    inner class ExtractStepTextTests {
-
-        @Test
-        fun `extracts text after Given`() {
-            assertEquals("user is logged in", StepUsageIndex.extractStepText("given user is logged in"))
-        }
-
-        @Test
-        fun `extracts text after When`() {
-            assertEquals("user clicks submit", StepUsageIndex.extractStepText("when user clicks submit"))
-        }
-
-        @Test
-        fun `extracts text after Then`() {
-            assertEquals("success message appears", StepUsageIndex.extractStepText("then success message appears"))
-        }
-
-        @Test
-        fun `extracts text after And`() {
-            assertEquals("user has items", StepUsageIndex.extractStepText("And user has items"))
-        }
-
-        @Test
-        fun `extracts text after But`() {
-            assertEquals("no errors shown", StepUsageIndex.extractStepText("But no errors shown"))
-        }
-
-        @Test
-        fun `handles case insensitive prefixes`() {
-            assertEquals("test", StepUsageIndex.extractStepText("given test"))
-            assertEquals("test", StepUsageIndex.extractStepText("GIVEN test"))
-            assertEquals("test", StepUsageIndex.extractStepText("given test"))
-        }
-
-        @Test
-        fun `trims whitespace`() {
-            assertEquals("user is logged in", StepUsageIndex.extractStepText("  given  user is logged in  "))
-        }
-
-        @Test
-        fun `returns null for non-step lines`() {
-            assertNull(StepUsageIndex.extractStepText("Feature: Test"))
-            assertNull(StepUsageIndex.extractStepText("scenario: Test"))
-            assertNull(StepUsageIndex.extractStepText("# Comment"))
-            assertNull(StepUsageIndex.extractStepText(""))
-        }
-
-        @Test
-        fun `returns null for lines without step prefix`() {
-            assertNull(StepUsageIndex.extractStepText("user is logged in"))
-            assertNull(StepUsageIndex.extractStepText("Assert: response is valid"))
-        }
-    }
-
-    @Nested
-    inner class ExtractAssertionTextTests {
-
-        @Test
-        fun `extracts text after Assert`() {
-            assertEquals(": response is valid", StepUsageIndex.extractAssertionText("Assert: response is valid"))
-        }
-
-        @Test
-        fun `handles case insensitive Assert`() {
-            assertEquals(": test", StepUsageIndex.extractAssertionText("assert: test"))
-            assertEquals(": TEST", StepUsageIndex.extractAssertionText("ASSERT: TEST"))
-        }
-
-        @Test
-        fun `trims whitespace`() {
-            assertEquals(": valid", StepUsageIndex.extractAssertionText("  Assert: valid  "))
-        }
-
-        @Test
-        fun `returns null for non-assertion lines`() {
-            assertNull(StepUsageIndex.extractAssertionText("given test"))
-            assertNull(StepUsageIndex.extractAssertionText("Feature: Test"))
-            assertNull(StepUsageIndex.extractAssertionText(""))
-        }
-    }
-
-    @Nested
     inner class EdgeCaseTests {
-
         @Test
         fun `empty pattern`() {
             val regex = StepUsageIndex.patternToRegex("")

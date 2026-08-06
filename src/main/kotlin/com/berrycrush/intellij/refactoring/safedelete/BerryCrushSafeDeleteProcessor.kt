@@ -2,7 +2,6 @@ package com.berrycrush.intellij.refactoring.safedelete
 
 import com.berrycrush.intellij.index.IncludeUsageIndex
 import com.berrycrush.intellij.language.FragmentFileType
-import com.berrycrush.intellij.psi.BerryCrushFile
 import com.berrycrush.intellij.psi.BerryCrushFragmentElement
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
@@ -26,7 +25,6 @@ import com.intellij.util.containers.MultiMap
  * - Allows force delete or cancel
  */
 class BerryCrushSafeDeleteProcessor : SafeDeleteProcessorDelegate {
-
     override fun handlesElement(element: PsiElement): Boolean {
         // Handle individual fragment elements (for per-fragment deletion)
         if (element is BerryCrushFragmentElement) {
@@ -44,15 +42,17 @@ class BerryCrushSafeDeleteProcessor : SafeDeleteProcessorDelegate {
         val project = element.project
 
         // Get fragment names based on element type
-        val fragmentNames = when (element) {
-            is BerryCrushFragmentElement -> listOfNotNull(element.description)
-            is PsiFile -> extractFragmentNames(element)
-            else -> element.containingFile?.let { extractFragmentNames(it) } ?: emptyList()
-        }
+        val fragmentNames =
+            when (element) {
+                is BerryCrushFragmentElement -> listOfNotNull(element.description)
+                is PsiFile -> extractFragmentNames(element)
+                else -> element.containingFile?.let { extractFragmentNames(it) } ?: emptyList()
+            }
 
         // Find usages via our index
         fragmentNames.forEach { fragmentName ->
-            IncludeUsageIndex.findIncludeUsages(project, fragmentName)
+            IncludeUsageIndex
+                .findIncludeUsages(project, fragmentName)
                 .map { UsageInfo(it) }
                 .forEach { usages.add(it) }
         }
@@ -93,22 +93,24 @@ class BerryCrushSafeDeleteProcessor : SafeDeleteProcessorDelegate {
         val project = element.project
 
         // Get fragment names based on element type
-        val fragmentNames = when (element) {
-            is BerryCrushFragmentElement -> listOfNotNull(element.description)
-            is PsiFile -> extractFragmentNames(element)
-            else -> element.containingFile?.let { extractFragmentNames(it) } ?: emptyList()
-        }
+        val fragmentNames =
+            when (element) {
+                is BerryCrushFragmentElement -> listOfNotNull(element.description)
+                is PsiFile -> extractFragmentNames(element)
+                else -> element.containingFile?.let { extractFragmentNames(it) } ?: emptyList()
+            }
 
         // Find usages and report as conflicts
         fragmentNames.forEach { fragmentName ->
             val fragmentUsages = IncludeUsageIndex.findIncludeUsages(project, fragmentName)
             if (fragmentUsages.isNotEmpty()) {
                 val usageFiles = fragmentUsages.mapNotNull { it.containingFile?.name }.distinct()
-                val usageDescription = if (usageFiles.size <= 3) {
-                    usageFiles.joinToString(", ")
-                } else {
-                    "${usageFiles.take(3).joinToString(", ")} and ${usageFiles.size - 3} more"
-                }
+                val usageDescription =
+                    if (usageFiles.size <= 3) {
+                        usageFiles.joinToString(", ")
+                    } else {
+                        "${usageFiles.take(3).joinToString(", ")} and ${usageFiles.size - 3} more"
+                    }
                 conflicts.putValue(element, "Fragment '$fragmentName' is included in: $usageDescription")
             }
         }
@@ -125,13 +127,19 @@ class BerryCrushSafeDeleteProcessor : SafeDeleteProcessorDelegate {
 
     override fun isToSearchInComments(element: PsiElement): Boolean = false
 
-    override fun setToSearchInComments(element: PsiElement, enabled: Boolean) {
+    override fun setToSearchInComments(
+        element: PsiElement,
+        enabled: Boolean,
+    ) {
         // Not supported
     }
 
     override fun isToSearchForTextOccurrences(element: PsiElement): Boolean = false
 
-    override fun setToSearchForTextOccurrences(element: PsiElement, enabled: Boolean) {
+    override fun setToSearchForTextOccurrences(
+        element: PsiElement,
+        enabled: Boolean,
+    ) {
         // Not supported
     }
 
@@ -139,17 +147,15 @@ class BerryCrushSafeDeleteProcessor : SafeDeleteProcessorDelegate {
      * Extracts all fragment names defined in a file.
      * A file can contain multiple fragment definitions.
      */
-    private fun extractFragmentNames(file: PsiFile): List<String> =
-        FRAGMENT_PATTERN
-            .findAll(file.text)
-            .filter { match ->
-                // Skip commented lines
-                val lineStart = file.text.lastIndexOf('\n', match.range.first) + 1
-                val linePrefix = file.text.substring(lineStart, match.range.first).trim()
-                !linePrefix.startsWith("#")
-            }
-            .mapNotNull { it.groupValues.getOrNull(1) }
-            .toList()
+    private fun extractFragmentNames(file: PsiFile): List<String> = FRAGMENT_PATTERN
+        .findAll(file.text)
+        .filter { match ->
+            // Skip commented lines
+            val lineStart = file.text.lastIndexOf('\n', match.range.first) + 1
+            val linePrefix = file.text.substring(lineStart, match.range.first).trim()
+            !linePrefix.startsWith("#")
+        }.mapNotNull { it.groupValues.getOrNull(1) }
+        .toList()
 
     companion object {
         private val FRAGMENT_PATTERN = Regex("""[Ff]ragment:\s*(\S+)""")

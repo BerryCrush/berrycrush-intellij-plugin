@@ -8,6 +8,8 @@ import com.intellij.lang.Language
  * Represents the BerryCrush DSL for OpenAPI-driven BDD testing.
  */
 object BerryCrushLanguage : Language("BerryCrush") {
+    private fun readResolve(): Any = BerryCrushLanguage
     override fun getDisplayName(): String = "BerryCrush"
+
     override fun isCaseSensitive(): Boolean = true
 }

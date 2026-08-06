@@ -11,11 +11,10 @@ import com.intellij.psi.PsiElement
  * Handles Go to Declaration (Cmd+Click) for BerryCrush elements.
  */
 class BerryCrushGotoDeclarationHandler : GotoDeclarationHandler {
-
     override fun getGotoDeclarationTargets(
         sourceElement: PsiElement?,
         offset: Int,
-        editor: Editor?
+        editor: Editor?,
     ): Array<PsiElement>? {
         if (sourceElement == null) return null
 
@@ -32,10 +31,11 @@ class BerryCrushGotoDeclarationHandler : GotoDeclarationHandler {
         if (text.startsWith("^") && text.length > 1) {
             val operationId = text.removePrefix("^")
             if (operationId.matches(Regex("[a-zA-Z_]\\w*"))) {
-                val target = BerryCrushOperationReference.findOperationInOpenAPI(
-                    sourceElement.project,
-                    operationId
-                )
+                val target =
+                    BerryCrushOperationReference.findOperationInOpenAPI(
+                        sourceElement.project,
+                        operationId,
+                    )
                 if (target != null) {
                     return arrayOf(target)
                 }
@@ -46,10 +46,11 @@ class BerryCrushGotoDeclarationHandler : GotoDeclarationHandler {
         if (isInIncludeContext(sourceElement)) {
             val fragmentName = text.removePrefix("^")
             if (fragmentName.matches(Regex("[a-zA-Z_][a-zA-Z0-9_.\\-]*"))) {
-                val target = BerryCrushFragmentReference.findFragmentByName(
-                    sourceElement.project,
-                    fragmentName
-                )
+                val target =
+                    BerryCrushFragmentReference.findFragmentByName(
+                        sourceElement.project,
+                        fragmentName,
+                    )
                 if (target != null) {
                     return arrayOf(target)
                 }
@@ -59,10 +60,11 @@ class BerryCrushGotoDeclarationHandler : GotoDeclarationHandler {
         // Check if the text itself looks like a fragment name (for direct include clicks)
         if (text.matches(Regex("[a-zA-Z_][a-zA-Z0-9_.\\-]*"))) {
             // Look for this as a potential fragment name
-            val target = BerryCrushFragmentReference.findFragmentByName(
-                sourceElement.project,
-                text
-            )
+            val target =
+                BerryCrushFragmentReference.findFragmentByName(
+                    sourceElement.project,
+                    text,
+                )
             if (target != null) {
                 return arrayOf(target)
             }

@@ -30,7 +30,6 @@ import javax.swing.Icon
  * This provides build-tool agnostic test execution with proper navigation support.
  */
 class BerryCrushTestFramework : JUnit5Framework() {
-
     companion object {
         private const val BERRYCRUSH_SCENARIOS = "org.berrycrush.junit.BerryCrushScenarios"
         private const val BERRYCRUSH_SPEC = "org.berrycrush.junit.BerryCrushSpec"
@@ -41,7 +40,10 @@ class BerryCrushTestFramework : JUnit5Framework() {
 
     override fun getIcon(): Icon = BerryCrushIcons.SCENARIO_FILE
 
-    override fun isTestClass(clazz: PsiClass, canBePotential: Boolean): Boolean {
+    override fun isTestClass(
+        clazz: PsiClass,
+        canBePotential: Boolean,
+    ): Boolean {
         // Check for @BerryCrushScenarios annotation
         if (clazz.hasAnnotation(BERRYCRUSH_SCENARIOS)) {
             return true

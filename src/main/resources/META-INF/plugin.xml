@@ -159,6 +159,13 @@
 
         <!-- Inspections (no language attr - checks in implementation) -->
         <localInspection groupName="BerryCrush"
+                         shortName="BerryCrushSyntaxError"
+                         displayName="Syntax error"
+                         enabledByDefault="true"
+                         level="ERROR"
+                         implementationClass="com.berrycrush.intellij.inspection.SyntaxCheckInspection"/>
+
+        <localInspection groupName="BerryCrush"
                          shortName="BerryCrushMissingFragment"
                          displayName="Missing fragment reference"
                          enabledByDefault="true"

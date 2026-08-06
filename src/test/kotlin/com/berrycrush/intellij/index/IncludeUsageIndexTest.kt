@@ -8,40 +8,47 @@ import com.berrycrush.intellij.BerryCrushTestCase
  * Tests the actual index class behavior using the IntelliJ testing framework.
  */
 class IncludeUsageIndexTest : BerryCrushTestCase() {
-
     // ========== Index Detection Tests ==========
 
     fun testIndexesBasicInclude() {
-        createScenarioFile("test", """
+        createScenarioFile(
+            "test",
+            """
             scenario: test
               given: setup
                 include login-steps
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         val fragments = IncludeUsageIndex.getAllIncludedFragments(project)
         assertTrue(
             "Should index 'login-steps'",
-            fragments.contains("login-steps")
+            fragments.contains("login-steps"),
         )
     }
 
     fun testIndexesIncludeWithCaret() {
-        createScenarioFile("test2", """
+        createScenarioFile(
+            "test2",
+            """
             scenario: test
               given: setup
                 include ^operation-fragment
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         // Caret prefix should be removed during indexing
         val fragments = IncludeUsageIndex.getAllIncludedFragments(project)
         assertTrue(
             "Should index 'operation-fragment' (without caret)",
-            fragments.contains("operation-fragment")
+            fragments.contains("operation-fragment"),
         )
     }
 
     fun testIndexesMultipleIncludes() {
-        createScenarioFile("test3", """
+        createScenarioFile(
+            "test3",
+            """
             scenario: test
               given: setup
                 include setup-steps
@@ -49,7 +56,8 @@ class IncludeUsageIndexTest : BerryCrushTestCase() {
                 include auth-steps
               then: verify
                 include cleanup-steps
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         val fragments = IncludeUsageIndex.getAllIncludedFragments(project)
         assertTrue("Should index 'setup-steps'", fragments.contains("setup-steps"))
@@ -58,97 +66,118 @@ class IncludeUsageIndexTest : BerryCrushTestCase() {
     }
 
     fun testIndexesFragmentNameWithDots() {
-        createScenarioFile("test4", """
+        createScenarioFile(
+            "test4",
+            """
             scenario: test
               given: setup
                 include api.v1.steps
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         val fragments = IncludeUsageIndex.getAllIncludedFragments(project)
         assertTrue(
             "Should index 'api.v1.steps'",
-            fragments.contains("api.v1.steps")
+            fragments.contains("api.v1.steps"),
         )
     }
 
     fun testIndexesFragmentNameWithDashes() {
-        createScenarioFile("test5", """
+        createScenarioFile(
+            "test5",
+            """
             scenario: test
               given: setup
                 include my-custom-fragment
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         val fragments = IncludeUsageIndex.getAllIncludedFragments(project)
         assertTrue(
             "Should index 'my-custom-fragment'",
-            fragments.contains("my-custom-fragment")
+            fragments.contains("my-custom-fragment"),
         )
     }
 
     fun testIndexesFragmentNameWithUnderscores() {
-        createScenarioFile("test6", """
+        createScenarioFile(
+            "test6",
+            """
             scenario: test
               given: setup
                 include my_custom_fragment
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         val fragments = IncludeUsageIndex.getAllIncludedFragments(project)
         assertTrue(
             "Should index 'my_custom_fragment'",
-            fragments.contains("my_custom_fragment")
+            fragments.contains("my_custom_fragment"),
         )
     }
 
     fun testDoesNotIndexIncludeWithoutSpace() {
-        createScenarioFile("test7", """
+        createScenarioFile(
+            "test7",
+            """
             scenario: test
               given: includenospace
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         val fragments = IncludeUsageIndex.getAllIncludedFragments(project)
         assertFalse(
             "Should not index 'nospace'",
-            fragments.contains("nospace")
+            fragments.contains("nospace"),
         )
     }
 
     fun testDoesNotIndexIncludeInMiddleOfLine() {
-        createScenarioFile("test8", """
+        createScenarioFile(
+            "test8",
+            """
             scenario: test
               given: I include the header
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         val fragments = IncludeUsageIndex.getAllIncludedFragments(project)
         assertFalse(
             "Should not index 'the' (include not at line start)",
-            fragments.contains("the")
+            fragments.contains("the"),
         )
     }
 
     fun testGetFilesIncludingFragment() {
         // Create scenario that includes a fragment
-        createScenarioFile("includer", """
+        createScenarioFile(
+            "includer",
+            """
             scenario: test
               given: setup
                 include target-fragment
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         // Create another file without the include
-        createScenarioFile("other", """
+        createScenarioFile(
+            "other",
+            """
             scenario: other
               given: setup
                 call GET /api
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         val files = IncludeUsageIndex.getFilesIncludingFragment(project, "target-fragment")
         assertEquals(
             "Should find one file including 'target-fragment'",
             1,
-            files.size
+            files.size,
         )
         assertTrue(
             "Should be the includer file",
-            files.first().name == "includer.scenario"
+            files.first().name == "includer.scenario",
         )
     }
 
@@ -156,17 +185,20 @@ class IncludeUsageIndexTest : BerryCrushTestCase() {
 
     fun testIndexRequiresLowercaseInclude() {
         // Create with uppercase INCLUDE - should NOT be indexed (strict lowercase)
-        createScenarioFile("test9", """
+        createScenarioFile(
+            "test9",
+            """
             scenario: test
               given: setup
                 INCLUDE uppercase-fragment
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         val fragments = IncludeUsageIndex.getAllIncludedFragments(project)
         // The index uses strict lowercase matching
         assertFalse(
             "Should not index with uppercase INCLUDE keyword",
-            fragments.contains("uppercase-fragment")
+            fragments.contains("uppercase-fragment"),
         )
     }
 }

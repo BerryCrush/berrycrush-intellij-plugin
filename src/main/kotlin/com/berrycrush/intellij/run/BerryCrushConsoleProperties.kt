@@ -1,12 +1,12 @@
 package com.berrycrush.intellij.run
 
 import com.intellij.execution.Executor
+import com.intellij.execution.Location
 import com.intellij.execution.junit.JUnitConfiguration
 import com.intellij.execution.junit2.ui.properties.JUnitConsoleProperties
 import com.intellij.execution.testframework.JavaTestLocator
 import com.intellij.execution.testframework.sm.FileUrlProvider
 import com.intellij.execution.testframework.sm.runner.SMTestLocator
-import com.intellij.execution.Location
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
@@ -26,18 +26,15 @@ import com.intellij.psi.search.GlobalSearchScope
  */
 class BerryCrushConsoleProperties(
     config: JUnitConfiguration,
-    executor: Executor
+    executor: Executor,
 ) : JUnitConsoleProperties(config, executor) {
-
     /**
      * Returns a combined test locator that supports both java:// and file:// URLs.
      *
      * - java:// URLs (from standard JUnit tests) → delegated to JavaTestLocator
      * - file:// URLs (from BerryCrush scenario tests) → handled by FileUrlProvider
      */
-    override fun getTestLocator(): SMTestLocator {
-        return BerryCrushTestLocator
-    }
+    override fun getTestLocator(): SMTestLocator = BerryCrushTestLocator
 }
 
 /**
@@ -47,22 +44,19 @@ class BerryCrushConsoleProperties(
  * explicitly to avoid internal API dependencies.
  */
 private object BerryCrushTestLocator : SMTestLocator, DumbAware {
-
     override fun getLocation(
         protocol: String,
         path: String,
         project: Project,
-        scope: GlobalSearchScope
-    ): List<Location<*>> {
-        return getLocation(protocol, path, null, project, scope)
-    }
+        scope: GlobalSearchScope,
+    ): List<Location<*>> = getLocation(protocol, path, null, project, scope)
 
     override fun getLocation(
         protocol: String,
         path: String,
         metainfo: String?,
         project: Project,
-        scope: GlobalSearchScope
+        scope: GlobalSearchScope,
     ): List<Location<*>> {
         // Handle file:// URLs (BerryCrush scenario locations)
         if (protocol == "file") {
@@ -80,13 +74,11 @@ private object BerryCrushTestLocator : SMTestLocator, DumbAware {
     override fun getLocation(
         stacktraceLine: String,
         project: Project,
-        scope: GlobalSearchScope
+        scope: GlobalSearchScope,
     ): List<Location<*>> {
         // Delegate stacktrace parsing to FileUrlProvider (handles file:line format)
         return FileUrlProvider.INSTANCE.getLocation(stacktraceLine, project, scope)
     }
 
-    override fun getLocationCacheModificationTracker(project: Project): ModificationTracker {
-        return JavaTestLocator.INSTANCE.getLocationCacheModificationTracker(project)
-    }
+    override fun getLocationCacheModificationTracker(project: Project): ModificationTracker = JavaTestLocator.INSTANCE.getLocationCacheModificationTracker(project)
 }

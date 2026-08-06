@@ -5,43 +5,44 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class BerryCrushScenarioExecutionSupportTest {
-
     @Test
     fun `selectPreferredCandidate prefers class in preferred module`() {
-        val selected = BerryCrushScenarioExecutionSupport.selectPreferredCandidate(
-            listOf(
-                BerryCrushScenarioExecutionSupport.ClassCandidate(
-                    value = "com.example.ZetaTest",
-                    qualifiedName = "com.example.ZetaTest",
-                    inPreferredModule = false,
+        val selected =
+            BerryCrushScenarioExecutionSupport.selectPreferredCandidate(
+                listOf(
+                    BerryCrushScenarioExecutionSupport.ClassCandidate(
+                        value = "com.example.ZetaTest",
+                        qualifiedName = "com.example.ZetaTest",
+                        inPreferredModule = false,
+                    ),
+                    BerryCrushScenarioExecutionSupport.ClassCandidate(
+                        value = "com.example.AlphaTest",
+                        qualifiedName = "com.example.AlphaTest",
+                        inPreferredModule = true,
+                    ),
                 ),
-                BerryCrushScenarioExecutionSupport.ClassCandidate(
-                    value = "com.example.AlphaTest",
-                    qualifiedName = "com.example.AlphaTest",
-                    inPreferredModule = true,
-                ),
-            ),
-        )
+            )
 
         assertEquals("com.example.AlphaTest", selected)
     }
 
     @Test
     fun `selectPreferredCandidate uses lexical order for deterministic tie break`() {
-        val selected = BerryCrushScenarioExecutionSupport.selectPreferredCandidate(
-            listOf(
-                BerryCrushScenarioExecutionSupport.ClassCandidate(
-                    value = "com.example.ZetaTest",
-                    qualifiedName = "com.example.ZetaTest",
-                    inPreferredModule = false,
+        val selected =
+            BerryCrushScenarioExecutionSupport.selectPreferredCandidate(
+                listOf(
+                    BerryCrushScenarioExecutionSupport.ClassCandidate(
+                        value = "com.example.ZetaTest",
+                        qualifiedName = "com.example.ZetaTest",
+                        inPreferredModule = false,
+                    ),
+                    BerryCrushScenarioExecutionSupport.ClassCandidate(
+                        value = "com.example.AlphaTest",
+                        qualifiedName = "com.example.AlphaTest",
+                        inPreferredModule = false,
+                    ),
                 ),
-                BerryCrushScenarioExecutionSupport.ClassCandidate(
-                    value = "com.example.AlphaTest",
-                    qualifiedName = "com.example.AlphaTest",
-                    inPreferredModule = false,
-                ),
-            ),
-        )
+            )
 
         assertEquals("com.example.AlphaTest", selected)
     }
@@ -60,11 +61,12 @@ class BerryCrushScenarioExecutionSupportTest {
 
     @Test
     fun `buildVmOptions includes scenario file and scenario name for scenario keyword`() {
-        val vmOptions = BerryCrushScenarioExecutionSupport.buildVmOptions(
-            scenarioFile = "petstore.scenario",
-            scenarioName = "Create Pet",
-            keywordType = "Scenario",
-        )
+        val vmOptions =
+            BerryCrushScenarioExecutionSupport.buildVmOptions(
+                scenarioFile = "petstore.scenario",
+                scenarioName = "Create Pet",
+                keywordType = "Scenario",
+            )
 
         assertEquals(
             "-DberryCrush.scenarioFile=petstore.scenario -DberryCrush.scenarioName=\"Create Pet\"",
@@ -74,11 +76,12 @@ class BerryCrushScenarioExecutionSupportTest {
 
     @Test
     fun `buildVmOptions includes feature name for feature keyword`() {
-        val vmOptions = BerryCrushScenarioExecutionSupport.buildVmOptions(
-            scenarioFile = "petstore.scenario",
-            scenarioName = "Petstore API",
-            keywordType = "Feature",
-        )
+        val vmOptions =
+            BerryCrushScenarioExecutionSupport.buildVmOptions(
+                scenarioFile = "petstore.scenario",
+                scenarioName = "Petstore API",
+                keywordType = "Feature",
+            )
 
         assertEquals(
             "-DberryCrush.scenarioFile=petstore.scenario -DberryCrush.featureName=\"Petstore API\"",

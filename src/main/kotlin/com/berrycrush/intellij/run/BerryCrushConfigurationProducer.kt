@@ -24,27 +24,27 @@ import com.intellij.psi.util.PsiTreeUtil
  * Order is important: this producer must be ordered before JUnit's TestInClassConfigurationProducer
  * to ensure BerryCrush configs take precedence.
  */
-class BerryCrushConfigurationProducer : LazyRunConfigurationProducer<BerryCrushRunConfiguration>(), DumbAware {
-
+class BerryCrushConfigurationProducer :
+    LazyRunConfigurationProducer<BerryCrushRunConfiguration>(),
+    DumbAware {
     companion object {
-        private val BERRYCRUSH_ANNOTATIONS = setOf(
-            "org.berrycrush.junit.BerryCrushScenarios",
-            "org.berrycrush.junit.BerryCrushSpec",
-            "org.berrycrush.junit.BerryCrushConfiguration",
-            "BerryCrushScenarios",
-            "BerryCrushSpec",
-            "BerryCrushConfiguration"
-        )
+        private val BERRYCRUSH_ANNOTATIONS =
+            setOf(
+                "org.berrycrush.junit.BerryCrushScenarios",
+                "org.berrycrush.junit.BerryCrushSpec",
+                "org.berrycrush.junit.BerryCrushConfiguration",
+                "BerryCrushScenarios",
+                "BerryCrushSpec",
+                "BerryCrushConfiguration",
+            )
     }
 
-    override fun getConfigurationFactory(): ConfigurationFactory {
-        return BerryCrushConfigurationType().configurationFactories[0]
-    }
+    override fun getConfigurationFactory(): ConfigurationFactory = BerryCrushConfigurationType().configurationFactories[0]
 
     override fun setupConfigurationFromContext(
         configuration: BerryCrushRunConfiguration,
         context: ConfigurationContext,
-        sourceElement: Ref<PsiElement>
+        sourceElement: Ref<PsiElement>,
     ): Boolean {
         val psiElement = context.psiLocation ?: return false
         val testClass = findBerryCrushTestClass(psiElement) ?: return false
@@ -76,7 +76,7 @@ class BerryCrushConfigurationProducer : LazyRunConfigurationProducer<BerryCrushR
 
     override fun isConfigurationFromContext(
         configuration: BerryCrushRunConfiguration,
-        context: ConfigurationContext
+        context: ConfigurationContext,
     ): Boolean {
         val psiElement = context.psiLocation ?: return false
         val testClass = findBerryCrushTestClass(psiElement) ?: return false
@@ -97,7 +97,10 @@ class BerryCrushConfigurationProducer : LazyRunConfigurationProducer<BerryCrushR
         }
     }
 
-    override fun shouldReplace(self: ConfigurationFromContext, other: ConfigurationFromContext): Boolean {
+    override fun shouldReplace(
+        self: ConfigurationFromContext,
+        other: ConfigurationFromContext,
+    ): Boolean {
         // BerryCrush configs should replace plain JUnit configs for BerryCrush test classes
         val otherType = other.configuration.factory?.type ?: return false
         // Replace JUnit configurations but not our own BerryCrush configurations
@@ -108,11 +111,12 @@ class BerryCrushConfigurationProducer : LazyRunConfigurationProducer<BerryCrushR
      * Finds the BerryCrush test class containing the given element.
      */
     private fun findBerryCrushTestClass(element: PsiElement): PsiClass? {
-        val psiClass = when (element) {
-            is PsiClass -> element
-            is PsiMethod -> element.containingClass
-            else -> PsiTreeUtil.getParentOfType(element, PsiClass::class.java)
-        } ?: return null
+        val psiClass =
+            when (element) {
+                is PsiClass -> element
+                is PsiMethod -> element.containingClass
+                else -> PsiTreeUtil.getParentOfType(element, PsiClass::class.java)
+            } ?: return null
 
         return if (isBerryCrushTestClass(psiClass)) psiClass else null
     }
@@ -121,38 +125,41 @@ class BerryCrushConfigurationProducer : LazyRunConfigurationProducer<BerryCrushR
      * Finds a test method at the given element position.
      */
     private fun findTestMethod(element: PsiElement): PsiMethod? {
-        val method = when (element) {
-            is PsiMethod -> element
-            else -> PsiTreeUtil.getParentOfType(element, PsiMethod::class.java)
-        } ?: return null
+        val method =
+            when (element) {
+                is PsiMethod -> element
+                else -> PsiTreeUtil.getParentOfType(element, PsiMethod::class.java)
+            } ?: return null
 
         // Check if it's a test method (has @Test, @ParameterizedTest, @ScenarioTest, etc.)
-        val testAnnotations = setOf(
-            "org.junit.jupiter.api.Test",
-            "org.junit.jupiter.params.ParameterizedTest",
-            "org.junit.Test",
-            "org.berrycrush.junit.ScenarioTest",
-            "Test",
-            "ParameterizedTest",
-            "ScenarioTest"
-        )
+        val testAnnotations =
+            setOf(
+                "org.junit.jupiter.api.Test",
+                "org.junit.jupiter.params.ParameterizedTest",
+                "org.junit.Test",
+                "org.berrycrush.junit.ScenarioTest",
+                "Test",
+                "ParameterizedTest",
+                "ScenarioTest",
+            )
 
-        val hasTestAnnotation = method.annotations.any { annotation ->
-            val qualifiedName = annotation.qualifiedName
-            qualifiedName != null && testAnnotations.any { expected ->
-                qualifiedName == expected || qualifiedName.endsWith(".$expected")
+        val hasTestAnnotation =
+            method.annotations.any { annotation ->
+                val qualifiedName = annotation.qualifiedName
+                qualifiedName != null &&
+                    testAnnotations.any { expected ->
+                        qualifiedName == expected || qualifiedName.endsWith(".$expected")
+                    }
             }
-        }
 
         return if (hasTestAnnotation) method else null
     }
 
-    private fun isBerryCrushTestClass(psiClass: PsiClass): Boolean {
-        return psiClass.annotations.any { annotation ->
-            val qualifiedName = annotation.qualifiedName
-            qualifiedName != null && BERRYCRUSH_ANNOTATIONS.any { expected ->
+    private fun isBerryCrushTestClass(psiClass: PsiClass): Boolean = psiClass.annotations.any { annotation ->
+        val qualifiedName = annotation.qualifiedName
+        qualifiedName != null &&
+            BERRYCRUSH_ANNOTATIONS.any { expected ->
                 qualifiedName == expected || qualifiedName.endsWith(".$expected")
             }
-        }
     }
 }

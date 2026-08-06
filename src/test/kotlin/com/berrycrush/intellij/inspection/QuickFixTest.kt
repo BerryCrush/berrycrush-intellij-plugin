@@ -7,14 +7,13 @@ import com.berrycrush.intellij.BerryCrushTestCase
  * Verifies quick fix creation and properties.
  */
 class QuickFixTest : BerryCrushTestCase() {
-
     // ========== CreateFragmentQuickFix Tests ==========
 
     fun testCreateFragmentQuickFixName() {
         val quickFix = CreateFragmentQuickFix("my-fragment")
         assertEquals(
             "Create fragment 'my-fragment'...",
-            quickFix.name
+            quickFix.name,
         )
     }
 
@@ -28,7 +27,7 @@ class QuickFixTest : BerryCrushTestCase() {
         // Fragment quick fix shows a dialog, so should NOT start in write action
         assertFalse(
             "Should not start in write action (shows dialog)",
-            quickFix.startInWriteAction()
+            quickFix.startInWriteAction(),
         )
     }
 
@@ -39,7 +38,7 @@ class QuickFixTest : BerryCrushTestCase() {
         // Actual implementation copies to clipboard
         assertEquals(
             "Copy @Step method template to clipboard",
-            quickFix.name
+            quickFix.name,
         )
     }
 
@@ -54,7 +53,7 @@ class QuickFixTest : BerryCrushTestCase() {
         // Default is true for LocalQuickFix
         assertTrue(
             "Clipboard quick fix can start in write action",
-            quickFix.startInWriteAction()
+            quickFix.startInWriteAction(),
         )
     }
 
@@ -64,7 +63,7 @@ class QuickFixTest : BerryCrushTestCase() {
         val quickFix = CreateAssertionQuickFix("response.status == 200")
         assertEquals(
             "Copy @Assertion method template to clipboard",
-            quickFix.name
+            quickFix.name,
         )
     }
 
@@ -78,7 +77,7 @@ class QuickFixTest : BerryCrushTestCase() {
         // Assertion quick fix copies to clipboard, uses default behavior
         assertTrue(
             "Clipboard quick fix can start in write action",
-            quickFix.startInWriteAction()
+            quickFix.startInWriteAction(),
         )
     }
 
@@ -117,15 +116,15 @@ class QuickFixTest : BerryCrushTestCase() {
 
         assertTrue(
             "CreateFragmentQuickFix should be LocalQuickFix",
-            fragmentFix is com.intellij.codeInspection.LocalQuickFix
+            fragmentFix is com.intellij.codeInspection.LocalQuickFix,
         )
         assertTrue(
             "CreateStepQuickFix should be LocalQuickFix",
-            stepFix is com.intellij.codeInspection.LocalQuickFix
+            stepFix is com.intellij.codeInspection.LocalQuickFix,
         )
         assertTrue(
             "CreateAssertionQuickFix should be LocalQuickFix",
-            assertionFix is com.intellij.codeInspection.LocalQuickFix
+            assertionFix is com.intellij.codeInspection.LocalQuickFix,
         )
     }
 }

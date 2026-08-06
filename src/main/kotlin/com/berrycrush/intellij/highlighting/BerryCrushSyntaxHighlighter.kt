@@ -10,9 +10,7 @@ import com.intellij.psi.tree.IElementType
  * Syntax highlighter for BerryCrush language.
  */
 class BerryCrushSyntaxHighlighter : SyntaxHighlighterBase() {
-
     override fun getHighlightingLexer(): Lexer = BerryCrushLexer()
 
-    override fun getTokenHighlights(tokenType: IElementType?): Array<TextAttributesKey> =
-        BerryCrushTokenHighlighting.keysForToken(tokenType)
+    override fun getTokenHighlights(tokenType: IElementType?): Array<TextAttributesKey> = BerryCrushTokenHighlighting.keysForToken(tokenType)
 }

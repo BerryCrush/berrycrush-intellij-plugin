@@ -10,11 +10,10 @@ import com.intellij.codeInsight.daemon.LineMarkerInfo
 import com.intellij.codeInsight.daemon.LineMarkerProvider
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.editor.markup.GutterIconRenderer
+import com.intellij.psi.PsiAnnotation
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiIdentifier
 import com.intellij.psi.PsiMethod
-import com.intellij.psi.PsiAnnotation
-import com.intellij.psi.impl.source.tree.LeafPsiElement
 
 /**
  * Provides gutter icons for @Step and @Assertion annotated methods in Java and Kotlin files,
@@ -24,7 +23,6 @@ import com.intellij.psi.impl.source.tree.LeafPsiElement
  * on the module containing the @Step/@Assertion method.
  */
 class StepAnnotationLineMarkerProvider : LineMarkerProvider {
-
     companion object {
         private const val STEP_ANNOTATION_FQN = "org.berrycrush.step.Step"
         private const val ASSERTION_ANNOTATION_FQN = "org.berrycrush.assertion.Assertion"
@@ -34,7 +32,7 @@ class StepAnnotationLineMarkerProvider : LineMarkerProvider {
         // For Kotlin files, add debug for elements with KtNamedFunction parent
         val file = element.containingFile
         val isKotlin = file?.name?.endsWith(".kt") == true
-        
+
         if (isKotlin) {
             var current: PsiElement? = element.parent
             var depth = 0
@@ -46,23 +44,24 @@ class StepAnnotationLineMarkerProvider : LineMarkerProvider {
                         val nameIdMethod = current.javaClass.getMethod("getNameIdentifier")
                         val nameIdentifier = nameIdMethod.invoke(current) as? PsiElement
                         val isMatch = (nameIdentifier == element)
-                        
+
                         if (isMatch || isAncestorOf(element, nameIdentifier)) {
                             // This is the method name - check for annotations directly
                             val ktAnnotations = getKotlinAnnotations(current)
-                            
+
                             // Check for @Step or @Assertion
                             val hasStep = ktAnnotations.any { it.contains("Step") }
                             val hasAssertion = ktAnnotations.any { it.contains("Assertion") }
-                            
+
                             // Get pattern if @Step or @Assertion
-                            val annotationName = when {
-                                hasStep -> "Step"
-                                hasAssertion -> "Assertion"
-                                else -> null
-                            }
+                            val annotationName =
+                                when {
+                                    hasStep -> "Step"
+                                    hasAssertion -> "Assertion"
+                                    else -> null
+                                }
                             val pattern = getKotlinAnnotationPattern(current, annotationName)
-                            
+
                             // @Step methods use step keywords (Given/When/Then/And/But)
                             // Use module-scoped search: only find usages from dependent modules
                             if (hasStep && pattern != null) {
@@ -82,11 +81,11 @@ class StepAnnotationLineMarkerProvider : LineMarkerProvider {
                                             }
                                         },
                                         GutterIconRenderer.Alignment.LEFT,
-                                        { "Step usages" }
+                                        { "Step usages" },
                                     )
                                 }
                             }
-                            
+
                             // @Assertion methods use assert directive (assert pet name is "Fluffy")
                             // Use module-scoped search: only find usages from dependent modules
                             if (hasAssertion && pattern != null) {
@@ -106,7 +105,7 @@ class StepAnnotationLineMarkerProvider : LineMarkerProvider {
                                             }
                                         },
                                         GutterIconRenderer.Alignment.LEFT,
-                                        { "Assertion usages" }
+                                        { "Assertion usages" },
                                     )
                                 }
                             }
@@ -119,10 +118,10 @@ class StepAnnotationLineMarkerProvider : LineMarkerProvider {
                 depth++
             }
         }
-        
+
         // For Java files, use the original approach
         val method = findContainingMethod(element)
-        
+
         if (method == null) return null
 
         // Check for @Step annotation
@@ -147,7 +146,7 @@ class StepAnnotationLineMarkerProvider : LineMarkerProvider {
                             }
                         },
                         GutterIconRenderer.Alignment.LEFT,
-                        { "Step usages" }
+                        { "Step usages" },
                     )
                 }
             }
@@ -175,7 +174,7 @@ class StepAnnotationLineMarkerProvider : LineMarkerProvider {
                             }
                         },
                         GutterIconRenderer.Alignment.LEFT,
-                        { "Assertion usages" }
+                        { "Assertion usages" },
                     )
                 }
             }
@@ -196,17 +195,17 @@ class StepAnnotationLineMarkerProvider : LineMarkerProvider {
                 return parent
             }
         }
-        
+
         // For Kotlin: The element is a LeafPsiElement, we need to check if it's a function name
         // by walking up the parent chain to find a KtNamedFunction
         val file = element.containingFile
         val isKotlin = file?.name?.endsWith(".kt") == true
-        
+
         if (isKotlin) {
             // Check if this element is the identifier of a named function
             var current: PsiElement? = element.parent
             var maxDepth = 5 // Don't walk too far
-            
+
             while (current != null && maxDepth > 0) {
                 // Check if current element is a KtNamedFunction (via class name)
                 val className = current.javaClass.name
@@ -230,14 +229,17 @@ class StepAnnotationLineMarkerProvider : LineMarkerProvider {
                 maxDepth--
             }
         }
-        
+
         return null
     }
-    
+
     /**
      * Check if element is the nameIdentifier or a child of it
      */
-    private fun isAncestorOf(element: PsiElement, potentialAncestor: PsiElement?): Boolean {
+    private fun isAncestorOf(
+        element: PsiElement,
+        potentialAncestor: PsiElement?,
+    ): Boolean {
         if (potentialAncestor == null) return false
         var current: PsiElement? = element
         while (current != null) {
@@ -246,7 +248,7 @@ class StepAnnotationLineMarkerProvider : LineMarkerProvider {
         }
         return false
     }
-    
+
     /**
      * Get annotation names from a Kotlin function via reflection
      */
@@ -254,9 +256,10 @@ class StepAnnotationLineMarkerProvider : LineMarkerProvider {
         val result = mutableListOf<String>()
         try {
             // Try getAnnotationEntries
-            val annotationsMethod = ktFunction.javaClass.methods.find { 
-                it.name == "getAnnotationEntries" && it.parameterCount == 0
-            }
+            val annotationsMethod =
+                ktFunction.javaClass.methods.find {
+                    it.name == "getAnnotationEntries" && it.parameterCount == 0
+                }
             if (annotationsMethod != null) {
                 annotationsMethod.isAccessible = true
                 @Suppress("UNCHECKED_CAST")
@@ -298,12 +301,13 @@ class StepAnnotationLineMarkerProvider : LineMarkerProvider {
                     }
                 }
             }
-            
+
             // Fallback: try getModifierList and getAnnotations
             if (result.isEmpty()) {
-                val modListMethod = ktFunction.javaClass.methods.find { 
-                    it.name == "getModifierList" && it.parameterCount == 0
-                }
+                val modListMethod =
+                    ktFunction.javaClass.methods.find {
+                        it.name == "getModifierList" && it.parameterCount == 0
+                    }
                 if (modListMethod != null) {
                     modListMethod.isAccessible = true
                     val modList = modListMethod.invoke(ktFunction)
@@ -326,16 +330,20 @@ class StepAnnotationLineMarkerProvider : LineMarkerProvider {
         }
         return result
     }
-    
+
     /**
      * Get pattern value from Kotlin @Step or @Assertion annotation
      */
-    private fun getKotlinAnnotationPattern(ktFunction: PsiElement, annotationName: String?): String? {
+    private fun getKotlinAnnotationPattern(
+        ktFunction: PsiElement,
+        annotationName: String?,
+    ): String? {
         if (annotationName == null) return null
         try {
-            val annotationsMethod = ktFunction.javaClass.methods.find { 
-                it.name == "getAnnotationEntries" && it.parameterCount == 0
-            }
+            val annotationsMethod =
+                ktFunction.javaClass.methods.find {
+                    it.name == "getAnnotationEntries" && it.parameterCount == 0
+                }
             if (annotationsMethod != null) {
                 annotationsMethod.isAccessible = true
                 @Suppress("UNCHECKED_CAST")
@@ -343,24 +351,25 @@ class StepAnnotationLineMarkerProvider : LineMarkerProvider {
                 annotations?.forEach { ann ->
                     if (ann != null) {
                         // Get the annotation text directly via getText()
-                        val text = try {
-                            val getTextMethod = ann.javaClass.getMethod("getText")
-                            getTextMethod.invoke(ann) as? String
-                        } catch (e: Exception) {
-                            ann.toString()
-                        } ?: return@forEach
-                        
+                        val text =
+                            try {
+                                val getTextMethod = ann.javaClass.getMethod("getText")
+                                getTextMethod.invoke(ann) as? String
+                            } catch (e: Exception) {
+                                ann.toString()
+                            } ?: return@forEach
+
                         // Check if this is the annotation we want
-                        if (text.contains("@$annotationName") || text.contains("@${annotationName}(")) {
+                        if (text.contains("@$annotationName") || text.contains("@$annotationName(")) {
                             // Parse the pattern from the annotation text
                             // Handle: @Step("pattern"), @Step(pattern = "pattern"), @Step(value = "pattern")
-                            
+
                             // Try named parameter: pattern = "..." or value = "..."
                             val namedMatch = Regex("""(?:pattern|value)\s*=\s*"([^"]+)"""").find(text)
                             if (namedMatch != null) {
                                 return namedMatch.groupValues[1]
                             }
-                            
+
                             // Try positional argument: @Step("...")
                             val positionalMatch = Regex("""@\w+\s*\(\s*"([^"]+)"""").find(text)
                             if (positionalMatch != null) {
@@ -384,12 +393,13 @@ class StepAnnotationLineMarkerProvider : LineMarkerProvider {
         if (ktFunction is PsiMethod) {
             return ktFunction
         }
-        
+
         // Try direct toLightMethods call
         try {
-            val toLightMethodsMethod = ktFunction.javaClass.methods.find { 
-                it.name == "toLightMethods" && it.parameterCount == 0
-            }
+            val toLightMethodsMethod =
+                ktFunction.javaClass.methods.find {
+                    it.name == "toLightMethods" && it.parameterCount == 0
+                }
             if (toLightMethodsMethod != null) {
                 toLightMethodsMethod.isAccessible = true
                 @Suppress("UNCHECKED_CAST")
@@ -401,12 +411,13 @@ class StepAnnotationLineMarkerProvider : LineMarkerProvider {
         } catch (e: Exception) {
             // Continue trying
         }
-        
+
         // Try via getContainingClass
         try {
-            val containingClassMethod = ktFunction.javaClass.methods.find { 
-                it.name == "getContainingClass" && it.parameterCount == 0
-            }
+            val containingClassMethod =
+                ktFunction.javaClass.methods.find {
+                    it.name == "getContainingClass" && it.parameterCount == 0
+                }
             if (containingClassMethod != null) {
                 containingClassMethod.isAccessible = true
                 val containingClass = containingClassMethod.invoke(ktFunction) as? com.intellij.psi.PsiClass
@@ -421,19 +432,21 @@ class StepAnnotationLineMarkerProvider : LineMarkerProvider {
         } catch (e: Exception) {
             // Continue trying
         }
-        
+
         // Try via getContainingClassOrObject and toLightClass
         try {
-            val containingClassMethod = ktFunction.javaClass.methods.find { 
-                it.name == "getContainingClassOrObject" && it.parameterCount == 0
-            }
+            val containingClassMethod =
+                ktFunction.javaClass.methods.find {
+                    it.name == "getContainingClassOrObject" && it.parameterCount == 0
+                }
             if (containingClassMethod != null) {
                 containingClassMethod.isAccessible = true
                 val containingClass = containingClassMethod.invoke(ktFunction)
                 if (containingClass != null) {
-                    val toLightClassMethod = containingClass.javaClass.methods.find { 
-                        it.name == "toLightClass" && it.parameterCount == 0
-                    }
+                    val toLightClassMethod =
+                        containingClass.javaClass.methods.find {
+                            it.name == "toLightClass" && it.parameterCount == 0
+                        }
                     if (toLightClassMethod != null) {
                         toLightClassMethod.isAccessible = true
                         val lightClass = toLightClassMethod.invoke(containingClass) as? com.intellij.psi.PsiClass
@@ -450,18 +463,19 @@ class StepAnnotationLineMarkerProvider : LineMarkerProvider {
         } catch (e: Exception) {
             // Continue trying
         }
-        
+
         return null
     }
 
     /**
      * Find an annotation by FQN on a method
      */
-    private fun findAnnotation(method: PsiMethod, annotationFqn: String): PsiAnnotation? {
-        return method.annotations.find { annotation ->
-            annotation.qualifiedName == annotationFqn ||
+    private fun findAnnotation(
+        method: PsiMethod,
+        annotationFqn: String,
+    ): PsiAnnotation? = method.annotations.find { annotation ->
+        annotation.qualifiedName == annotationFqn ||
             annotation.qualifiedName?.endsWith(".${annotationFqn.substringAfterLast('.')}") == true
-        }
     }
 
     /**
@@ -495,31 +509,40 @@ class StepAnnotationLineMarkerProvider : LineMarkerProvider {
     /**
      * Show a popup for multiple usages
      */
-    private fun showUsagesPopup(element: PsiElement, usages: List<PsiElement>) {
+    private fun showUsagesPopup(
+        element: PsiElement,
+        usages: List<PsiElement>,
+    ) {
         val project = element.project
 
         // Create popup with all usages
-        val popup = com.intellij.openapi.ui.popup.JBPopupFactory.getInstance()
-            .createPopupChooserBuilder(usages.map { usage ->
-                val file = usage.containingFile
-                val lineNumber = getLineNumber(usage)
-                "${file.name}:$lineNumber"
-            })
-            .setTitle("Usages in Scenario Files")
-            .setItemChosenCallback { selected ->
-                val index = usages.indices.find { i ->
-                    val usage = usages[i]
-                    val file = usage.containingFile
-                    val lineNumber = getLineNumber(usage)
-                    "${file.name}:$lineNumber" == selected
-                }
-                if (index != null) {
-                    usages[index].navigate(true)
-                }
-            }
-            .createPopup()
+        val popup =
+            com.intellij.openapi.ui.popup.JBPopupFactory
+                .getInstance()
+                .createPopupChooserBuilder(
+                    usages.map { usage ->
+                        val file = usage.containingFile
+                        val lineNumber = getLineNumber(usage)
+                        "${file.name}:$lineNumber"
+                    },
+                ).setTitle("Usages in Scenario Files")
+                .setItemChosenCallback { selected ->
+                    val index =
+                        usages.indices.find { i ->
+                            val usage = usages[i]
+                            val file = usage.containingFile
+                            val lineNumber = getLineNumber(usage)
+                            "${file.name}:$lineNumber" == selected
+                        }
+                    if (index != null) {
+                        usages[index].navigate(true)
+                    }
+                }.createPopup()
 
-        val editor = com.intellij.openapi.fileEditor.FileEditorManager.getInstance(project).selectedTextEditor
+        val editor =
+            com.intellij.openapi.fileEditor.FileEditorManager
+                .getInstance(project)
+                .selectedTextEditor
         if (editor != null) {
             popup.showInBestPositionFor(editor)
         }
@@ -529,8 +552,10 @@ class StepAnnotationLineMarkerProvider : LineMarkerProvider {
      * Get line number for a PSI element
      */
     private fun getLineNumber(element: PsiElement): Int {
-        val document = com.intellij.psi.PsiDocumentManager.getInstance(element.project)
-            .getDocument(element.containingFile)
+        val document =
+            com.intellij.psi.PsiDocumentManager
+                .getInstance(element.project)
+                .getDocument(element.containingFile)
         return if (document != null) {
             document.getLineNumber(element.textOffset) + 1
         } else {

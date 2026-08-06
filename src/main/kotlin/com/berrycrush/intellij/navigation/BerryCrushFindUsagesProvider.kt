@@ -15,44 +15,36 @@ import com.intellij.psi.PsiNamedElement
  * Enables "Find Usages" (Alt+F7) for fragments and operations.
  */
 class BerryCrushFindUsagesProvider : FindUsagesProvider {
-
-    override fun canFindUsagesFor(element: PsiElement): Boolean {
-        return element is PsiNamedElement
-    }
+    override fun canFindUsagesFor(element: PsiElement): Boolean = element is PsiNamedElement
 
     override fun getHelpId(element: PsiElement): String? = null
 
-    override fun getType(element: PsiElement): String {
-        return when (element) {
-            is BerryCrushFile -> {
-                val fileName = element.name
-                when {
-                    fileName.endsWith(".fragment") -> "fragment"
-                    fileName.endsWith(".scenario") -> "scenario"
-                    else -> "file"
-                }
+    override fun getType(element: PsiElement): String = when (element) {
+        is BerryCrushFile -> {
+            val fileName = element.name
+            when {
+                fileName.endsWith(".fragment") -> "fragment"
+                fileName.endsWith(".scenario") -> "scenario"
+                else -> "file"
             }
-            else -> "element"
         }
+        else -> "element"
     }
 
-    override fun getDescriptiveName(element: PsiElement): String {
-        return when (element) {
-            is PsiNamedElement -> element.name ?: "<unnamed>"
-            else -> element.text.take(30)
-        }
+    override fun getDescriptiveName(element: PsiElement): String = when (element) {
+        is PsiNamedElement -> element.name ?: "<unnamed>"
+        else -> element.text.take(30)
     }
 
-    override fun getNodeText(element: PsiElement, useFullName: Boolean): String {
-        return getDescriptiveName(element)
-    }
+    override fun getNodeText(
+        element: PsiElement,
+        useFullName: Boolean,
+    ): String = getDescriptiveName(element)
 
-    override fun getWordsScanner(): WordsScanner {
-        return DefaultWordsScanner(
-            BerryCrushLexer(),
-            BerryCrushTokenTypes.IDENTIFIERS,
-            BerryCrushTokenTypes.COMMENTS,
-            BerryCrushTokenTypes.STRINGS
-        )
-    }
+    override fun getWordsScanner(): WordsScanner = DefaultWordsScanner(
+        BerryCrushLexer(),
+        BerryCrushTokenTypes.IDENTIFIERS,
+        BerryCrushTokenTypes.COMMENTS,
+        BerryCrushTokenTypes.STRINGS,
+    )
 }

@@ -1,9 +1,11 @@
 package com.berrycrush.intellij.inspection
 
 import com.berrycrush.intellij.index.FragmentIndex
+import com.berrycrush.intellij.psi.BerryCrushIncludeElement
 import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.PsiFile
+import com.intellij.psi.util.PsiTreeUtil
 
 /**
  * Inspection that detects missing fragment references in BerryCrush files.
@@ -12,34 +14,29 @@ import com.intellij.psi.PsiFile
  * fragment doesn't exist in the project.
  */
 class MissingFragmentInspection : BerryCrushInspection() {
-
     override fun getDisplayName(): String = "Missing fragment reference"
+
     override fun getShortName(): String = "BerryCrushMissingFragment"
+
     override fun getGroupDisplayName(): String = "BerryCrush"
+
     override fun isEnabledByDefault(): Boolean = true
 
-    override fun checkFile(file: PsiFile, holder: ProblemsHolder) {
+    override fun checkFile(
+        file: PsiFile,
+        holder: ProblemsHolder,
+    ) {
         val knownFragments = FragmentIndex.getAllFragmentNames(file.project)
-        val lines = file.text.lines()
-        
-        lines.forEachIndexed { lineIndex, line ->
-            INCLUDE_PATTERN.find(line)?.let { match ->
-                val fragmentName = match.groupValues[1]
-                if (fragmentName !in knownFragments) {
-                    findElementAtLine(file, lineIndex, match.range.first)?.let { element ->
-                        holder.registerProblem(
-                            element,
-                            "Fragment '$fragmentName' not found",
-                            ProblemHighlightType.ERROR,
-                            CreateFragmentQuickFix(fragmentName)
-                        )
-                    }
-                }
+        PsiTreeUtil.findChildrenOfType(file, BerryCrushIncludeElement::class.java).forEach { include ->
+            val ref = include.fragmentRef ?: return@forEach
+            if (ref.name !in knownFragments) {
+                holder.registerProblem(
+                    ref,
+                    "Fragment '${ref.name}' not found",
+                    ProblemHighlightType.GENERIC_ERROR,
+                    CreateFragmentQuickFix(ref.name),
+                )
             }
         }
-    }
-
-    companion object {
-        private val INCLUDE_PATTERN = Regex("""^\s*include\s+(\S+)""")
     }
 }

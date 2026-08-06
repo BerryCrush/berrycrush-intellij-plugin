@@ -3,12 +3,10 @@ package com.berrycrush.intellij.highlighting
 import com.berrycrush.intellij.BerryCrushTestCase
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.openapi.editor.colors.TextAttributesKey
-import com.intellij.openapi.util.TextRange
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class BerryCrushAnnotatorTest : BerryCrushTestCase() {
-
     fun testAnnotatorHighlightsOnlyFeatureKeywordInFeatureTitleLine() {
         val content = "feature: this should not be coloured"
 
@@ -82,11 +80,12 @@ class BerryCrushAnnotatorTest : BerryCrushTestCase() {
     }
 
     fun testAnnotatorHighlightsStepKeywordAndDirective() {
-        val content = """
+        val content =
+            """
             scenario: Annotator checks
                             given I invoke API
                 call ^listPets
-        """.trimIndent()
+            """.trimIndent()
 
         val infos = highlight(content)
 
@@ -105,12 +104,13 @@ class BerryCrushAnnotatorTest : BerryCrushTestCase() {
     }
 
     fun testAnnotatorHighlightsIncludeParameterKeyRange() {
-        val content = """
+        val content =
+            """
             scenario: Include params
               given using fragment
                 include auth-flow
                   token: "abc"
-        """.trimIndent()
+            """.trimIndent()
 
         val infos = highlight(content)
 
@@ -123,29 +123,32 @@ class BerryCrushAnnotatorTest : BerryCrushTestCase() {
     }
 
     fun testAnnotatorHighlightingIsStableAcrossReopenAndEdit() {
-        val initial = """
+        val initial =
+            """
             scenario: Stability
               given base step
                 call ^listPets
-        """.trimIndent()
+            """.trimIndent()
 
         val firstInfos = highlight(initial)
-        val firstGivenCount = countHighlightsAtToken(
-            infos = firstInfos,
-            content = initial,
-            token = "given",
-            key = BerryCrushHighlightingColors.STEP_KEYWORD,
-        )
+        val firstGivenCount =
+            countHighlightsAtToken(
+                infos = firstInfos,
+                content = initial,
+                token = "given",
+                key = BerryCrushHighlightingColors.STEP_KEYWORD,
+            )
         assertTrue(firstGivenCount > 0)
 
         myFixture.configureByText("stability.scenario", initial)
         val reopenInfos = myFixture.doHighlighting()
-        val reopenGivenCount = countHighlightsAtToken(
-            infos = reopenInfos,
-            content = initial,
-            token = "given",
-            key = BerryCrushHighlightingColors.STEP_KEYWORD,
-        )
+        val reopenGivenCount =
+            countHighlightsAtToken(
+                infos = reopenInfos,
+                content = initial,
+                token = "given",
+                key = BerryCrushHighlightingColors.STEP_KEYWORD,
+            )
         assertEquals(firstGivenCount, reopenGivenCount)
 
         val edited = initial + "\n  then verify result"
@@ -210,11 +213,12 @@ class BerryCrushAnnotatorTest : BerryCrushTestCase() {
         assertTrue(start >= 0, "Text '$text' must exist in test content")
         val end = start + text.length
 
-        val overlappingBerryCrushHighlights = infos.filter {
-            val overlaps = it.startOffset < end && it.endOffset > start
-            val key = it.forcedTextAttributesKey
-            overlaps && key?.externalName?.startsWith("BERRYCRUSH_") == true
-        }
+        val overlappingBerryCrushHighlights =
+            infos.filter {
+                val overlaps = it.startOffset < end && it.endOffset > start
+                val key = it.forcedTextAttributesKey
+                overlaps && key?.externalName?.startsWith("BERRYCRUSH_") == true
+            }
 
         assertTrue(
             overlappingBerryCrushHighlights.isEmpty(),

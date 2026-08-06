@@ -15,12 +15,15 @@ import com.intellij.psi.PsiElement
  * - Safe delete for fragment definitions and files
  */
 class BerryCrushRefactoringSupportProvider : RefactoringSupportProvider() {
+    override fun isMemberInplaceRenameAvailable(
+        element: PsiElement,
+        context: PsiElement?,
+    ): Boolean = element.containingFile is BerryCrushFile && isRenameableElement(element)
 
-    override fun isMemberInplaceRenameAvailable(element: PsiElement, context: PsiElement?): Boolean =
-        element.containingFile is BerryCrushFile && isRenameableElement(element)
-
-    override fun isInplaceRenameAvailable(element: PsiElement, context: PsiElement?): Boolean =
-        element.containingFile is BerryCrushFile && isRenameableElement(element)
+    override fun isInplaceRenameAvailable(
+        element: PsiElement,
+        context: PsiElement?,
+    ): Boolean = element.containingFile is BerryCrushFile && isRenameableElement(element)
 
     override fun isSafeDeleteAvailable(element: PsiElement): Boolean {
         // Safe delete available for individual fragment elements
@@ -44,17 +47,17 @@ class BerryCrushRefactoringSupportProvider : RefactoringSupportProvider() {
         val lineNumber = document.getLineNumber(offset)
         val lineStart = document.getLineStartOffset(lineNumber)
         val lineEnd = document.getLineEndOffset(lineNumber)
-        return document.getText(com.intellij.openapi.util.TextRange(lineStart, lineEnd))
+        return document.getText(
+            com.intellij.openapi.util
+                .TextRange(lineStart, lineEnd),
+        )
     }
 
-    private fun isFragmentDefinition(lineText: String): Boolean =
-        FRAGMENT_DEF_PATTERN.containsMatchIn(lineText)
+    private fun isFragmentDefinition(lineText: String): Boolean = FRAGMENT_DEF_PATTERN.containsMatchIn(lineText)
 
-    private fun isIncludeDirective(lineText: String): Boolean =
-        INCLUDE_PATTERN.containsMatchIn(lineText)
+    private fun isIncludeDirective(lineText: String): Boolean = INCLUDE_PATTERN.containsMatchIn(lineText)
 
-    private fun isVariablePlaceholder(text: String): Boolean =
-        VARIABLE_PATTERN.containsMatchIn(text)
+    private fun isVariablePlaceholder(text: String): Boolean = VARIABLE_PATTERN.containsMatchIn(text)
 
     companion object {
         private val FRAGMENT_DEF_PATTERN = Regex("""^\s*[Ff]ragment:\s*\S+""")

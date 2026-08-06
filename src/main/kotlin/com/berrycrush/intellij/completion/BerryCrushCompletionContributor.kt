@@ -2,7 +2,7 @@ package com.berrycrush.intellij.completion
 
 import com.berrycrush.intellij.language.BerryCrushLanguage
 import com.berrycrush.intellij.psi.BerryCrushIncludeElement
-import com.berrycrush.intellij.psi.BerryCrushParametersBlockElement
+import com.berrycrush.intellij.psi.BerryCrushParametersElement
 import com.berrycrush.intellij.psi.BerryCrushScenarioElement
 import com.berrycrush.intellij.reference.BerryCrushFragmentReference
 import com.intellij.codeInsight.completion.CompletionContributor
@@ -23,13 +23,12 @@ import com.intellij.util.ProcessingContext
  * Provides completion for keywords, directives, and assertion conditions.
  */
 class BerryCrushCompletionContributor : CompletionContributor() {
-
     init {
         // Add completions for BerryCrush files
         extend(
             CompletionType.BASIC,
             PlatformPatterns.psiElement().withLanguage(BerryCrushLanguage),
-            BerryCrushCompletionProvider()
+            BerryCrushCompletionProvider(),
         )
     }
 }
@@ -38,11 +37,10 @@ class BerryCrushCompletionContributor : CompletionContributor() {
  * Provides completion items for BerryCrush keywords and directives.
  */
 class BerryCrushCompletionProvider : CompletionProvider<CompletionParameters>() {
-
     override fun addCompletions(
         parameters: CompletionParameters,
         context: ProcessingContext,
-        result: CompletionResultSet
+        result: CompletionResultSet,
     ) {
         val position = parameters.position
         val text = position.containingFile.text
@@ -55,7 +53,7 @@ class BerryCrushCompletionProvider : CompletionProvider<CompletionParameters>() 
         }
 
         // Check if we're inside a scenario/feature parameters block
-        val parametersBlock = PsiTreeUtil.getParentOfType(position, BerryCrushParametersBlockElement::class.java)
+        val parametersBlock = PsiTreeUtil.getParentOfType(position, BerryCrushParametersElement::class.java)
         if (parametersBlock != null) {
             addScenarioParameterCompletions(result)
             return
@@ -106,7 +104,10 @@ class BerryCrushCompletionProvider : CompletionProvider<CompletionParameters>() 
     /**
      * Check if cursor is inside a variable interpolation: {{...}}
      */
-    private fun isInVariableInterpolation(text: String, offset: Int): Boolean {
+    private fun isInVariableInterpolation(
+        text: String,
+        offset: Int,
+    ): Boolean {
         // Look backwards for {{
         var pos = offset - 1
         while (pos >= 1) {
@@ -121,13 +122,17 @@ class BerryCrushCompletionProvider : CompletionProvider<CompletionParameters>() 
     /**
      * Add completions for variable interpolation prefixes and known variables.
      */
-    private fun addVariableInterpolationCompletions(file: PsiFile, result: CompletionResultSet) {
+    private fun addVariableInterpolationCompletions(
+        file: PsiFile,
+        result: CompletionResultSet,
+    ) {
         // Add prefix suggestions
         VARIABLE_PREFIXES.forEach { (prefix, description) ->
             result.addElement(
-                LookupElementBuilder.create(prefix)
+                LookupElementBuilder
+                    .create(prefix)
                     .withIcon(AllIcons.Nodes.Variable)
-                    .withTypeText(description)
+                    .withTypeText(description),
             )
         }
 
@@ -135,9 +140,10 @@ class BerryCrushCompletionProvider : CompletionProvider<CompletionParameters>() 
         val extractedVars = extractExtractedVariables(file)
         extractedVars.forEach { varName ->
             result.addElement(
-                LookupElementBuilder.create(varName)
+                LookupElementBuilder
+                    .create(varName)
                     .withIcon(AllIcons.Nodes.Variable)
-                    .withTypeText("context variable")
+                    .withTypeText("context variable"),
             )
         }
     }
@@ -149,7 +155,8 @@ class BerryCrushCompletionProvider : CompletionProvider<CompletionParameters>() 
         val text = file.text
         // Pattern: extract varName = ...
         val pattern = Regex("""extract\s+(\w+)\s*=""")
-        return pattern.findAll(text)
+        return pattern
+            .findAll(text)
             .map { it.groupValues[1] }
             .toSet()
     }
@@ -160,7 +167,7 @@ class BerryCrushCompletionProvider : CompletionProvider<CompletionParameters>() 
     private fun isInParametersBlockStartPosition(
         text: String,
         offset: Int,
-        scenarioElement: BerryCrushScenarioElement
+        scenarioElement: BerryCrushScenarioElement,
     ): Boolean {
         // Check if we're on the line after scenario:
         val scenarioTextOffset = scenarioElement.textRange.startOffset
@@ -178,10 +185,11 @@ class BerryCrushCompletionProvider : CompletionProvider<CompletionParameters>() 
      */
     private fun addParametersBlockKeyword(result: CompletionResultSet) {
         result.addElement(
-            LookupElementBuilder.create("parameters:")
+            LookupElementBuilder
+                .create("parameters:")
                 .withIcon(AllIcons.Nodes.Property)
                 .withTypeText("parameters block")
-                .withBoldness(true)
+                .withBoldness(true),
         )
     }
 
@@ -191,10 +199,11 @@ class BerryCrushCompletionProvider : CompletionProvider<CompletionParameters>() 
     private fun addScenarioParameterCompletions(result: CompletionResultSet) {
         KNOWN_PARAMETERS.forEach { (paramName, description) ->
             result.addElement(
-                LookupElementBuilder.create("$paramName: ")
+                LookupElementBuilder
+                    .create("$paramName: ")
                     .withIcon(AllIcons.Nodes.Property)
                     .withTypeText(description)
-                    .withPresentableText(paramName)
+                    .withPresentableText(paramName),
             )
         }
     }
@@ -203,7 +212,11 @@ class BerryCrushCompletionProvider : CompletionProvider<CompletionParameters>() 
      * Check if the cursor is in a position suitable for parameter completion
      * (after the include line, in an indented position).
      */
-    private fun isInParameterBlockPosition(text: String, offset: Int, includeElement: BerryCrushIncludeElement): Boolean {
+    private fun isInParameterBlockPosition(
+        text: String,
+        offset: Int,
+        includeElement: BerryCrushIncludeElement,
+    ): Boolean {
         // Check if we're after the include line (not on the same line)
         val includeEndOffset = includeElement.textRange.startOffset + includeElement.text.indexOf('\n')
         if (offset <= includeEndOffset) return false
@@ -217,25 +230,30 @@ class BerryCrushCompletionProvider : CompletionProvider<CompletionParameters>() 
     /**
      * Add parameter name completions based on fragment's expected variables.
      */
-    private fun addParameterCompletions(includeElement: BerryCrushIncludeElement, result: CompletionResultSet) {
+    private fun addParameterCompletions(
+        includeElement: BerryCrushIncludeElement,
+        result: CompletionResultSet,
+    ) {
         val fragmentName = includeElement.fragmentName ?: return
         val project = includeElement.project
 
         // Find the fragment definition
-        val fragmentFile = BerryCrushFragmentReference.findFragmentByName(project, fragmentName)
-            as? PsiFile ?: return
+        val fragmentFile =
+            BerryCrushFragmentReference.findFragmentByName(project, fragmentName)
+                as? PsiFile ?: return
 
         // Extract expected parameters from fragment
         val expectedParams = extractExpectedParameters(fragmentFile)
-        val providedParams = includeElement.parameterNames
+        val providedParams = includeElement.parameterNames.toSet()
 
         // Suggest parameters that haven't been provided yet
         expectedParams.subtract(providedParams).forEach { paramName ->
             result.addElement(
-                LookupElementBuilder.create("$paramName: ")
+                LookupElementBuilder
+                    .create("$paramName: ")
                     .withIcon(AllIcons.Nodes.Parameter)
                     .withTypeText("parameter")
-                    .withPresentableText(paramName)
+                    .withPresentableText(paramName),
             )
         }
     }
@@ -247,12 +265,16 @@ class BerryCrushCompletionProvider : CompletionProvider<CompletionParameters>() 
     private fun extractExpectedParameters(fragmentFile: PsiFile): Set<String> {
         val text = fragmentFile.text
         val pattern = Regex("""\{\{(\w+)\}\}""")
-        return pattern.findAll(text)
+        return pattern
+            .findAll(text)
             .map { it.groupValues[1] }
             .toSet()
     }
 
-    private fun findLineStart(text: String, offset: Int): Int {
+    private fun findLineStart(
+        text: String,
+        offset: Int,
+    ): Int {
         var pos = offset - 1
         while (pos >= 0 && text[pos] != '\n') {
             pos--
@@ -263,8 +285,11 @@ class BerryCrushCompletionProvider : CompletionProvider<CompletionParameters>() 
     private fun countIndent(linePrefix: String): Int {
         var count = 0
         for (c in linePrefix) {
-            if (c == ' ') count++
-            else break
+            if (c == ' ') {
+                count++
+            } else {
+                break
+            }
         }
         return count / 2
     }
@@ -272,9 +297,10 @@ class BerryCrushCompletionProvider : CompletionProvider<CompletionParameters>() 
     private fun addBlockKeywords(result: CompletionResultSet) {
         BLOCK_KEYWORDS.forEach { keyword ->
             result.addElement(
-                LookupElementBuilder.create(keyword)
+                LookupElementBuilder
+                    .create(keyword)
                     .withTypeText("block")
-                    .withBoldness(true)
+                    .withBoldness(true),
             )
         }
     }
@@ -282,8 +308,9 @@ class BerryCrushCompletionProvider : CompletionProvider<CompletionParameters>() 
     private fun addDirectives(result: CompletionResultSet) {
         DIRECTIVES.forEach { (keyword, description) ->
             result.addElement(
-                LookupElementBuilder.create(keyword)
-                    .withTypeText(description)
+                LookupElementBuilder
+                    .create(keyword)
+                    .withTypeText(description),
             )
         }
     }
@@ -291,8 +318,9 @@ class BerryCrushCompletionProvider : CompletionProvider<CompletionParameters>() 
     private fun addConditions(result: CompletionResultSet) {
         CONDITIONS.forEach { (keyword, description) ->
             result.addElement(
-                LookupElementBuilder.create(keyword)
-                    .withTypeText(description)
+                LookupElementBuilder
+                    .create(keyword)
+                    .withTypeText(description),
             )
         }
     }
@@ -301,79 +329,86 @@ class BerryCrushCompletionProvider : CompletionProvider<CompletionParameters>() 
         addBlockKeywords(result)
         STEP_KEYWORDS.forEach { keyword ->
             result.addElement(
-                LookupElementBuilder.create(keyword)
-                    .withTypeText("step")
+                LookupElementBuilder
+                    .create(keyword)
+                    .withTypeText("step"),
             )
         }
         addDirectives(result)
     }
 
     companion object {
-        private val BLOCK_KEYWORDS = listOf(
-            "feature:",
-            "scenario:",
-            "outline:",
-            "fragment:",
-            "parameters:",
-            "background:",
-            "examples:",
-        )
+        private val BLOCK_KEYWORDS =
+            listOf(
+                "feature:",
+                "scenario:",
+                "outline:",
+                "fragment:",
+                "parameters:",
+                "background:",
+                "examples:",
+            )
 
-        private val STEP_KEYWORDS = listOf(
-            "given ",
-            "when ",
-            "then ",
-            "and ",
-            "but ",
-        )
+        private val STEP_KEYWORDS =
+            listOf(
+                "given ",
+                "when ",
+                "then ",
+                "and ",
+                "but ",
+            )
 
-        private val DIRECTIVES = listOf(
-            "call " to "API call",
-            "assert " to "assertion",
-            "extract " to "variable extraction",
-            "include " to "fragment include",
-            "body:" to "request body",
-            "if " to "conditional",
-            "else if " to "conditional",
-            "else" to "conditional",
-            "fail " to "fail with message",
-        )
+        private val DIRECTIVES =
+            listOf(
+                "call " to "API call",
+                "assert " to "assertion",
+                "extract " to "variable extraction",
+                "include " to "fragment include",
+                "body:" to "request body",
+                "if " to "conditional",
+                "else if " to "conditional",
+                "else" to "conditional",
+                "fail " to "fail with message",
+            )
 
-        private val CONDITIONS = listOf(
-            "status " to "HTTP status code",
-            "header " to "response header",
-            "contains " to "body contains text",
-            "schema" to "JSON schema validation",
-            "responseTime " to "response time limit",
-            "exists" to "value exists",
-            "not " to "negation",
-        )
+        private val CONDITIONS =
+            listOf(
+                "status " to "HTTP status code",
+                "header " to "response header",
+                "contains " to "body contains text",
+                "schema" to "JSON schema validation",
+                "responseTime " to "response time limit",
+                "exists" to "value exists",
+                "not " to "negation",
+            )
 
         /**
          * Known parameter names for scenario/feature parameters blocks.
          */
-        private val KNOWN_PARAMETERS = listOf(
-            "timeout" to "request timeout in milliseconds",
-            "baseUrl" to "base URL for API calls",
-            "environment" to "execution environment",
-            "shareVariablesAcrossScenarios" to "share extracted variables",
-            "logRequests" to "log HTTP requests",
-            "logResponses" to "log HTTP responses",
-            "strictSchemaValidation" to "strict JSON schema validation",
-            "followRedirects" to "follow HTTP redirects",
-            "multiTestSequentialCount" to "sequential test count",
-            "multiTestConcurrentCount" to "concurrent test count",
-            "autoAssertions.enabled" to "enable auto assertions",
-            "autoAssertions.statusCode" to "auto assert status code",
-            "autoAssertions.contentType" to "auto assert content type",
-            "autoAssertions.schema" to "auto assert schema",
-        )
+        private val KNOWN_PARAMETERS =
+            listOf(
+                "timeout" to "request timeout in milliseconds",
+                "baseUrl" to "base URL for API calls",
+                "environment" to "execution environment",
+                "shareVariablesAcrossScenarios" to "share extracted variables",
+                "logRequests" to "log HTTP requests",
+                "logResponses" to "log HTTP responses",
+                "strictSchemaValidation" to "strict JSON schema validation",
+                "followRedirects" to "follow HTTP redirects",
+                "multiTestSequentialCount" to "sequential test count",
+                "multiTestConcurrentCount" to "concurrent test count",
+                "autoAssertions.enabled" to "enable auto assertions",
+                "autoAssertions.statusCode" to "auto assert status code",
+                "autoAssertions.contentType" to "auto assert content type",
+                "autoAssertions.schema" to "auto assert schema",
+            )
 
         /**
          * Variable interpolation prefixes.
          */
-        private val VARIABLE_PREFIXES = listOf(
-            "param." to "parameter reference",
-        )
+        private val VARIABLE_PREFIXES =
+            listOf(
+                "param." to "parameter reference",
+            )
     }
 }

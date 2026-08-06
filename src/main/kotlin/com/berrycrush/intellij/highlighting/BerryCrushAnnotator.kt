@@ -1,6 +1,6 @@
 package com.berrycrush.intellij.highlighting
 
-import com.berrycrush.intellij.psi.BerryCrushIncludeParameterElement
+import com.berrycrush.intellij.psi.BerryCrushParameterKeyElement
 import com.intellij.lang.annotation.AnnotationHolder
 import com.intellij.lang.annotation.Annotator
 import com.intellij.lang.annotation.HighlightSeverity
@@ -12,33 +12,43 @@ import com.intellij.psi.PsiElement
  * Annotator for BerryCrush-specific highlighting.
  */
 class BerryCrushAnnotator : Annotator {
-
-    override fun annotate(element: PsiElement, holder: AnnotationHolder) {
+    override fun annotate(
+        element: PsiElement,
+        holder: AnnotationHolder,
+    ) {
         annotateLeafToken(element, holder)
         when (element) {
-            is BerryCrushIncludeParameterElement -> annotateParameter(element, holder)
+            is BerryCrushParameterKeyElement -> annotateParameter(element, holder)
         }
     }
 
-    private fun annotateLeafToken(element: PsiElement, holder: AnnotationHolder) {
+    private fun annotateLeafToken(
+        element: PsiElement,
+        holder: AnnotationHolder,
+    ) {
         if (element.firstChild != null || element.node == null) return
 
         val tokenKey = BerryCrushTokenHighlighting.keyForToken(element.node.elementType) ?: return
         if (isInNarrativeDescriptionSegment(element)) return
         val range = annotationRange(element, tokenKey)
 
-        holder.newSilentAnnotation(HighlightSeverity.INFORMATION)
+        holder
+            .newSilentAnnotation(HighlightSeverity.INFORMATION)
             .range(range)
             .textAttributes(tokenKey)
             .create()
     }
 
-    private fun annotationRange(element: PsiElement, tokenKey: TextAttributesKey): TextRange {
-        val keywordRange = keywordOnlyRange(
-            text = element.text,
-            baseOffset = element.textRange.startOffset,
-            tokenKey = tokenKey,
-        )
+    private fun annotationRange(
+        element: PsiElement,
+        tokenKey: TextAttributesKey,
+    ): TextRange {
+        val keywordRange =
+            keywordOnlyRange(
+                text = element.text,
+                baseOffset = element.textRange.startOffset,
+                tokenKey = tokenKey,
+            )
         return keywordRange ?: element.textRange
     }
 
@@ -52,10 +62,14 @@ class BerryCrushAnnotator : Annotator {
         val fileText = element.containingFile?.text ?: return null
         val elementOffset = element.textRange.startOffset
 
-        val lineStart = fileText.lastIndexOf('\n', startIndex = (elementOffset - 1).coerceAtLeast(0))
-            .let { if (it < 0) 0 else it + 1 }
-        val lineEndExclusive = fileText.indexOf('\n', startIndex = elementOffset)
-            .let { if (it < 0) fileText.length else it }
+        val lineStart =
+            fileText
+                .lastIndexOf('\n', startIndex = (elementOffset - 1).coerceAtLeast(0))
+                .let { if (it < 0) 0 else it + 1 }
+        val lineEndExclusive =
+            fileText
+                .indexOf('\n', startIndex = elementOffset)
+                .let { if (it < 0) fileText.length else it }
 
         return LineInfo(
             lineText = fileText.substring(lineStart, lineEndExclusive),
@@ -63,7 +77,10 @@ class BerryCrushAnnotator : Annotator {
         )
     }
 
-    private fun descriptionStartOffset(lineText: String, lineStartOffset: Int): Int? {
+    private fun descriptionStartOffset(
+        lineText: String,
+        lineStartOffset: Int,
+    ): Int? {
         val titleMatch = TITLE_LINE_PREFIX_REGEX.find(lineText)
         if (titleMatch != null) {
             return lineStartOffset + titleMatch.range.last + 1
@@ -77,34 +94,33 @@ class BerryCrushAnnotator : Annotator {
         return null
     }
 
-    private fun keywordOnlyRange(text: String, baseOffset: Int, tokenKey: TextAttributesKey): TextRange? {
-        val match = when (tokenKey) {
-            BerryCrushHighlightingColors.BLOCK_KEYWORD -> BLOCK_KEYWORD_REGEX.find(text)
-            BerryCrushHighlightingColors.STEP_KEYWORD -> STEP_KEYWORD_REGEX.find(text)
-            else -> null
-        } ?: return null
+    private fun keywordOnlyRange(
+        text: String,
+        baseOffset: Int,
+        tokenKey: TextAttributesKey,
+    ): TextRange? {
+        val match =
+            when (tokenKey) {
+                BerryCrushHighlightingColors.BLOCK_KEYWORD -> BLOCK_KEYWORD_REGEX.find(text)
+                BerryCrushHighlightingColors.STEP_KEYWORD -> STEP_KEYWORD_REGEX.find(text)
+                else -> null
+            } ?: return null
 
         return TextRange(baseOffset + match.range.first, baseOffset + match.range.last + 1)
     }
 
-    private fun annotateParameter(element: BerryCrushIncludeParameterElement, holder: AnnotationHolder) {
-        val range = parameterKeyRange(element) ?: return
+    private fun annotateParameter(
+        element: BerryCrushParameterKeyElement,
+        holder: AnnotationHolder,
+    ) {
+        val name = element.keyName
+        val range = TextRange(element.textRange.startOffset, element.textRange.startOffset + name.length)
 
-        holder.newSilentAnnotation(HighlightSeverity.INFORMATION)
+        holder
+            .newSilentAnnotation(HighlightSeverity.INFORMATION)
             .range(range)
             .textAttributes(BerryCrushHighlightingColors.PARAMETER_KEY)
             .create()
-    }
-
-    /**
-     * Highlight the parameter name (key before colon) in include parameters.
-     */
-    internal fun parameterKeyRange(element: BerryCrushIncludeParameterElement): TextRange? {
-        val name = element.parameterName ?: return null
-        val offset = element.text.indexOf("$name:")
-        if (offset == -1) return null
-
-        return TextRange(element.textRange.startOffset + offset, element.textRange.startOffset + offset + name.length)
     }
 
     companion object {

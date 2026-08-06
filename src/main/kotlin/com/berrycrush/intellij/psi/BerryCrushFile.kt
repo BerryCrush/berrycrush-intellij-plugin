@@ -9,7 +9,10 @@ import com.intellij.psi.FileViewProvider
 /**
  * PSI file for BerryCrush scenario and fragment files.
  */
-class BerryCrushFile(viewProvider: FileViewProvider) : PsiFileBase(viewProvider, BerryCrushLanguage) {
+class BerryCrushFile(
+    viewProvider: FileViewProvider,
+) : PsiFileBase(viewProvider, BerryCrushLanguage) {
     override fun getFileType(): FileType = ScenarioFileType
+
     override fun toString(): String = "BerryCrush File"
 }

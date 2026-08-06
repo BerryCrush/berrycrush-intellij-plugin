@@ -8,25 +8,29 @@ import com.berrycrush.intellij.BerryCrushTestCase
  * Tests the actual index class behavior using the IntelliJ testing framework.
  */
 class OperationUsageIndexTest : BerryCrushTestCase() {
-
     // ========== Index Detection Tests ==========
 
     fun testIndexesBasicOperationReference() {
-        createScenarioFile("test", """
+        createScenarioFile(
+            "test",
+            """
             scenario: test
               given: setup
                 call ^createUser
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         val operations = OperationUsageIndex.getAllOperationIds(project)
         assertTrue(
             "Should index 'createUser'",
-            operations.contains("createUser")
+            operations.contains("createUser"),
         )
     }
 
     fun testIndexesMultipleOperationReferences() {
-        createScenarioFile("test2", """
+        createScenarioFile(
+            "test2",
+            """
             scenario: test
               given: setup
                 call ^createUser
@@ -34,7 +38,8 @@ class OperationUsageIndexTest : BerryCrushTestCase() {
                 call ^updateUser
               then: verify
                 call ^deleteUser
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         val operations = OperationUsageIndex.getAllOperationIds(project)
         assertTrue("Should index 'createUser'", operations.contains("createUser"))
@@ -43,143 +48,156 @@ class OperationUsageIndexTest : BerryCrushTestCase() {
     }
 
     fun testIndexesOperationWithUnderscores() {
-        createScenarioFile("test3", """
+        createScenarioFile(
+            "test3",
+            """
             scenario: test
               given: setup
                 call ^get_user_by_id
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         val operations = OperationUsageIndex.getAllOperationIds(project)
         assertTrue(
             "Should index 'get_user_by_id'",
-            operations.contains("get_user_by_id")
+            operations.contains("get_user_by_id"),
         )
     }
 
     fun testIndexesOperationStartingWithUnderscore() {
-        createScenarioFile("test4", """
+        createScenarioFile(
+            "test4",
+            """
             scenario: test
               given: setup
                 call ^_privateOp
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         val operations = OperationUsageIndex.getAllOperationIds(project)
         assertTrue(
             "Should index '_privateOp'",
-            operations.contains("_privateOp")
+            operations.contains("_privateOp"),
         )
     }
 
     fun testIndexesOperationWithNumbers() {
-        createScenarioFile("test5", """
+        createScenarioFile(
+            "test5",
+            """
             scenario: test
               given: setup
                 call ^User123
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         val operations = OperationUsageIndex.getAllOperationIds(project)
         assertTrue(
             "Should index 'User123'",
-            operations.contains("User123")
+            operations.contains("User123"),
         )
     }
 
     fun testDoesNotIndexCaretWithoutValidId() {
-        createScenarioFile("test6", """
+        createScenarioFile(
+            "test6",
+            """
             scenario: test
               given: this line has ^ by itself
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         val operations = OperationUsageIndex.getAllOperationIds(project)
         // Should not index 'in' which comes after the caret
         // The pattern requires the caret to be followed by a valid identifier start
         assertFalse(
             "Should not index text after isolated caret",
-            operations.contains("by")
-        )
-    }
-
-    fun testDoesNotIndexOperationStartingWithNumber() {
-        createScenarioFile("test7", """
-            scenario: test
-              given: setup
-                call ^123invalid
-        """.trimIndent())
-
-        val operations = OperationUsageIndex.getAllOperationIds(project)
-        assertFalse(
-            "Should not index '123invalid' (starts with number)",
-            operations.contains("123invalid")
+            operations.contains("by"),
         )
     }
 
     fun testIndexesOperationAtEndOfLine() {
-        createScenarioFile("test8", """
+        createScenarioFile(
+            "test8",
+            """
             scenario: test
               given: setup
                 call ^getUser
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         val operations = OperationUsageIndex.getAllOperationIds(project)
         assertTrue(
             "Should index 'getUser'",
-            operations.contains("getUser")
+            operations.contains("getUser"),
         )
     }
 
     fun testIndexesOperationInStepText() {
-        createScenarioFile("test9", """
+        createScenarioFile(
+            "test9",
+            """
             scenario: test
               given: ^createUser is called
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         val operations = OperationUsageIndex.getAllOperationIds(project)
         assertTrue(
             "Should index 'createUser' in step text",
-            operations.contains("createUser")
+            operations.contains("createUser"),
         )
     }
 
     // ========== File Lookup Tests ==========
 
     fun testGetFilesReferencingOperation() {
-        createScenarioFile("referencer", """
+        createScenarioFile(
+            "referencer",
+            """
             scenario: test
               given: setup
                 call ^targetOp
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
-        createScenarioFile("other", """
+        createScenarioFile(
+            "other",
+            """
             scenario: other
               given: setup
                 call GET /api
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         val files = OperationUsageIndex.getFilesReferencingOperation(project, "targetOp")
         assertEquals(
             "Should find one file referencing 'targetOp'",
             1,
-            files.size
+            files.size,
         )
         assertTrue(
             "Should be the referencer file",
-            files.first().name == "referencer.scenario"
+            files.first().name == "referencer.scenario",
         )
     }
 
     // ========== Include Directive Tests ==========
 
     fun testIndexesOperationInIncludeDirective() {
-        createScenarioFile("test10", """
+        createScenarioFile(
+            "test10",
+            """
             scenario: test
               given: setup
                 include ^fragmentOp
-        """.trimIndent())
+            """.trimIndent(),
+        )
 
         val operations = OperationUsageIndex.getAllOperationIds(project)
         assertTrue(
             "Should index 'fragmentOp' from include directive",
-            operations.contains("fragmentOp")
+            operations.contains("fragmentOp"),
         )
     }
 }

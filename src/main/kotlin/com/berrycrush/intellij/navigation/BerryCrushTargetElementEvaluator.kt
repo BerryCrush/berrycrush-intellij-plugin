@@ -12,7 +12,6 @@ import com.intellij.psi.util.PsiTreeUtil
  * refactoring operations like Safe Delete and Rename.
  */
 class BerryCrushTargetElementEvaluator : TargetElementEvaluatorEx2() {
-
     override fun isAcceptableNamedParent(parent: PsiElement): Boolean {
         // Accept fragment elements as named parents
         return parent is BerryCrushFragmentElement

@@ -8,12 +8,15 @@ import com.berrycrush.intellij.refactoring.variable.VariableRenameProcessor
  * Tests for BerryCrush refactoring support.
  */
 class RefactoringTest : BerryCrushTestCase() {
-
     fun testRefactoringSupportProviderDetectsFragmentDefinition() {
-        val file = createFragmentFile("test", """
-            fragment: my-fragment
-            given step one
-        """.trimIndent())
+        val file =
+            createFragmentFile(
+                "test",
+                """
+                fragment: my-fragment
+                given step one
+                """.trimIndent(),
+            )
 
         val psiFile = psiManager.findFile(file)
         assertNotNull(psiFile)
@@ -28,11 +31,15 @@ class RefactoringTest : BerryCrushTestCase() {
     }
 
     fun testRefactoringSupportProviderDetectsIncludeDirective() {
-        val file = createScenarioFile("test", """
-            scenario: Test
-            include my-fragment
-            then done
-        """.trimIndent())
+        val file =
+            createScenarioFile(
+                "test",
+                """
+                scenario: Test
+                include my-fragment
+                then done
+                """.trimIndent(),
+            )
 
         val psiFile = psiManager.findFile(file)
         assertNotNull(psiFile)
@@ -45,10 +52,14 @@ class RefactoringTest : BerryCrushTestCase() {
     }
 
     fun testRefactoringSupportProviderDetectsVariablePlaceholder() {
-        val file = createScenarioFile("test", """
-            scenario: Test
-            given step with {{myVar}}
-        """.trimIndent())
+        val file =
+            createScenarioFile(
+                "test",
+                """
+                scenario: Test
+                given step with {{myVar}}
+                """.trimIndent(),
+            )
 
         val psiFile = psiManager.findFile(file)
         assertNotNull(psiFile)
@@ -61,10 +72,14 @@ class RefactoringTest : BerryCrushTestCase() {
     }
 
     fun testFragmentRenameProcessorCanProcessFragmentDefinition() {
-        val file = createFragmentFile("test", """
-            fragment: my-fragment
-            given step
-        """.trimIndent())
+        val file =
+            createFragmentFile(
+                "test",
+                """
+                fragment: my-fragment
+                given step
+                """.trimIndent(),
+            )
 
         val psiFile = psiManager.findFile(file)
         assertNotNull(psiFile)
@@ -77,10 +92,14 @@ class RefactoringTest : BerryCrushTestCase() {
     }
 
     fun testFragmentRenameProcessorCanProcessIncludeDirective() {
-        val file = createScenarioFile("test", """
-            scenario: Test
-            include my-fragment
-        """.trimIndent())
+        val file =
+            createScenarioFile(
+                "test",
+                """
+                scenario: Test
+                include my-fragment
+                """.trimIndent(),
+            )
 
         val psiFile = psiManager.findFile(file)
         assertNotNull(psiFile)
@@ -93,10 +112,14 @@ class RefactoringTest : BerryCrushTestCase() {
     }
 
     fun testVariableRenameProcessorCanProcessVariableUsage() {
-        val file = createScenarioFile("test", """
-            scenario: Test
-            given step with {{petId}}
-        """.trimIndent())
+        val file =
+            createScenarioFile(
+                "test",
+                """
+                scenario: Test
+                given step with {{petId}}
+                """.trimIndent(),
+            )
 
         val psiFile = psiManager.findFile(file)
         assertNotNull(psiFile)
@@ -109,10 +132,14 @@ class RefactoringTest : BerryCrushTestCase() {
     }
 
     fun testVariableRenameProcessorCanProcessVariableDefinition() {
-        val file = createScenarioFile("test", """
-            scenario: Test
-            extract $.id => petId
-        """.trimIndent())
+        val file =
+            createScenarioFile(
+                "test",
+                """
+                scenario: Test
+                extract $.id => petId
+                """.trimIndent(),
+            )
 
         val psiFile = psiManager.findFile(file)
         assertNotNull(psiFile)

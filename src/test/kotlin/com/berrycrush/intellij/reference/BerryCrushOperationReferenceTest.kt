@@ -2,14 +2,13 @@ package com.berrycrush.intellij.reference
 
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 /**
  * Unit tests for BerryCrushOperationReference OpenAPI parsing logic.
  */
 class BerryCrushOperationReferenceTest {
-
     // Replicate the operation ID extraction logic for testing
     private fun extractOperationIds(text: String): List<String> {
         val result = mutableListOf<String>()
@@ -29,7 +28,8 @@ class BerryCrushOperationReferenceTest {
 
     @Test
     fun `detects OpenAPI 3 YAML spec`() {
-        val spec = """
+        val spec =
+            """
             openapi: 3.0.0
             info:
               title: Test API
@@ -38,26 +38,28 @@ class BerryCrushOperationReferenceTest {
               /users:
                 get:
                   operationId: listUsers
-        """.trimIndent()
+            """.trimIndent()
         assertTrue(BerryCrushOperationReference.isOpenAPISpec(spec))
     }
 
     @Test
     fun `detects OpenAPI 3 with quoted version`() {
-        val spec = """
+        val spec =
+            """
             openapi: '3.0.1'
             info:
               title: Test API
               version: 1.0.0
             paths: {}
             extra: content to make it longer than 100 chars
-        """.trimIndent()
+            """.trimIndent()
         assertTrue(BerryCrushOperationReference.isOpenAPISpec(spec))
     }
 
     @Test
     fun `detects Swagger 2 YAML spec`() {
-        val spec = """
+        val spec =
+            """
             swagger: 2.0
             info:
               title: Test API
@@ -66,13 +68,14 @@ class BerryCrushOperationReferenceTest {
               /users:
                 get:
                   operationId: listUsers
-        """.trimIndent()
+            """.trimIndent()
         assertTrue(BerryCrushOperationReference.isOpenAPISpec(spec))
     }
 
     @Test
     fun `detects OpenAPI 3 JSON spec`() {
-        val spec = """
+        val spec =
+            """
             {
               "openapi": "3.0.0",
               "info": {
@@ -81,13 +84,14 @@ class BerryCrushOperationReferenceTest {
                 "description": "This is a test API for testing purposes"
               }
             }
-        """.trimIndent()
+            """.trimIndent()
         assertTrue(BerryCrushOperationReference.isOpenAPISpec(spec))
     }
 
     @Test
     fun `detects Swagger 2 JSON spec`() {
-        val spec = """
+        val spec =
+            """
             {
               "swagger": "2.0",
               "info": {
@@ -96,18 +100,19 @@ class BerryCrushOperationReferenceTest {
                 "description": "This is a test API for testing purposes"
               }
             }
-        """.trimIndent()
+            """.trimIndent()
         assertTrue(BerryCrushOperationReference.isOpenAPISpec(spec))
     }
 
     @Test
     fun `rejects non-OpenAPI content`() {
-        val content = """
+        val content =
+            """
             name: My Config
             version: 1.0.0
             settings:
               - key: value
-        """.trimIndent()
+            """.trimIndent()
         assertFalse(BerryCrushOperationReference.isOpenAPISpec(content))
     }
 
@@ -119,7 +124,8 @@ class BerryCrushOperationReferenceTest {
 
     @Test
     fun `extracts operation IDs from YAML`() {
-        val spec = """
+        val spec =
+            """
             openapi: 3.0.0
             paths:
               /users:
@@ -132,7 +138,7 @@ class BerryCrushOperationReferenceTest {
                   operationId: getUser
                 delete:
                   operationId: deleteUser
-        """.trimIndent()
+            """.trimIndent()
 
         val ids = extractOperationIds(spec)
         assertEquals(4, ids.size)
@@ -144,7 +150,8 @@ class BerryCrushOperationReferenceTest {
 
     @Test
     fun `extracts operation IDs from JSON`() {
-        val spec = """
+        val spec =
+            """
             {
               "openapi": "3.0.0",
               "paths": {
@@ -154,7 +161,7 @@ class BerryCrushOperationReferenceTest {
                 }
               }
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val ids = extractOperationIds(spec)
         assertEquals(2, ids.size)
@@ -164,7 +171,8 @@ class BerryCrushOperationReferenceTest {
 
     @Test
     fun `handles quoted YAML operation IDs`() {
-        val spec = """
+        val spec =
+            """
             openapi: 3.0.0
             paths:
               /users:
@@ -172,7 +180,7 @@ class BerryCrushOperationReferenceTest {
                   operationId: 'listUsers'
                 post:
                   operationId: "createUser"
-        """.trimIndent()
+            """.trimIndent()
 
         val ids = extractOperationIds(spec)
         assertTrue(ids.contains("listUsers"))
@@ -181,13 +189,14 @@ class BerryCrushOperationReferenceTest {
 
     @Test
     fun `handles spec without operations`() {
-        val spec = """
+        val spec =
+            """
             openapi: 3.0.0
             info:
               title: Empty API
               version: 1.0.0
             paths: {}
-        """.trimIndent()
+            """.trimIndent()
 
         val ids = extractOperationIds(spec)
         assertEquals(0, ids.size)
@@ -195,11 +204,12 @@ class BerryCrushOperationReferenceTest {
 
     @Test
     fun `deduplicates operation IDs`() {
-        val spec = """
+        val spec =
+            """
             operationId: duplicate
             operationId: duplicate
             operationId: unique
-        """.trimIndent()
+            """.trimIndent()
 
         val ids = extractOperationIds(spec)
         assertEquals(2, ids.size)

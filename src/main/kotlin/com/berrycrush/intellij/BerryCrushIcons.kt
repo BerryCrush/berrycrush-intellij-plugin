@@ -29,11 +29,11 @@ object BerryCrushIcons {
 
     // Structure view icons - reuse existing icons as fallbacks
     @JvmField
-    val OPERATION: Icon = STEP  // API operation calls
+    val OPERATION: Icon = STEP // API operation calls
 
     @JvmField
-    val ASSERTION: Icon = STEP  // Assert directives
+    val ASSERTION: Icon = STEP // Assert directives
 
     @JvmField
-    val VARIABLE: Icon = STEP   // Extract directives
+    val VARIABLE: Icon = STEP // Extract directives
 }

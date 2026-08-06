@@ -21,7 +21,6 @@ import com.intellij.psi.PsiFile
  * Checks for usages before deletion and warns if fragment is included anywhere.
  */
 class SafeDeleteFragmentAction : AnAction("Delete Fragment...") {
-
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 
     override fun update(e: AnActionEvent) {
@@ -52,7 +51,10 @@ class SafeDeleteFragmentAction : AnAction("Delete Fragment...") {
         deleteFragment(project, editor, targetFragment)
     }
 
-    private fun findFragmentAtCursor(file: PsiFile, editor: Editor): FragmentInfo? {
+    private fun findFragmentAtCursor(
+        file: PsiFile,
+        editor: Editor,
+    ): FragmentInfo? {
         val offset = editor.caretModel.offset
         val document = editor.document
         val lineNumber = document.getLineNumber(offset)
@@ -70,56 +72,67 @@ class SafeDeleteFragmentAction : AnAction("Delete Fragment...") {
         return FragmentInfo(fragmentName, fragmentBounds)
     }
 
-    private fun findFragmentBounds(text: String, fragmentStart: Int): TextRange {
+    private fun findFragmentBounds(
+        text: String,
+        fragmentStart: Int,
+    ): TextRange {
         // Find the end of this fragment (next fragment definition or end of file)
         val afterFragment = text.substring(fragmentStart)
         val nextFragmentMatch = FRAGMENT_PATTERN.find(afterFragment, 1)
 
-        val fragmentEnd = if (nextFragmentMatch != null) {
-            // Find the line start of the next fragment
-            val nextFragmentOffset = fragmentStart + nextFragmentMatch.range.first
-            val lastNewline = text.lastIndexOf('\n', nextFragmentOffset - 1)
-            if (lastNewline > fragmentStart) lastNewline else nextFragmentOffset
-        } else {
-            text.length
-        }
+        val fragmentEnd =
+            if (nextFragmentMatch != null) {
+                // Find the line start of the next fragment
+                val nextFragmentOffset = fragmentStart + nextFragmentMatch.range.first
+                val lastNewline = text.lastIndexOf('\n', nextFragmentOffset - 1)
+                if (lastNewline > fragmentStart) lastNewline else nextFragmentOffset
+            } else {
+                text.length
+            }
 
         return TextRange(fragmentStart, fragmentEnd)
     }
 
-    private fun deleteFragment(project: Project, editor: Editor, fragment: FragmentInfo) {
+    private fun deleteFragment(
+        project: Project,
+        editor: Editor,
+        fragment: FragmentInfo,
+    ) {
         val usages = IncludeUsageIndex.findIncludeUsages(project, fragment.name)
 
         if (usages.isNotEmpty()) {
-            val message = buildString {
-                appendLine("Fragment '${fragment.name}' is still referenced:")
-                usages.take(5).forEach { usage ->
-                    val fileName = usage.containingFile?.name ?: "unknown"
-                    appendLine("  - $fileName")
+            val message =
+                buildString {
+                    appendLine("Fragment '${fragment.name}' is still referenced:")
+                    usages.take(5).forEach { usage ->
+                        val fileName = usage.containingFile?.name ?: "unknown"
+                        appendLine("  - $fileName")
+                    }
+                    if (usages.size > 5) {
+                        appendLine("  - ... and ${usages.size - 5} more")
+                    }
+                    appendLine("\nDelete anyway?")
                 }
-                if (usages.size > 5) {
-                    appendLine("  - ... and ${usages.size - 5} more")
-                }
-                appendLine("\nDelete anyway?")
-            }
 
-            val result = Messages.showYesNoDialog(
-                project,
-                message,
-                "Delete Fragment",
-                "Delete Anyway",
-                "Cancel",
-                Messages.getWarningIcon(),
-            )
+            val result =
+                Messages.showYesNoDialog(
+                    project,
+                    message,
+                    "Delete Fragment",
+                    "Delete Anyway",
+                    "Cancel",
+                    Messages.getWarningIcon(),
+                )
 
             if (result != Messages.YES) return
         } else {
-            val result = Messages.showYesNoDialog(
-                project,
-                "Delete fragment '${fragment.name}'?",
-                "Delete Fragment",
-                Messages.getQuestionIcon(),
-            )
+            val result =
+                Messages.showYesNoDialog(
+                    project,
+                    "Delete fragment '${fragment.name}'?",
+                    "Delete Fragment",
+                    Messages.getQuestionIcon(),
+                )
             if (result != Messages.YES) return
         }
 

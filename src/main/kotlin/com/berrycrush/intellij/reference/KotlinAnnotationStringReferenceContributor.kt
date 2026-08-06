@@ -21,13 +21,12 @@ private const val ASSERTION_ANNOTATION_FQN = "org.berrycrush.step.Assertion"
  * Enables Cmd+Click navigation from the annotation string to scenario file usages.
  */
 class KotlinAnnotationStringReferenceContributor : PsiReferenceContributor() {
-
     override fun registerReferenceProviders(registrar: PsiReferenceRegistrar) {
         // Register for all elements and filter in the provider
         // This is necessary because Kotlin PSI classes aren't directly available
         registrar.registerReferenceProvider(
             PlatformPatterns.psiElement(),
-            KotlinAnnotationStringReferenceProvider()
+            KotlinAnnotationStringReferenceProvider(),
         )
     }
 }
@@ -36,64 +35,66 @@ class KotlinAnnotationStringReferenceContributor : PsiReferenceContributor() {
  * Provider that creates references for @Step/@Assertion annotation string parameters in Kotlin.
  */
 class KotlinAnnotationStringReferenceProvider : PsiReferenceProvider() {
-
     override fun getReferencesByElement(
         element: PsiElement,
-        context: ProcessingContext
+        context: ProcessingContext,
     ): Array<PsiReference> {
         // Only process Kotlin files
         val file = element.containingFile ?: return PsiReference.EMPTY_ARRAY
         if (!file.name.endsWith(".kt") && !file.name.endsWith(".kts")) {
             return PsiReference.EMPTY_ARRAY
         }
-        
+
         // Check if this is a string template expression (KtStringTemplateExpression)
         val className = element.javaClass.name
-        if (!className.contains("KtStringTemplateExpression") && 
-            !className.contains("KtLiteralStringTemplateEntry")) {
+        if (!className.contains("KtStringTemplateExpression") &&
+            !className.contains("KtLiteralStringTemplateEntry")
+        ) {
             return PsiReference.EMPTY_ARRAY
         }
-        
+
         // Get the string value
         val text = element.text
         if (text.isEmpty()) return PsiReference.EMPTY_ARRAY
-        
+
         // Check if it's inside an annotation
         val annotationEntry = findContainingAnnotationEntry(element) ?: return PsiReference.EMPTY_ARRAY
-        
+
         // Get the annotation name
         val annotationName = getAnnotationName(annotationEntry) ?: return PsiReference.EMPTY_ARRAY
-        
+
         // Check if it's @Step or @Assertion
-        val isStep = annotationName == STEP_ANNOTATION_SHORT || 
-                     annotationName == STEP_ANNOTATION_FQN ||
-                     annotationName.endsWith(".Step")
-        val isAssertion = annotationName == ASSERTION_ANNOTATION_SHORT || 
-                          annotationName == ASSERTION_ANNOTATION_FQN ||
-                          annotationName.endsWith(".Assertion")
-        
+        val isStep =
+            annotationName == STEP_ANNOTATION_SHORT ||
+                annotationName == STEP_ANNOTATION_FQN ||
+                annotationName.endsWith(".Step")
+        val isAssertion =
+            annotationName == ASSERTION_ANNOTATION_SHORT ||
+                annotationName == ASSERTION_ANNOTATION_FQN ||
+                annotationName.endsWith(".Assertion")
+
         if (!isStep && !isAssertion) return PsiReference.EMPTY_ARRAY
-        
+
         // Extract string value and create reference
         val stringValue = extractStringValue(element) ?: return PsiReference.EMPTY_ARRAY
         if (stringValue.isEmpty()) return PsiReference.EMPTY_ARRAY
-        
+
         // Calculate range (skip quotes)
         val startOffset = if (text.startsWith("\"") || text.startsWith("'")) 1 else 0
         val endOffset = if (text.endsWith("\"") || text.endsWith("'")) text.length - 1 else text.length
-        
+
         if (startOffset >= endOffset) return PsiReference.EMPTY_ARRAY
-        
+
         return arrayOf(
             AnnotationStringReference(
                 element,
                 TextRange(startOffset, endOffset),
                 stringValue,
-                isAssertion
-            )
+                isAssertion,
+            ),
         )
     }
-    
+
     /**
      * Find containing KtAnnotationEntry using reflection.
      */
@@ -108,7 +109,7 @@ class KotlinAnnotationStringReferenceProvider : PsiReferenceProvider() {
         }
         return null
     }
-    
+
     /**
      * Get annotation name from KtAnnotationEntry using reflection.
      */
@@ -126,7 +127,7 @@ class KotlinAnnotationStringReferenceProvider : PsiReferenceProvider() {
                     return shortName.toString()
                 }
             }
-            
+
             // Fallback: try to get typeReference and extract name
             val typeRefMethod = annotationEntry.javaClass.methods.find { it.name == "getTypeReference" }
             if (typeRefMethod != null) {
@@ -135,17 +136,16 @@ class KotlinAnnotationStringReferenceProvider : PsiReferenceProvider() {
                     return typeRef.toString()
                 }
             }
-            
+
             // Last resort: extract from text
             val text = annotationEntry.text
             val match = Regex("""@(\w+(?:\.\w+)*)""").find(text)
             return match?.groupValues?.get(1)
-            
         } catch (e: Exception) {
             return null
         }
     }
-    
+
     /**
      * Extract string value from a Kotlin string template expression.
      */
@@ -163,15 +163,15 @@ class KotlinAnnotationStringReferenceProvider : PsiReferenceProvider() {
                     }
                 }
             }
-            
+
             // Fallback: strip quotes from text
             val text = element.text
             return when {
-                text.startsWith("\"\"\"") && text.endsWith("\"\"\"") -> 
+                text.startsWith("\"\"\"") && text.endsWith("\"\"\"") ->
                     text.removePrefix("\"\"\"").removeSuffix("\"\"\"")
-                text.startsWith("\"") && text.endsWith("\"") -> 
+                text.startsWith("\"") && text.endsWith("\"") ->
                     text.removePrefix("\"").removeSuffix("\"")
-                text.startsWith("'") && text.endsWith("'") -> 
+                text.startsWith("'") && text.endsWith("'") ->
                     text.removePrefix("'").removeSuffix("'")
                 else -> text
             }

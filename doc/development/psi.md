@@ -21,6 +21,14 @@ The current parser composes hierarchical PSI for `.scenario` files using indenta
 - `call` can contain nested payload entries as parameters (`id`, `body`, etc.).
 - `body:` is represented as a parameter that can contain nested parameter entries.
 
+### Comment-Handling Invariants
+
+- Comment lines are valid at top-level and inside all structural blocks (`feature`, `background`, `scenario`, `outline`, `fragment`, `step`, directive payloads, and `examples`).
+- Interleaved comments must not change block boundaries or parent-child containment.
+- Consecutive comments inside indented blocks must not terminate parsing of subsequent siblings.
+- Comment tokens should be emitted as comment PSI nodes where comment PSI is supported, rather than degrading into generic text nodes.
+- Parser regressions should include tree-validation assertions (parent/child checks), not only token presence assertions.
+
 Example hierarchy used for regression tests:
 
 ```text

@@ -12,19 +12,25 @@ import com.intellij.psi.tree.IElementType
  * Matches braces, brackets, and variable delimiters.
  */
 class BerryCrushBraceMatcher : PairedBraceMatcher {
-
     override fun getPairs(): Array<BracePair> = PAIRS
 
-    override fun isPairedBracesAllowedBeforeType(lbraceType: IElementType, contextType: IElementType?): Boolean = true
+    override fun isPairedBracesAllowedBeforeType(
+        lbraceType: IElementType,
+        contextType: IElementType?,
+    ): Boolean = true
 
-    override fun getCodeConstructStart(file: PsiFile?, openingBraceOffset: Int): Int = openingBraceOffset
+    override fun getCodeConstructStart(
+        file: PsiFile?,
+        openingBraceOffset: Int,
+    ): Int = openingBraceOffset
 
     companion object {
-        private val PAIRS = arrayOf(
-            BracePair(BerryCrushTokenTypes.LBRACE, BerryCrushTokenTypes.RBRACE, false),
-            BracePair(BerryCrushTokenTypes.LBRACKET, BerryCrushTokenTypes.RBRACKET, false),
-            BracePair(BerryCrushTokenTypes.LPAREN, BerryCrushTokenTypes.RPAREN, false),
-            BracePair(BerryCrushTokenTypes.VARIABLE_START, BerryCrushTokenTypes.VARIABLE_END, false),
-        )
+        private val PAIRS =
+            arrayOf(
+                BracePair(BerryCrushTokenTypes.LBRACE, BerryCrushTokenTypes.RBRACE, false),
+                BracePair(BerryCrushTokenTypes.LBRACKET, BerryCrushTokenTypes.RBRACKET, false),
+                BracePair(BerryCrushTokenTypes.LPAREN, BerryCrushTokenTypes.RPAREN, false),
+                BracePair(BerryCrushTokenTypes.VARIABLE_START, BerryCrushTokenTypes.VARIABLE_END, false),
+            )
     }
 }

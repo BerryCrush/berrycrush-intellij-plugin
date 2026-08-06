@@ -1,12 +1,10 @@
 package com.berrycrush.intellij.reference
 
 import com.berrycrush.intellij.index.FragmentIndex
-import com.berrycrush.intellij.psi.BerryCrushFile
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiReferenceBase
 import com.intellij.psi.search.FilenameIndex
@@ -18,9 +16,8 @@ import com.intellij.psi.search.GlobalSearchScope
 class BerryCrushFragmentReference(
     element: PsiElement,
     textRange: TextRange,
-    private val fragmentName: String
+    private val fragmentName: String,
 ) : PsiReferenceBase<PsiElement>(element, textRange, true) {
-
     override fun resolve(): PsiElement? {
         val project = element.project
         return findFragmentByName(project, fragmentName)
@@ -29,7 +26,7 @@ class BerryCrushFragmentReference(
     override fun getVariants(): Array<Any> {
         val project = element.project
         return findAllFragments(project)
-            .mapNotNull { it.nameWithoutExtension }
+            .map { it.nameWithoutExtension }
             .toTypedArray()
     }
 
@@ -38,7 +35,10 @@ class BerryCrushFragmentReference(
          * Find a fragment by its name using the FragmentIndex.
          * Returns the fragment definition element, or the file if element not found.
          */
-        fun findFragmentByName(project: Project, fragmentName: String): PsiElement? {
+        fun findFragmentByName(
+            project: Project,
+            fragmentName: String,
+        ): PsiElement? {
             // Use FragmentIndex for content-based lookup (finds fragments by "fragment: name")
             val fragmentElement = FragmentIndex.findFragmentElement(project, fragmentName)
             if (fragmentElement != null) {

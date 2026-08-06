@@ -21,7 +21,6 @@ import com.intellij.navigation.ItemPresentation
 import com.intellij.openapi.editor.Editor
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
-import com.intellij.psi.tree.IElementType
 import com.intellij.psi.util.PsiTreeUtil
 import javax.swing.Icon
 
@@ -33,9 +32,7 @@ class BerryCrushStructureViewFactory : PsiStructureViewFactory {
         if (psiFile !is BerryCrushFile) return null
 
         return object : TreeBasedStructureViewBuilder() {
-            override fun createStructureViewModel(editor: Editor?): StructureViewModel {
-                return BerryCrushStructureViewModel(psiFile, editor)
-            }
+            override fun createStructureViewModel(editor: Editor?): StructureViewModel = BerryCrushStructureViewModel(psiFile, editor)
         }
     }
 }
@@ -45,7 +42,7 @@ class BerryCrushStructureViewFactory : PsiStructureViewFactory {
  */
 class BerryCrushStructureViewModel(
     psiFile: BerryCrushFile,
-    editor: Editor?
+    editor: Editor?,
 ) : StructureViewModelBase(psiFile, editor, BerryCrushStructureViewElement(psiFile)) {
     override fun getSuitableClasses(): Array<Class<*>> = arrayOf(
         BerryCrushFile::class.java,
@@ -72,13 +69,16 @@ class BerryCrushStructureViewModel(
  *     - Step (given/when/then/and/but)
  *       - Directive (call/assert/include)
  */
-class BerryCrushStructureViewElement(private val element: PsiElement) : StructureViewTreeElement {
-
+class BerryCrushStructureViewElement(
+    private val element: PsiElement,
+) : StructureViewTreeElement {
     override fun getValue(): Any = element
 
     override fun getPresentation(): ItemPresentation = object : ItemPresentation {
         override fun getPresentableText(): String? = getElementText()
+
         override fun getLocationString(): String? = null
+
         override fun getIcon(unused: Boolean): Icon? = getElementIcon()
     }
 
@@ -114,7 +114,10 @@ class BerryCrushStructureViewElement(private val element: PsiElement) : Structur
     /**
      * Collect block elements (scenarios, fragments, features) from file children.
      */
-    private fun collectBlocks(file: BerryCrushFile, result: MutableList<TreeElement>) {
+    private fun collectBlocks(
+        file: BerryCrushFile,
+        result: MutableList<TreeElement>,
+    ) {
         // Use PsiTreeUtil to find all block elements in the file
         val scenarios = PsiTreeUtil.findChildrenOfType(file, BerryCrushScenarioElement::class.java)
         val fragments = PsiTreeUtil.findChildrenOfType(file, BerryCrushFragmentElement::class.java)
@@ -128,7 +131,10 @@ class BerryCrushStructureViewElement(private val element: PsiElement) : Structur
     /**
      * Collect steps that are NESTED inside a fragment (parser nests content).
      */
-    private fun collectNestedSteps(fragment: BerryCrushFragmentElement, result: MutableList<TreeElement>) {
+    private fun collectNestedSteps(
+        fragment: BerryCrushFragmentElement,
+        result: MutableList<TreeElement>,
+    ) {
         val steps = PsiTreeUtil.findChildrenOfType(fragment, BerryCrushStepElement::class.java)
         steps.sortedBy { it.textOffset }.forEach { result.add(BerryCrushStructureViewElement(it)) }
     }
@@ -137,7 +143,10 @@ class BerryCrushStructureViewElement(private val element: PsiElement) : Structur
      * Collect children for a feature (scenarios and/or steps).
      * Features can contain scenarios or steps directly.
      */
-    private fun collectChildrenForFeature(feature: BerryCrushFeatureElement, result: MutableList<TreeElement>) {
+    private fun collectChildrenForFeature(
+        feature: BerryCrushFeatureElement,
+        result: MutableList<TreeElement>,
+    ) {
         val file = feature.containingFile
         if (file == null) return
 
@@ -146,9 +155,10 @@ class BerryCrushStructureViewElement(private val element: PsiElement) : Structur
 
         // Find all scenarios after this feature (but before the next feature)
         val allScenarios = PsiTreeUtil.findChildrenOfType(file, BerryCrushScenarioElement::class.java)
-        val scenariosInFeature = allScenarios.filter {
-            it.textOffset > featureStartOffset && it.textOffset < featureEndOffset
-        }
+        val scenariosInFeature =
+            allScenarios.filter {
+                it.textOffset > featureStartOffset && it.textOffset < featureEndOffset
+            }
 
         // Find all steps after this feature that aren't part of a scenario
         val allSteps = PsiTreeUtil.findChildrenOfType(file, BerryCrushStepElement::class.java)
@@ -160,9 +170,10 @@ class BerryCrushStructureViewElement(private val element: PsiElement) : Structur
             }
         } else {
             // Feature has no scenarios - show steps directly
-            val stepsInFeature = allSteps.filter {
-                it.textOffset > featureStartOffset && it.textOffset < featureEndOffset
-            }
+            val stepsInFeature =
+                allSteps.filter {
+                    it.textOffset > featureStartOffset && it.textOffset < featureEndOffset
+                }
             stepsInFeature.sortedBy { it.textOffset }.forEach {
                 result.add(BerryCrushStructureViewElement(it))
             }
@@ -187,7 +198,10 @@ class BerryCrushStructureViewElement(private val element: PsiElement) : Structur
      * Collect steps that are SIBLINGS after a scenario/feature (parser only marks header).
      * Also tries PsiTreeUtil as fallback if direct sibling traversal fails.
      */
-    private fun collectSiblingStepsForBlock(block: PsiElement, result: MutableList<TreeElement>) {
+    private fun collectSiblingStepsForBlock(
+        block: PsiElement,
+        result: MutableList<TreeElement>,
+    ) {
         // First, try direct sibling traversal
         var sibling = block.nextSibling
         while (sibling != null) {
@@ -238,7 +252,10 @@ class BerryCrushStructureViewElement(private val element: PsiElement) : Structur
      * Collect directives for a step.
      * Check both nested children and siblings (parser behavior varies).
      */
-    private fun collectDirectivesForStep(step: BerryCrushStepElement, result: MutableList<TreeElement>) {
+    private fun collectDirectivesForStep(
+        step: BerryCrushStepElement,
+        result: MutableList<TreeElement>,
+    ) {
         // First, check for nested directives (inside step element)
         val nestedCalls = PsiTreeUtil.findChildrenOfType(step, BerryCrushCallElement::class.java)
         val nestedAsserts = PsiTreeUtil.findChildrenOfType(step, BerryCrushAssertElement::class.java)
@@ -264,17 +281,15 @@ class BerryCrushStructureViewElement(private val element: PsiElement) : Structur
         }
     }
 
-    private fun isBlockElement(element: PsiElement): Boolean =
-        element is BerryCrushScenarioElement ||
-            element is BerryCrushFragmentElement ||
-            element is BerryCrushFeatureElement ||
-            element.node?.elementType in BLOCK_ELEMENT_TYPES
+    private fun isBlockElement(element: PsiElement): Boolean = element is BerryCrushScenarioElement ||
+        element is BerryCrushFragmentElement ||
+        element is BerryCrushFeatureElement ||
+        element.node?.elementType in BLOCK_ELEMENT_TYPES
 
-    private fun isDirectiveElement(element: PsiElement): Boolean =
-        element is BerryCrushCallElement ||
-            element is BerryCrushAssertElement ||
-            element is BerryCrushIncludeElement ||
-            element.node?.elementType in DIRECTIVE_ELEMENT_TYPES
+    private fun isDirectiveElement(element: PsiElement): Boolean = element is BerryCrushCallElement ||
+        element is BerryCrushAssertElement ||
+        element is BerryCrushIncludeElement ||
+        element.node?.elementType in DIRECTIVE_ELEMENT_TYPES
 
     override fun navigate(requestFocus: Boolean) {
         if (element is com.intellij.pom.Navigatable) {
@@ -284,8 +299,7 @@ class BerryCrushStructureViewElement(private val element: PsiElement) : Structur
 
     override fun canNavigate(): Boolean = element is com.intellij.pom.Navigatable && element.canNavigate()
 
-    override fun canNavigateToSource(): Boolean =
-        element is com.intellij.pom.Navigatable && element.canNavigateToSource()
+    override fun canNavigateToSource(): Boolean = element is com.intellij.pom.Navigatable && element.canNavigateToSource()
 
     private fun getElementText(): String = when (element) {
         is BerryCrushFile -> element.name
@@ -294,7 +308,11 @@ class BerryCrushStructureViewElement(private val element: PsiElement) : Structur
         is BerryCrushFeatureElement -> "feature: ${element.description ?: ""}"
         is BerryCrushStepElement -> "${element.keyword?.lowercase() ?: ""} ${element.stepText ?: ""}".trim().take(60)
         is BerryCrushCallElement -> "call ^${element.operationId ?: ""}"
-        is BerryCrushAssertElement -> element.text.trim().takeWhile { it != '\n' }.take(60)
+        is BerryCrushAssertElement ->
+            element.text
+                .trim()
+                .takeWhile { it != '\n' }
+                .take(60)
         is BerryCrushIncludeElement -> "include ${element.fragmentName ?: ""}"
         else -> {
             // Fallback for other elements
@@ -317,21 +335,23 @@ class BerryCrushStructureViewElement(private val element: PsiElement) : Structur
 
     companion object {
         // PSI element types for blocks (used as fallback when class check fails)
-        private val BLOCK_ELEMENT_TYPES = setOf(
-            BerryCrushElementTypes.FEATURE,
-            BerryCrushElementTypes.SCENARIO,
-            BerryCrushElementTypes.OUTLINE,
-            BerryCrushElementTypes.FRAGMENT,
-            BerryCrushElementTypes.BACKGROUND,
-            BerryCrushElementTypes.EXAMPLES,
-        )
+        private val BLOCK_ELEMENT_TYPES =
+            setOf(
+                BerryCrushElementTypes.FEATURE,
+                BerryCrushElementTypes.SCENARIO,
+                BerryCrushElementTypes.OUTLINE,
+                BerryCrushElementTypes.FRAGMENT,
+                BerryCrushElementTypes.BACKGROUND,
+                BerryCrushElementTypes.EXAMPLES,
+            )
 
         // PSI element types for directives
-        private val DIRECTIVE_ELEMENT_TYPES = setOf(
-            BerryCrushElementTypes.CALL_DIRECTIVE,
-            BerryCrushElementTypes.ASSERT_DIRECTIVE,
-            BerryCrushElementTypes.EXTRACT_DIRECTIVE,
-            BerryCrushElementTypes.INCLUDE_DIRECTIVE,
-        )
+        private val DIRECTIVE_ELEMENT_TYPES =
+            setOf(
+                BerryCrushElementTypes.CALL_DIRECTIVE,
+                BerryCrushElementTypes.ASSERT_DIRECTIVE,
+                BerryCrushElementTypes.EXTRACT_DIRECTIVE,
+                BerryCrushElementTypes.INCLUDE_DIRECTIVE,
+            )
     }
 }

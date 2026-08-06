@@ -2,10 +2,12 @@ package com.berrycrush.intellij.refactoring.fragment
 
 import com.berrycrush.intellij.index.IncludeUsageIndex
 import com.berrycrush.intellij.psi.BerryCrushFile
+import com.berrycrush.intellij.psi.BerryCrushFragmentElement
+import com.berrycrush.intellij.psi.BerryCrushIncludeElement
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiFile
 import com.intellij.psi.search.SearchScope
+import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.refactoring.rename.RenamePsiElementProcessor
 
 /**
@@ -20,12 +22,10 @@ import com.intellij.refactoring.rename.RenamePsiElementProcessor
  * - Include directive line
  */
 class FragmentRenameProcessor : RenamePsiElementProcessor() {
-
     override fun canProcessElement(element: PsiElement): Boolean {
         if (element.containingFile !is BerryCrushFile) return false
 
-        val lineText = getLineText(element)
-        return isFragmentDefinition(lineText) || isIncludeDirective(lineText)
+        return isFragmentDefinition(element) || isIncludeDirective(element)
     }
 
     override fun prepareRenaming(
@@ -38,11 +38,12 @@ class FragmentRenameProcessor : RenamePsiElementProcessor() {
         val project = element.project
 
         // Find all include usages
-        IncludeUsageIndex.findIncludeUsages(project, fragmentName)
+        IncludeUsageIndex
+            .findIncludeUsages(project, fragmentName)
             .forEach { usage -> allRenames[usage] = newName }
 
         // If renaming from include, also rename the definition
-        if (isIncludeDirective(getLineText(element))) {
+        if (isIncludeDirective(element)) {
             findFragmentDefinition(project, fragmentName)?.let { definition ->
                 allRenames[definition] = newName
             }
@@ -53,37 +54,19 @@ class FragmentRenameProcessor : RenamePsiElementProcessor() {
      * Extracts fragment name from element's line.
      * Handles both "fragment: name" and "include name" syntaxes.
      */
-    private fun extractFragmentName(element: PsiElement): String? {
-        val lineText = getLineText(element)
-        return extractFromFragmentDef(lineText) ?: extractFromInclude(lineText)
-    }
+    private fun extractFragmentName(element: PsiElement): String? = extractFromFragmentDef(element) ?: extractFromInclude(element)
 
-    private fun extractFromFragmentDef(lineText: String): String? =
-        FRAGMENT_DEF_PATTERN.find(lineText)?.groupValues?.get(1)
+    private fun extractFromFragmentDef(element: PsiElement): String? = PsiTreeUtil.getParentOfType(element, BerryCrushFragmentElement::class.java)?.fragmentName
 
-    private fun extractFromInclude(lineText: String): String? =
-        INCLUDE_PATTERN.find(lineText)?.groupValues?.get(1)?.removePrefix("^")
+    private fun extractFromInclude(element: PsiElement): String? = PsiTreeUtil.getParentOfType(element, BerryCrushIncludeElement::class.java)?.fragmentName
 
-    private fun isFragmentDefinition(lineText: String): Boolean =
-        FRAGMENT_DEF_PATTERN.containsMatchIn(lineText)
+    private fun isFragmentDefinition(element: PsiElement): Boolean = PsiTreeUtil.getParentOfType(element, BerryCrushFragmentElement::class.java) != null
 
-    private fun isIncludeDirective(lineText: String): Boolean =
-        INCLUDE_PATTERN.containsMatchIn(lineText)
+    private fun isIncludeDirective(element: PsiElement): Boolean = PsiTreeUtil.getParentOfType(element, BerryCrushIncludeElement::class.java) != null
 
-    private fun getLineText(element: PsiElement): String {
-        val document = element.containingFile?.viewProvider?.document ?: return ""
-        val offset = element.textOffset
-        val lineNumber = document.getLineNumber(offset)
-        val lineStart = document.getLineStartOffset(lineNumber)
-        val lineEnd = document.getLineEndOffset(lineNumber)
-        return document.getText(com.intellij.openapi.util.TextRange(lineStart, lineEnd))
-    }
-
-    private fun findFragmentDefinition(project: Project, fragmentName: String): PsiElement? =
-        com.berrycrush.intellij.index.FragmentIndex.findFragmentElement(project, fragmentName)
-
-    companion object {
-        private val FRAGMENT_DEF_PATTERN = Regex("""^\s*[Ff]ragment:\s*(\S+)""")
-        private val INCLUDE_PATTERN = Regex("""^\s*include\s+(\^?[a-zA-Z_][a-zA-Z0-9_.\-]*)""")
-    }
+    private fun findFragmentDefinition(
+        project: Project,
+        fragmentName: String,
+    ): PsiElement? = com.berrycrush.intellij.index.FragmentIndex
+        .findFragmentElement(project, fragmentName)
 }

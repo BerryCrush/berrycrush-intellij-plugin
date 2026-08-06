@@ -7,7 +7,6 @@ import com.intellij.execution.Executor
 import com.intellij.execution.ProgramRunnerUtil
 import com.intellij.execution.executors.DefaultDebugExecutor
 import com.intellij.execution.executors.DefaultRunExecutor
-import com.intellij.execution.junit.JUnitConfiguration
 import com.intellij.execution.lineMarker.RunLineMarkerContributor
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder
 import com.intellij.icons.AllIcons
@@ -30,8 +29,9 @@ import javax.swing.Icon
  * When clicked, it creates a BerryCrush run configuration with scenario filtering
  * using the `-DberryCrush.scenarioName=...` VM option.
  */
-class BerryCrushScenarioRunLineMarkerProvider : RunLineMarkerContributor(), DumbAware {
-
+class BerryCrushScenarioRunLineMarkerProvider :
+    RunLineMarkerContributor(),
+    DumbAware {
     override fun getInfo(element: PsiElement): Info? {
         // Only handle leaf elements (IntelliJ performance guideline)
         if (element.firstChild != null) {
@@ -51,52 +51,56 @@ class BerryCrushScenarioRunLineMarkerProvider : RunLineMarkerContributor(), Dumb
 
         // Check for scenario/outline/feature keywords
         val lineText = getFullLineText(element).trim().lowercase()
-        val (keywordType, name) = when {
-            lineText.startsWith("scenario:") -> {
-                val scenarioElement = PsiTreeUtil.getParentOfType(element, BerryCrushScenarioElement::class.java)
-                "Scenario" to (scenarioElement?.description ?: extractName(lineText, "scenario:"))
+        val (keywordType, name) =
+            when {
+                lineText.startsWith("scenario:") -> {
+                    val scenarioElement = PsiTreeUtil.getParentOfType(element, BerryCrushScenarioElement::class.java)
+                    "Scenario" to (scenarioElement?.description ?: extractName(lineText, "scenario:"))
+                }
+                lineText.startsWith("outline:") -> {
+                    val scenarioElement = PsiTreeUtil.getParentOfType(element, BerryCrushScenarioElement::class.java)
+                    "Outline" to (scenarioElement?.description ?: extractName(lineText, "outline:"))
+                }
+                lineText.startsWith("feature:") -> {
+                    val featureElement = PsiTreeUtil.getParentOfType(element, BerryCrushFeatureElement::class.java)
+                    "Feature" to (featureElement?.description ?: extractName(lineText, "feature:"))
+                }
+                else -> return null
             }
-            lineText.startsWith("outline:") -> {
-                val scenarioElement = PsiTreeUtil.getParentOfType(element, BerryCrushScenarioElement::class.java)
-                "Outline" to (scenarioElement?.description ?: extractName(lineText, "outline:"))
-            }
-            lineText.startsWith("feature:") -> {
-                val featureElement = PsiTreeUtil.getParentOfType(element, BerryCrushFeatureElement::class.java)
-                "Feature" to (featureElement?.description ?: extractName(lineText, "feature:"))
-            }
-            else -> return null
-        }
 
         // Get the scenario file name for filtering
         val scenarioFileName = file.virtualFile?.name ?: return null
 
         // Create custom run actions
-        val runAction = RunScenarioAction(
-            "Run '$name'",
-            AllIcons.RunConfigurations.TestState.Run,
-            DefaultRunExecutor.getRunExecutorInstance(),
-            scenarioFileName,
-            name,
-            keywordType
-        )
-        val debugAction = RunScenarioAction(
-            "Debug '$name'",
-            AllIcons.RunConfigurations.TestState.Run,
-            DefaultDebugExecutor.getDebugExecutorInstance(),
-            scenarioFileName,
-            name,
-            keywordType
-        )
+        val runAction =
+            RunScenarioAction(
+                "Run '$name'",
+                AllIcons.RunConfigurations.TestState.Run,
+                DefaultRunExecutor.getRunExecutorInstance(),
+                scenarioFileName,
+                name,
+                keywordType,
+            )
+        val debugAction =
+            RunScenarioAction(
+                "Debug '$name'",
+                AllIcons.RunConfigurations.TestState.Run,
+                DefaultDebugExecutor.getDebugExecutorInstance(),
+                scenarioFileName,
+                name,
+                keywordType,
+            )
 
-        val icon = when (keywordType) {
-            "Feature" -> AllIcons.RunConfigurations.TestState.Run_run
-            else -> AllIcons.RunConfigurations.TestState.Run
-        }
+        val icon =
+            when (keywordType) {
+                "Feature" -> AllIcons.RunConfigurations.TestState.Run_run
+                else -> AllIcons.RunConfigurations.TestState.Run
+            }
 
         return Info(
             icon,
             arrayOf(runAction, debugAction),
-            { "Run $keywordType: $name" }
+            { "Run $keywordType: $name" },
         )
     }
 
@@ -107,7 +111,12 @@ class BerryCrushScenarioRunLineMarkerProvider : RunLineMarkerContributor(), Dumb
         val lineNumber = document.getLineNumber(offset)
         val lineStart = document.getLineStartOffset(lineNumber)
 
-        val textBeforeElement = document.getText(com.intellij.openapi.util.TextRange(lineStart, offset)).trim()
+        val textBeforeElement =
+            document
+                .getText(
+                    com.intellij.openapi.util
+                        .TextRange(lineStart, offset),
+                ).trim()
         return textBeforeElement.isEmpty()
     }
 
@@ -118,10 +127,16 @@ class BerryCrushScenarioRunLineMarkerProvider : RunLineMarkerContributor(), Dumb
         val lineNumber = document.getLineNumber(offset)
         val lineStart = document.getLineStartOffset(lineNumber)
         val lineEnd = document.getLineEndOffset(lineNumber)
-        return document.getText(com.intellij.openapi.util.TextRange(lineStart, lineEnd))
+        return document.getText(
+            com.intellij.openapi.util
+                .TextRange(lineStart, lineEnd),
+        )
     }
 
-    private fun extractName(lineText: String, prefix: String): String {
+    private fun extractName(
+        lineText: String,
+        prefix: String,
+    ): String {
         val afterPrefix = lineText.removePrefix(prefix).trim()
         val commentIndex = afterPrefix.indexOf('#')
         return if (commentIndex >= 0) {
@@ -144,9 +159,9 @@ private class RunScenarioAction(
     private val executor: Executor,
     private val scenarioFile: String,
     private val scenarioName: String,
-    private val keywordType: String
-) : AnAction(text, "Run $keywordType: $scenarioName", icon), DumbAware {
-
+    private val keywordType: String,
+) : AnAction(text, "Run $keywordType: $scenarioName", icon),
+    DumbAware {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val fallbackClass = System.getProperty(BerryCrushScenarioExecutionSupport.DEFAULT_TEST_CLASS_PROPERTY)
@@ -180,7 +195,10 @@ private class RunScenarioAction(
         }
     }
 
-    private fun runWithTestClass(project: Project, testClass: PsiClass) {
+    private fun runWithTestClass(
+        project: Project,
+        testClass: PsiClass,
+    ) {
         val configName = "BerryCrush: $scenarioName"
         val config = BerryCrushScenarioExecutionSupport.createOrUpdateConfiguration(project, configName) ?: return
         val module = BerryCrushScenarioExecutionSupport.resolveModuleForClass(project, testClass)
@@ -193,21 +211,23 @@ private class RunScenarioAction(
             vmOptions = buildVmOptions(),
         )
 
-        val settings = com.intellij.execution.RunManager.getInstance(project).selectedConfiguration ?: return
+        val settings =
+            com.intellij.execution.RunManager
+                .getInstance(project)
+                .selectedConfiguration ?: return
 
         // Run the configuration
-        val environment = ExecutionEnvironmentBuilder
-            .createOrNull(executor, settings)
-            ?.build() ?: return
+        val environment =
+            ExecutionEnvironmentBuilder
+                .createOrNull(executor, settings)
+                ?.build() ?: return
 
         ProgramRunnerUtil.executeConfiguration(environment, false, true)
     }
 
-    private fun buildVmOptions(): String {
-        return BerryCrushScenarioExecutionSupport.buildVmOptions(
-            scenarioFile = scenarioFile,
-            scenarioName = scenarioName,
-            keywordType = keywordType,
-        )
-    }
+    private fun buildVmOptions(): String = BerryCrushScenarioExecutionSupport.buildVmOptions(
+        scenarioFile = scenarioFile,
+        scenarioName = scenarioName,
+        keywordType = keywordType,
+    )
 }

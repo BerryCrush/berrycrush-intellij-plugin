@@ -26,7 +26,6 @@ import com.intellij.refactoring.rename.RenameHandler
  * - Variable placeholders within scenarios
  */
 class BerryCrushRenameHandler : RenameHandler {
-
     override fun isAvailableOnDataContext(dataContext: DataContext): Boolean {
         val file = CommonDataKeys.PSI_FILE.getData(dataContext) ?: return false
         if (file !is BerryCrushFile) return false
@@ -42,7 +41,12 @@ class BerryCrushRenameHandler : RenameHandler {
 
     override fun isRenaming(dataContext: DataContext): Boolean = isAvailableOnDataContext(dataContext)
 
-    override fun invoke(project: Project, editor: Editor?, file: PsiFile?, dataContext: DataContext) {
+    override fun invoke(
+        project: Project,
+        editor: Editor?,
+        file: PsiFile?,
+        dataContext: DataContext,
+    ) {
         if (editor == null || file == null) return
         val offset = editor.caretModel.offset
         val lineText = getLineTextAtOffset(editor, offset)
@@ -55,22 +59,32 @@ class BerryCrushRenameHandler : RenameHandler {
         }
     }
 
-    override fun invoke(project: Project, elements: Array<out PsiElement>, dataContext: DataContext) {
+    override fun invoke(
+        project: Project,
+        elements: Array<out PsiElement>,
+        dataContext: DataContext,
+    ) {
         // Not used - we use editor-based rename
     }
 
     @Suppress("UnusedParameter")
-    private fun renameFragment(project: Project, editor: Editor, file: PsiFile, lineText: String) {
+    private fun renameFragment(
+        project: Project,
+        editor: Editor,
+        file: PsiFile,
+        lineText: String,
+    ) {
         val currentName = extractFragmentName(lineText) ?: return
 
-        val newName = Messages.showInputDialog(
-            project,
-            "Rename fragment '$currentName' to:",
-            "Rename Fragment",
-            null,
-            currentName,
-            null,
-        ) ?: return
+        val newName =
+            Messages.showInputDialog(
+                project,
+                "Rename fragment '$currentName' to:",
+                "Rename Fragment",
+                null,
+                currentName,
+                null,
+            ) ?: return
 
         if (newName == currentName || newName.isBlank()) return
 
@@ -91,19 +105,25 @@ class BerryCrushRenameHandler : RenameHandler {
     }
 
     @Suppress("UnusedParameter")
-    private fun renameVariable(project: Project, editor: Editor, file: PsiFile, offset: Int) {
+    private fun renameVariable(
+        project: Project,
+        editor: Editor,
+        file: PsiFile,
+        offset: Int,
+    ) {
         val document = editor.document
         val text = document.text
         val currentName = extractVariableNameAtOffset(text, offset) ?: return
 
-        val newName = Messages.showInputDialog(
-            project,
-            "Rename variable '{{$currentName}}' to:",
-            "Rename Variable",
-            null,
-            currentName,
-            null,
-        ) ?: return
+        val newName =
+            Messages.showInputDialog(
+                project,
+                "Rename variable '{{$currentName}}' to:",
+                "Rename Variable",
+                null,
+                currentName,
+                null,
+            ) ?: return
 
         if (newName == currentName || newName.isBlank()) return
 
@@ -151,7 +171,11 @@ class BerryCrushRenameHandler : RenameHandler {
         })
     }
 
-    private fun highlightUsages(project: Project, editor: Editor, fragmentName: String) {
+    private fun highlightUsages(
+        project: Project,
+        editor: Editor,
+        fragmentName: String,
+    ) {
         val highlightManager = HighlightManager.getInstance(project)
         val usages = IncludeUsageIndex.findIncludeUsages(project, fragmentName)
 
@@ -168,7 +192,11 @@ class BerryCrushRenameHandler : RenameHandler {
         }
     }
 
-    private fun replaceInElement(element: PsiElement, oldName: String, newName: String) {
+    private fun replaceInElement(
+        element: PsiElement,
+        oldName: String,
+        newName: String,
+    ) {
         val file = element.containingFile ?: return
         val document = PsiDocumentManager.getInstance(element.project).getDocument(file) ?: return
         val elementOffset = element.textOffset
@@ -190,7 +218,10 @@ class BerryCrushRenameHandler : RenameHandler {
         }
     }
 
-    private fun getLineTextAtOffset(editor: Editor, offset: Int): String {
+    private fun getLineTextAtOffset(
+        editor: Editor,
+        offset: Int,
+    ): String {
         val document = editor.document
         val lineNumber = document.getLineNumber(offset)
         val lineStart = document.getLineStartOffset(lineNumber)
@@ -204,18 +235,22 @@ class BerryCrushRenameHandler : RenameHandler {
         return null
     }
 
-    private fun isFragmentDefinition(lineText: String): Boolean =
-        FRAGMENT_DEF_PATTERN.containsMatchIn(lineText)
+    private fun isFragmentDefinition(lineText: String): Boolean = FRAGMENT_DEF_PATTERN.containsMatchIn(lineText)
 
-    private fun isIncludeDirective(lineText: String): Boolean =
-        INCLUDE_PATTERN.containsMatchIn(lineText)
+    private fun isIncludeDirective(lineText: String): Boolean = INCLUDE_PATTERN.containsMatchIn(lineText)
 
-    private fun isVariableAtOffset(editor: Editor, offset: Int): Boolean {
+    private fun isVariableAtOffset(
+        editor: Editor,
+        offset: Int,
+    ): Boolean {
         val text = editor.document.text
         return extractVariableNameAtOffset(text, offset) != null
     }
 
-    private fun extractVariableNameAtOffset(text: String, offset: Int): String? {
+    private fun extractVariableNameAtOffset(
+        text: String,
+        offset: Int,
+    ): String? {
         // Try {{...}} pattern first
         extractVariableFromBraces(text, offset)?.let { return it }
 
@@ -225,7 +260,10 @@ class BerryCrushRenameHandler : RenameHandler {
         return null
     }
 
-    private fun extractVariableFromBraces(text: String, offset: Int): String? {
+    private fun extractVariableFromBraces(
+        text: String,
+        offset: Int,
+    ): String? {
         // Look for {{...}} pattern containing the offset
         var searchPos = offset.coerceAtMost(text.length - 1)
         while (searchPos >= 0) {
@@ -248,7 +286,10 @@ class BerryCrushRenameHandler : RenameHandler {
         return null
     }
 
-    private fun extractVariableFromExampleHeader(text: String, offset: Int): String? {
+    private fun extractVariableFromExampleHeader(
+        text: String,
+        offset: Int,
+    ): String? {
         // Get the line containing the offset
         val lineStart = text.lastIndexOf('\n', offset - 1) + 1
         val lineEnd = text.indexOf('\n', offset).let { if (it == -1) text.length else it }
@@ -282,7 +323,10 @@ class BerryCrushRenameHandler : RenameHandler {
         return if (cellContent.matches(Regex("""[a-zA-Z_][a-zA-Z0-9_]*"""))) cellContent else null
     }
 
-    private fun findScenarioScope(text: String, offset: Int): IntRange? {
+    private fun findScenarioScope(
+        text: String,
+        offset: Int,
+    ): IntRange? {
         val beforeText = text.substring(0, offset)
         val lastScenario = SCENARIO_PATTERN.findAll(beforeText).lastOrNull() ?: return null
         val scenarioStart = lastScenario.range.first

@@ -12,7 +12,6 @@ import kotlin.test.assertSame
  * Unit tests for BerryCrush file types and language.
  */
 class BerryCrushFileTypeTest {
-
     @Test
     fun `scenario file type has correct extension`() {
         assertEquals("scenario", ScenarioFileType.defaultExtension)

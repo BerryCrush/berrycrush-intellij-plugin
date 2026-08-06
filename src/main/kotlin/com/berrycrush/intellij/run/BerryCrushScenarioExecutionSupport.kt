@@ -20,14 +20,14 @@ import com.intellij.ui.SimpleTextAttributes
  * Shared utilities for scenario execution from gutter and context-menu entry points.
  */
 object BerryCrushScenarioExecutionSupport {
-
     const val DEFAULT_TEST_CLASS_PROPERTY: String = "berryCrush.defaultTestClass"
 
-    private val berryCrushAnnotations = listOf(
-        "org.berrycrush.junit.BerryCrushScenarios",
-        "org.berrycrush.junit.BerryCrushConfiguration",
-        "org.berrycrush.junit.BerryCrushSpec",
-    )
+    private val berryCrushAnnotations =
+        listOf(
+            "org.berrycrush.junit.BerryCrushScenarios",
+            "org.berrycrush.junit.BerryCrushConfiguration",
+            "org.berrycrush.junit.BerryCrushSpec",
+        )
 
     internal data class ClassCandidate<T>(
         val value: T,
@@ -61,29 +61,35 @@ object BerryCrushScenarioExecutionSupport {
         return result.sortedBy { it.qualifiedName ?: it.name ?: "" }
     }
 
-    fun selectPreferredTestClass(candidates: List<PsiClass>, preferredModule: Module?): PsiClass? {
-        val mappedCandidates = candidates
-            .mapNotNull { psiClass ->
-                val qualifiedName = psiClass.qualifiedName ?: return@mapNotNull null
-                val classModule = ModuleUtilCore.findModuleForPsiElement(psiClass)
-                ClassCandidate(
-                    value = psiClass,
-                    qualifiedName = qualifiedName,
-                    inPreferredModule = preferredModule != null && preferredModule == classModule,
-                )
-            }
+    fun selectPreferredTestClass(
+        candidates: List<PsiClass>,
+        preferredModule: Module?,
+    ): PsiClass? {
+        val mappedCandidates =
+            candidates
+                .mapNotNull { psiClass ->
+                    val qualifiedName = psiClass.qualifiedName ?: return@mapNotNull null
+                    val classModule = ModuleUtilCore.findModuleForPsiElement(psiClass)
+                    ClassCandidate(
+                        value = psiClass,
+                        qualifiedName = qualifiedName,
+                        inPreferredModule = preferredModule != null && preferredModule == classModule,
+                    )
+                }
 
         return selectPreferredCandidate(mappedCandidates)
     }
 
-    fun resolveTestClass(project: Project, preferredModule: Module?, fallbackClassFqn: String?): PsiClass? {
-        return resolveTestClass(
-            project = project,
-            preferredModule = preferredModule,
-            fallbackClassFqn = fallbackClassFqn,
-            chooseWhenMultiple = false,
-        )
-    }
+    fun resolveTestClass(
+        project: Project,
+        preferredModule: Module?,
+        fallbackClassFqn: String?,
+    ): PsiClass? = resolveTestClass(
+        project = project,
+        preferredModule = preferredModule,
+        fallbackClassFqn = fallbackClassFqn,
+        chooseWhenMultiple = false,
+    )
 
     fun resolveTestClass(
         project: Project,
@@ -108,7 +114,10 @@ object BerryCrushScenarioExecutionSupport {
         return resolveFallbackClass(project, fallbackClassFqn)
     }
 
-    fun resolveModuleForClass(project: Project, testClass: PsiClass): Module? {
+    fun resolveModuleForClass(
+        project: Project,
+        testClass: PsiClass,
+    ): Module? {
         val virtualFile = testClass.containingFile?.virtualFile ?: return null
         return ProjectRootManager.getInstance(project).fileIndex.getModuleForFile(virtualFile)
     }
@@ -127,7 +136,11 @@ object BerryCrushScenarioExecutionSupport {
         module?.let { configuration.setModule(it) }
     }
 
-    fun buildVmOptions(scenarioFile: String, scenarioName: String? = null, keywordType: String? = null): String {
+    fun buildVmOptions(
+        scenarioFile: String,
+        scenarioName: String? = null,
+        keywordType: String? = null,
+    ): String {
         val options = mutableListOf(buildVmOption("berryCrush.scenarioFile", scenarioFile))
 
         when (keywordType) {
@@ -146,15 +159,19 @@ object BerryCrushScenarioExecutionSupport {
         return options.joinToString(" ")
     }
 
-    fun buildVmOption(key: String, value: String): String {
-        return if (value.contains(' ') || value.contains('\t')) {
-            "-D$key=\"$value\""
-        } else {
-            "-D$key=$value"
-        }
+    fun buildVmOption(
+        key: String,
+        value: String,
+    ): String = if (value.contains(' ') || value.contains('\t')) {
+        "-D$key=\"$value\""
+    } else {
+        "-D$key=$value"
     }
 
-    fun createOrUpdateConfiguration(project: Project, configName: String): BerryCrushRunConfiguration? {
+    fun createOrUpdateConfiguration(
+        project: Project,
+        configName: String,
+    ): BerryCrushRunConfiguration? {
         val configType = ConfigurationTypeUtil.findConfigurationType(BerryCrushConfigurationType::class.java)
         val factory = configType.configurationFactories[0]
 
@@ -181,11 +198,15 @@ object BerryCrushScenarioExecutionSupport {
         )
     }
 
-    private fun resolveFallbackClass(project: Project, fallbackClassFqn: String): PsiClass? {
-        val fallbackClass = JavaPsiFacade
-            .getInstance(project)
-            .findClass(fallbackClassFqn, GlobalSearchScope.projectScope(project))
-            ?: return null
+    private fun resolveFallbackClass(
+        project: Project,
+        fallbackClassFqn: String,
+    ): PsiClass? {
+        val fallbackClass =
+            JavaPsiFacade
+                .getInstance(project)
+                .findClass(fallbackClassFqn, GlobalSearchScope.projectScope(project))
+                ?: return null
 
         return fallbackClass.takeIf { isBerryCrushTestClass(it) }
     }
@@ -199,19 +220,22 @@ object BerryCrushScenarioExecutionSupport {
         }
     }
 
-    fun sortCandidates(candidates: List<PsiClass>, preferredModule: Module?): List<PsiClass> {
-        val sortedCandidates = candidates
-            .mapNotNull { candidate ->
-                val qualifiedName = candidate.qualifiedName ?: return@mapNotNull null
-                val classModule = ModuleUtilCore.findModuleForPsiElement(candidate)
-                ClassCandidate(
-                    value = candidate,
-                    qualifiedName = qualifiedName,
-                    inPreferredModule = preferredModule != null && preferredModule == classModule,
-                )
-            }
-            .sortedWith(compareByDescending<ClassCandidate<PsiClass>> { it.inPreferredModule }.thenBy { it.qualifiedName })
-            .map { it.value }
+    fun sortCandidates(
+        candidates: List<PsiClass>,
+        preferredModule: Module?,
+    ): List<PsiClass> {
+        val sortedCandidates =
+            candidates
+                .mapNotNull { candidate ->
+                    val qualifiedName = candidate.qualifiedName ?: return@mapNotNull null
+                    val classModule = ModuleUtilCore.findModuleForPsiElement(candidate)
+                    ClassCandidate(
+                        value = candidate,
+                        qualifiedName = qualifiedName,
+                        inPreferredModule = preferredModule != null && preferredModule == classModule,
+                    )
+                }.sortedWith(compareByDescending<ClassCandidate<PsiClass>> { it.inPreferredModule }.thenBy { it.qualifiedName })
+                .map { it.value }
 
         return sortedCandidates
     }
@@ -233,51 +257,58 @@ object BerryCrushScenarioExecutionSupport {
             return
         }
 
-        val popup = JBPopupFactory.getInstance()
-            .createPopupChooserBuilder(sortedCandidates)
-            .setTitle("Select Test Class")
-            .setItemChosenCallback { selectedClass ->
-                onSelected(selectedClass)
-            }
-            .setRenderer(object : ColoredListCellRenderer<PsiClass>() {
-                override fun customizeCellRenderer(
-                    list: javax.swing.JList<out PsiClass>,
-                    value: PsiClass?,
-                    index: Int,
-                    selected: Boolean,
-                    hasFocus: Boolean,
-                ) {
-                    if (value != null) {
-                        icon = com.intellij.icons.AllIcons.Nodes.Class
-                        append(value.name ?: "Unknown")
-                        value.qualifiedName?.let { qualifiedName ->
-                            val packageName = qualifiedName.substringBeforeLast('.', "")
-                            if (packageName.isNotEmpty()) {
-                                append(" ($packageName)", SimpleTextAttributes.GRAYED_ATTRIBUTES)
+        val popup =
+            JBPopupFactory
+                .getInstance()
+                .createPopupChooserBuilder(sortedCandidates)
+                .setTitle("Select Test Class")
+                .setItemChosenCallback { selectedClass ->
+                    onSelected(selectedClass)
+                }.setRenderer(
+                    object : ColoredListCellRenderer<PsiClass>() {
+                        override fun customizeCellRenderer(
+                            list: javax.swing.JList<out PsiClass>,
+                            value: PsiClass?,
+                            index: Int,
+                            selected: Boolean,
+                            hasFocus: Boolean,
+                        ) {
+                            if (value != null) {
+                                icon = com.intellij.icons.AllIcons.Nodes.Class
+                                append(value.name ?: "Unknown")
+                                value.qualifiedName?.let { qualifiedName ->
+                                    val packageName = qualifiedName.substringBeforeLast('.', "")
+                                    if (packageName.isNotEmpty()) {
+                                        append(" ($packageName)", SimpleTextAttributes.GRAYED_ATTRIBUTES)
+                                    }
+                                }
                             }
                         }
-                    }
-                }
-            })
-            .createPopup()
+                    },
+                ).createPopup()
 
         popup.showInFocusCenter()
     }
 
-    fun chooseTestClass(project: Project, candidates: List<PsiClass>, preferredModule: Module?): PsiClass? {
+    fun chooseTestClass(
+        project: Project,
+        candidates: List<PsiClass>,
+        preferredModule: Module?,
+    ): PsiClass? {
         val sortedCandidates = sortCandidates(candidates, preferredModule)
         if (sortedCandidates.isEmpty()) {
             return null
         }
 
-        val selectedIndex = Messages.showDialog(
-            project,
-            "Multiple BerryCrush test classes were found. Select one to run this scenario file.",
-            "Select BerryCrush Test Class",
-            sortedCandidates.map { it.qualifiedName ?: it.name ?: "Unknown" }.toTypedArray(),
-            0,
-            null,
-        )
+        val selectedIndex =
+            Messages.showDialog(
+                project,
+                "Multiple BerryCrush test classes were found. Select one to run this scenario file.",
+                "Select BerryCrush Test Class",
+                sortedCandidates.map { it.qualifiedName ?: it.name ?: "Unknown" }.toTypedArray(),
+                0,
+                null,
+            )
 
         if (selectedIndex < 0 || selectedIndex >= sortedCandidates.size) {
             return null

@@ -31,6 +31,15 @@ object BerryCrushElementTypes {
     @JvmField
     val EXAMPLES = BerryCrushPsiElementType("EXAMPLES")
 
+    @JvmField
+    val EXAMPLE_ROW = BerryCrushPsiElementType("EXAMPLE_ROW")
+
+    @JvmField
+    val EXAMPLES_HEADER = BerryCrushPsiElementType("EXAMPLES_HEADER")
+
+    @JvmField
+    val EXAMPLES_VALUE = BerryCrushPsiElementType("EXAMPLES_VALUE")
+
     // Step elements
     @JvmField
     val STEP = BerryCrushPsiElementType("STEP")
@@ -52,6 +61,15 @@ object BerryCrushElementTypes {
     val INCLUDE_DIRECTIVE = BerryCrushPsiElementType("INCLUDE_DIRECTIVE")
 
     @JvmField
+    val IF_DIRECTIVE = BerryCrushPsiElementType("IF_DIRECTIVE")
+
+    @JvmField
+    val CONDITION = BerryCrushPsiElementType("CONDITION")
+
+    @JvmField
+    val ELSE_DIRECTIVE = BerryCrushPsiElementType("ELSE_DIRECTIVE")
+
+    @JvmField
     val BODY_DIRECTIVE = BerryCrushPsiElementType("BODY_DIRECTIVE")
 
     // Reference elements
@@ -71,7 +89,6 @@ object BerryCrushElementTypes {
     @JvmField
     val ASSERTION_OPERATION = BerryCrushPsiElementType("ASSERTION_OPERATION")
 
-
     @JvmField
     val WEBHOOK_NAME = BerryCrushPsiElementType("WEBHOOK_NAME")
 
@@ -83,14 +100,16 @@ object BerryCrushElementTypes {
     val PARAMETERS = BerryCrushPsiElementType("PARAMETERS")
 
     @JvmField
-    val PARAMETER = BerryCrushPsiElementType("PARAMETER")
-
-    // Parameters block elements for scenario/feature parameters
-    @JvmField
-    val PARAMETERS_BLOCK = BerryCrushPsiElementType("PARAMETERS_BLOCK")
+    val INCLUDED_PARAMETER = BerryCrushPsiElementType("INCLUDED_PARAMETER")
 
     @JvmField
     val PARAMETER_ENTRY = BerryCrushPsiElementType("PARAMETER_ENTRY")
+
+    @JvmField
+    val PARAMETER_KEY = BerryCrushPsiElementType("PARAMETER_KEY")
+
+    @JvmField
+    val PARAMETER_VALUE = BerryCrushPsiElementType("PARAMETER_VALUE")
 
     @JvmField
     val TEXT = BerryCrushPsiElementType("TEXT")
@@ -100,9 +119,14 @@ object BerryCrushElementTypes {
 
     @JvmField
     val OPERATOR = BerryCrushPsiElementType("OPERATOR")
+
+    @JvmField
+    val ARROW = BerryCrushPsiElementType("ARROW")
 }
 
 /**
  * Custom element type for BerryCrush PSI elements.
  */
-class BerryCrushPsiElementType(debugName: String) : IElementType(debugName, BerryCrushLanguage)
+class BerryCrushPsiElementType(
+    debugName: String,
+) : IElementType(debugName, BerryCrushLanguage)
