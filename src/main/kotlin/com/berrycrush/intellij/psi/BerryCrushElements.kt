@@ -464,7 +464,3 @@ class BerryCrushParameterValueElement(
 class BerryCrushTextElement(
     node: ASTNode,
 ) : BerryCrushPsiElement(node)
-
-class BerryCrushCommentElement(
-    node: ASTNode,
-) : BerryCrushPsiElement(node)

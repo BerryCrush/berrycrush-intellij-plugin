@@ -122,9 +122,6 @@ object BerryCrushElementTypes {
 
     @JvmField
     val ARROW = BerryCrushPsiElementType("ARROW")
-
-    @JvmField
-    val COMMENT = BerryCrushPsiElementType("COMMENT")
 }
 
 /**

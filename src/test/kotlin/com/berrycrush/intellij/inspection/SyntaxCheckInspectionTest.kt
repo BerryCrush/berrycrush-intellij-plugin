@@ -27,7 +27,9 @@ class SyntaxCheckInspectionTest : BerryCrushInspectionTestCase(SyntaxCheckInspec
                 "test.scenario",
                 """
                 # comment
+                @api @experimental
                 feature: feature0
+                  @api @smoke
                   # comment description: blabla
                   scenario: scenario0
                     # comment
@@ -244,4 +246,35 @@ class SyntaxCheckInspectionTest : BerryCrushInspectionTestCase(SyntaxCheckInspec
             problems.isEmpty(),
         )
     }
+
+    fun testCallDirectiveInStep() {
+        // Step followed by directive should not be flagged
+        val psiFile =
+            myFixture.addFileToProject(
+                "test.scenario",
+                """
+                scenario: Body syntax - multi-line triple-quoted
+                  when: I create a pet with multi-line body
+                    call ^createPet
+                      body:
+                        ""${'"'}
+                        {
+                           "name": "MultiLinePet",
+                           "status": "available",
+                           "tags": ["cute", "friendly"]
+                        }
+                        ""${'"'}
+                 then: the pet is created
+                   assert status 2xx
+                   assert $.name equals "MultiLinePet"
+                """.trimIndent(),
+            )
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "body with multiline should not be flagged",
+            problems.isEmpty(),
+        )
+    }
+
 }

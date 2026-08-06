@@ -113,6 +113,7 @@ class BerryCrushLexer : LexerBase() {
             c == '\n' || c == '\r' -> scanNewline(c)
             c == '#' -> scanComment()
             c == ' ' && lineStart -> scanIndent()
+            (c == '"' && peek() == '"' && peek(2) == '"') -> scanMultiLineString()
             (c == '"' || c == '\'') && checkString(c) -> scanString(c)
             c.isWhitespace() -> scanWhitespace()
             else -> {
@@ -277,6 +278,17 @@ class BerryCrushLexer : LexerBase() {
             }
         }
         return false
+    }
+
+    private fun scanMultiLineString(): IElementType {
+        // skip """
+        position += 3
+        while (position + 2 < bufferEnd && !(buffer[position] == '"' && peek() == '"' && peek(2) == '"')) {
+            position++
+        }
+        // skip """
+        position += 3
+        return BerryCrushTokenTypes.STRING
     }
 
     private fun scanString(quote: Char): IElementType {

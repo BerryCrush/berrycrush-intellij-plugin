@@ -7,7 +7,6 @@ import com.berrycrush.intellij.psi.BerryCrushAssertElement
 import com.berrycrush.intellij.psi.BerryCrushAssertOperationElement
 import com.berrycrush.intellij.psi.BerryCrushBackgroundElement
 import com.berrycrush.intellij.psi.BerryCrushCallElement
-import com.berrycrush.intellij.psi.BerryCrushCommentElement
 import com.berrycrush.intellij.psi.BerryCrushConditionElement
 import com.berrycrush.intellij.psi.BerryCrushElementTypes
 import com.berrycrush.intellij.psi.BerryCrushElseElement
@@ -66,7 +65,7 @@ class BerryCrushParserDefinition : ParserDefinition {
 
     override fun getWhitespaceTokens(): TokenSet = BerryCrushTokenTypes.WHITESPACES
 
-    override fun getCommentTokens(): TokenSet = TokenSet.EMPTY
+    override fun getCommentTokens(): TokenSet = BerryCrushTokenTypes.COMMENTS
 
     override fun getStringLiteralElements(): TokenSet = BerryCrushTokenTypes.STRINGS
 
@@ -102,7 +101,6 @@ class BerryCrushParserDefinition : ParserDefinition {
         BerryCrushElementTypes.NOT -> BerryCrushNotElement(node)
         BerryCrushElementTypes.OPERATOR -> BerryCrushOperatorElement(node)
         BerryCrushElementTypes.TEXT -> BerryCrushTextElement(node)
-        BerryCrushElementTypes.COMMENT -> BerryCrushCommentElement(node)
         BerryCrushElementTypes.TAG -> BerryCrushTagElement(node)
         else -> BerryCrushGenericElement(node)
     }

@@ -3,17 +3,19 @@ package com.berrycrush.intellij.parser
 import com.berrycrush.intellij.BerryCrushTestCase
 import com.berrycrush.intellij.psi.BerryCrushAssertElement
 import com.berrycrush.intellij.psi.BerryCrushBackgroundElement
-import com.berrycrush.intellij.psi.BerryCrushCommentElement
+import com.berrycrush.intellij.psi.BerryCrushCallElement
 import com.berrycrush.intellij.psi.BerryCrushElseElement
 import com.berrycrush.intellij.psi.BerryCrushExamplesElement
 import com.berrycrush.intellij.psi.BerryCrushFeatureElement
 import com.berrycrush.intellij.psi.BerryCrushFragmentElement
 import com.berrycrush.intellij.psi.BerryCrushIfElement
+import com.berrycrush.intellij.psi.BerryCrushIncludeParameterElement
 import com.berrycrush.intellij.psi.BerryCrushOutlineElement
 import com.berrycrush.intellij.psi.BerryCrushParameterEntryElement
 import com.berrycrush.intellij.psi.BerryCrushParametersElement
 import com.berrycrush.intellij.psi.BerryCrushScenarioElement
 import com.berrycrush.intellij.psi.BerryCrushStepElement
+import com.intellij.psi.PsiComment
 import com.intellij.psi.util.PsiTreeUtil
 
 /**
@@ -56,7 +58,7 @@ class BerryCrushParserTest : BerryCrushTestCase() {
         assertNotNull("Standalone scenario should exist", standaloneScenario)
         assertSame("Standalone scenario should remain top-level", psiFile, standaloneScenario?.parent)
 
-        val comments = PsiTreeUtil.findChildrenOfType(psiFile, BerryCrushCommentElement::class.java)
+        val comments = PsiTreeUtil.findChildrenOfType(psiFile, PsiComment::class.java)
         assertTrue("Comment PSI nodes should be emitted", comments.size >= 3)
     }
 
@@ -463,5 +465,37 @@ class BerryCrushParserTest : BerryCrushTestCase() {
         val elseAssertions = PsiTreeUtil.findChildrenOfType(elseDirectives.first(), BerryCrushAssertElement::class.java)
         assertEquals("If branch should contain one assert", 1, ifAssertions.size)
         assertEquals("Else branch should contain one assert", 1, elseAssertions.size)
+    }
+
+    fun testIncludedParametersWithNewlinedValues() {
+        val file =
+            createScenarioFile(
+                "key-pair",
+                """
+                scenario: conditional checks
+                  when I call
+                    call ^operationId
+                      id:
+                        1234
+                      body:
+                        ${'"'}""
+                          {
+                            "body": "something"
+                          }
+                        ${'"'}""
+                """.trimIndent(),
+            )
+
+        val psiFile = psiManager.findFile(file)
+        assertNotNull("PSI file should be created", psiFile)
+
+        val callElement = PsiTreeUtil.findChildrenOfType(psiFile, BerryCrushCallElement::class.java)
+        assertEquals("Should find one call directive", 1, callElement.size)
+
+        val includedElement = PsiTreeUtil.findChildrenOfType(callElement.first(), BerryCrushIncludeParameterElement::class.java)
+        assertEquals("Should find one included parameter", 1, includedElement.size)
+
+        val entries = includedElement.first().entries
+        assertEquals("Should find 2 included parameter entries", 2, entries.size)
     }
 }
