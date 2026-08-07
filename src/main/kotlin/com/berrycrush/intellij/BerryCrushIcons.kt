@@ -1,5 +1,6 @@
 package com.berrycrush.intellij
 
+import com.intellij.icons.AllIcons
 import com.intellij.openapi.util.IconLoader
 import javax.swing.Icon
 
@@ -22,18 +23,33 @@ object BerryCrushIcons {
     val SCENARIO: Icon = load("/icons/scenario-item.svg")
 
     @JvmField
-    val STEP: Icon = load("/icons/step.svg")
+    val FRAGMENT: Icon = load("/icons/fragment-item.svg")
+
+    @JvmField
+    val STEP: Icon = AllIcons.General.InspectionsOK
 
     @JvmField
     val RUN_CONFIGURATION: Icon = load("/icons/run-configuration.svg")
 
     // Structure view icons - reuse existing icons as fallbacks
     @JvmField
-    val OPERATION: Icon = STEP // API operation calls
+    val OPERATION: Icon = AllIcons.Webreferences.Openapi
 
     @JvmField
-    val ASSERTION: Icon = STEP // Assert directives
+    val ASSERTION: Icon = AllIcons.General.InspectionsOK
 
     @JvmField
     val VARIABLE: Icon = STEP // Extract directives
+
+    @JvmField
+    val INCLUDE = FRAGMENT
+
+    @JvmField
+    val CONDITIONAL = AllIcons.Debugger.Question_badge
+
+    @JvmField
+    val EXTRACT = AllIcons.Vcs.Arrow_right
+
+    @JvmField
+    val PARAMETER = AllIcons.General.ProjectConfigurable
 }

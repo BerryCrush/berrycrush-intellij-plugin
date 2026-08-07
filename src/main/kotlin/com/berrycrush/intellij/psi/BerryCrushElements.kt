@@ -180,6 +180,8 @@ abstract class BerryCrushBlockElement(
     val description: String?
         get() = directChildrenOfType<BerryCrushTextElement>().firstOrNull()?.text
 
+    val parameter: BerryCrushParametersElement?
+        get() = directChildrenOfType<BerryCrushParametersElement>().firstOrNull()
     override fun getName(): String? = description
 }
 
@@ -289,6 +291,9 @@ class BerryCrushStepElement(
         get() = directChildrenOfType()
 
     val assertDirectives: List<BerryCrushAssertElement>
+        get() = directChildrenOfType()
+
+    val directives: List<BerryCrushDirectiveElement>
         get() = directChildrenOfType()
 }
 
