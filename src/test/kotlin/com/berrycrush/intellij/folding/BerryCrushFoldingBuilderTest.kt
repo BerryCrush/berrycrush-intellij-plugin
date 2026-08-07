@@ -40,9 +40,9 @@ class BerryCrushFoldingBuilderTest : BerryCrushTestCase() {
                 "fold",
                 """
                 fragment: my-fragment
-                given step one
-                when step two
-                then step three
+                  given step one
+                  when step two
+                  then step three
                 """.trimIndent(),
             )
 

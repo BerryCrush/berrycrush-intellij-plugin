@@ -9,6 +9,7 @@ import com.berrycrush.intellij.psi.BerryCrushFile
 import com.berrycrush.intellij.psi.BerryCrushFragmentElement
 import com.berrycrush.intellij.psi.BerryCrushIncludeElement
 import com.berrycrush.intellij.psi.BerryCrushScenarioElement
+import com.berrycrush.intellij.psi.BerryCrushScenarioLikeElement
 import com.berrycrush.intellij.psi.BerryCrushStepElement
 import com.intellij.ide.structureView.StructureViewBuilder
 import com.intellij.ide.structureView.StructureViewModel
@@ -90,17 +91,13 @@ class BerryCrushStructureViewElement(
             is BerryCrushFile -> {
                 collectBlocks(element, children)
             }
-            // Fragment: Content is NESTED inside (parser includes content in marker)
-            is BerryCrushFragmentElement -> {
+            // Fragment:, Scenario: Outline: Background: Content is NESTED inside (parser includes content in marker)
+            is BerryCrushScenarioLikeElement -> {
                 collectNestedSteps(element, children)
             }
             // Feature: Contains scenarios (and possibly steps)
             is BerryCrushFeatureElement -> {
                 collectChildrenForFeature(element, children)
-            }
-            // Scenario: Content is SIBLINGS after (parser only marks header)
-            is BerryCrushScenarioElement -> {
-                collectSiblingStepsForBlock(element, children)
             }
             // Step level: collect nested or sibling directives
             is BerryCrushStepElement -> {
@@ -132,10 +129,10 @@ class BerryCrushStructureViewElement(
      * Collect steps that are NESTED inside a fragment (parser nests content).
      */
     private fun collectNestedSteps(
-        fragment: BerryCrushFragmentElement,
+        fragment: BerryCrushScenarioLikeElement,
         result: MutableList<TreeElement>,
     ) {
-        val steps = PsiTreeUtil.findChildrenOfType(fragment, BerryCrushStepElement::class.java)
+        val steps = fragment.steps
         steps.sortedBy { it.textOffset }.forEach { result.add(BerryCrushStructureViewElement(it)) }
     }
 
@@ -192,60 +189,6 @@ class BerryCrushStructureViewElement(
             return null
         }
         return sortedFeatures[currentIndex + 1].textOffset
-    }
-
-    /**
-     * Collect steps that are SIBLINGS after a scenario/feature (parser only marks header).
-     * Also tries PsiTreeUtil as fallback if direct sibling traversal fails.
-     */
-    private fun collectSiblingStepsForBlock(
-        block: PsiElement,
-        result: MutableList<TreeElement>,
-    ) {
-        // First, try direct sibling traversal
-        var sibling = block.nextSibling
-        while (sibling != null) {
-            // Stop at next block
-            if (isBlockElement(sibling)) {
-                break
-            }
-            // Collect steps
-            if (sibling is BerryCrushStepElement) {
-                result.add(BerryCrushStructureViewElement(sibling))
-            }
-            sibling = sibling.nextSibling
-        }
-
-        // If no steps found via siblings, try finding steps in the file that come after this block
-        if (result.isEmpty()) {
-            val file = block.containingFile
-            if (file != null) {
-                val allSteps = PsiTreeUtil.findChildrenOfType(file, BerryCrushStepElement::class.java)
-                val blockEndOffset = block.textRange.endOffset
-                val nextBlockOffset = findNextBlockOffset(block)
-
-                for (step in allSteps) {
-                    val stepOffset = step.textOffset
-                    if (stepOffset > blockEndOffset && (nextBlockOffset == null || stepOffset < nextBlockOffset)) {
-                        result.add(BerryCrushStructureViewElement(step))
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Find the offset of the next block element after the given block.
-     */
-    private fun findNextBlockOffset(block: PsiElement): Int? {
-        var sibling = block.nextSibling
-        while (sibling != null) {
-            if (isBlockElement(sibling)) {
-                return sibling.textOffset
-            }
-            sibling = sibling.nextSibling
-        }
-        return null
     }
 
     /**

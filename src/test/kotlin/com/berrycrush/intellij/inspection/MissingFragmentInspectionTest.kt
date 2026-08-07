@@ -138,8 +138,8 @@ class MissingFragmentInspectionTest : BerryCrushInspectionTestCase(MissingFragme
 
         val problem = problems.first()
         assertEquals(
-            "Missing fragment should be ERROR severity",
-            com.intellij.codeInspection.ProblemHighlightType.ERROR,
+            "Missing fragment should be GENERIC_ERROR severity",
+            com.intellij.codeInspection.ProblemHighlightType.GENERIC_ERROR,
             problem.highlightType,
         )
     }

@@ -12,12 +12,10 @@ import com.berrycrush.intellij.reference.BerryCrushAssertionReference
 import com.berrycrush.intellij.reference.BerryCrushFragmentReference
 import com.berrycrush.intellij.reference.BerryCrushOperationReference
 import com.berrycrush.intellij.reference.BerryCrushStepReference
-import com.intellij.codeInsight.daemon.LineMarkerInfo
 import com.intellij.codeInsight.daemon.RelatedItemLineMarkerInfo
 import com.intellij.codeInsight.daemon.RelatedItemLineMarkerProvider
 import com.intellij.codeInsight.navigation.NavigationGutterIconBuilder
 import com.intellij.icons.AllIcons
-import com.intellij.openapi.editor.markup.GutterIconRenderer
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 
@@ -35,7 +33,7 @@ private val CLASS_LIST: Array<Class<out BerryCrushPsiElement>> = arrayOf(BerryCr
 class BerryCrushLineMarkerProvider : RelatedItemLineMarkerProvider() {
     override fun collectNavigationMarkers(
         element: PsiElement,
-        result: MutableCollection<in RelatedItemLineMarkerInfo<*>>
+        result: MutableCollection<in RelatedItemLineMarkerInfo<*>>,
     ) {
         val marker = when (val e = getOneOfParent(element)) {
             is BerryCrushFragmentElement -> e.markFragment(element)
@@ -50,11 +48,9 @@ class BerryCrushLineMarkerProvider : RelatedItemLineMarkerProvider() {
         }
     }
 
-    private fun getOneOfParent(element: PsiElement): PsiElement? {
-        return CLASS_LIST.mapNotNull {
-            PsiTreeUtil.getParentOfType(element, it, true)
-        }.firstOrNull { it.firstChild == element }
-    }
+    private fun getOneOfParent(element: PsiElement): PsiElement? = CLASS_LIST.mapNotNull {
+        PsiTreeUtil.getParentOfType(element, it, true)
+    }.firstOrNull { it.firstChild == element }
 
     private fun BerryCrushFragmentElement.markFragment(element: PsiElement): RelatedItemLineMarkerInfo<*>? {
         return fragmentName?.let { name ->

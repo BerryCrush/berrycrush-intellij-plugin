@@ -233,9 +233,9 @@ class SafeDeleteTest : BerryCrushTestCase() {
                 "test",
                 """
                 fragment: test-fragment
-                given step one
-                when step two
-                then step three
+                  given step one
+                  when step two
+                  then step three
                 """.trimIndent(),
             )
 
@@ -256,7 +256,7 @@ class SafeDeleteTest : BerryCrushTestCase() {
                 "test",
                 """
                 fragment: test-fragment
-                given step one
+                  given step one
                 """.trimIndent(),
             )
 
@@ -281,7 +281,7 @@ class SafeDeleteTest : BerryCrushTestCase() {
                 "test",
                 """
                 fragment: test-fragment
-                given step
+                  given step
                 """.trimIndent(),
             )
 

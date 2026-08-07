@@ -179,11 +179,11 @@ class BerryCrushParserTest : BerryCrushTestCase() {
                 """
                 fragment: commented-fragment
                 # comment before first step
-                given first step
+                  given first step
                   # indented step comment
-                when second step
+                  when second step
                 # comment between steps
-                then third step
+                  then third step
                 """.trimIndent(),
             )
 
@@ -325,9 +325,9 @@ class BerryCrushParserTest : BerryCrushTestCase() {
                 "test",
                 """
                 fragment: my-fragment
-                given step one
-                when step two
-                then step three
+                  given step one
+                  when step two
+                  then step three
                 """.trimIndent(),
             )
 
@@ -356,10 +356,10 @@ class BerryCrushParserTest : BerryCrushTestCase() {
                 "multi",
                 """
                 fragment: first
-                given first step
+                  given first step
 
                 fragment: second
-                when second step
+                  when second step
                 """.trimIndent(),
             )
 
@@ -391,6 +391,7 @@ class BerryCrushParserTest : BerryCrushTestCase() {
                 "params",
                 """
                 scenario: test with parameters
+                  # comment
                   parameters:
                     timeout: 5000
                     baseUrl: https://api.example.com
@@ -406,7 +407,7 @@ class BerryCrushParserTest : BerryCrushTestCase() {
         assertEquals("Should find 1 scenario", 1, scenarios.size)
 
         // Find parameters block
-        val paramsBlocks = PsiTreeUtil.findChildrenOfType(psiFile, BerryCrushParametersElement::class.java)
+        val paramsBlocks = PsiTreeUtil.findChildrenOfType(scenarios.firstOrNull(), BerryCrushParametersElement::class.java)
         assertEquals("Should find 1 parameters block", 1, paramsBlocks.size)
 
         // Check parameter entries
@@ -521,5 +522,25 @@ class BerryCrushParserTest : BerryCrushTestCase() {
 
         val stepText = stepElements.toList()[1].stepText
         assertEquals("Must only contain step text", "custom step", stepText)
+    }
+
+    fun testNestedFeatureWithTaggedScenario() {
+        val file =
+            createScenarioFile(
+                "test",
+                """
+                feature: this
+                  @api scenario: this belongs to the feature
+                    when do something
+                """.trimIndent(),
+            )
+
+        val psiFile = psiManager.findFile(file)
+        assertNotNull("PSI file should be created", psiFile)
+
+        val featureElements = PsiTreeUtil.findChildrenOfType(psiFile, BerryCrushFeatureElement::class.java)
+        assertEquals("Should one feature", 1, featureElements.size)
+
+        assertEquals("Should contain one scenario", 1, featureElements.firstOrNull()?.scenarios?.size)
     }
 }

@@ -89,9 +89,9 @@ class BerryCrushStructureViewFactoryTest : BerryCrushTestCase() {
                 "nestedSteps",
                 """
                 fragment: my-fragment
-                given step one
-                when step two
-                then step three
+                  given step one
+                  when step two
+                  then step three
                 """.trimIndent(),
             )
 
@@ -116,9 +116,9 @@ class BerryCrushStructureViewFactoryTest : BerryCrushTestCase() {
                 "siblingSteps",
                 """
                 scenario: My Scenario
-                given step one
-                when step two
-                then step three
+                  given step one
+                  when step two
+                  then step three
                 """.trimIndent(),
             )
 
@@ -143,7 +143,7 @@ class BerryCrushStructureViewFactoryTest : BerryCrushTestCase() {
                 "presentation",
                 """
                 scenario: My Test Scenario
-                given step
+                  given step
                 """.trimIndent(),
             )
 

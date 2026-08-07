@@ -251,7 +251,7 @@ class BerryCrushTagElement(node: ASTNode) : BerryCrushPsiElement(node)
  */
 class BerryCrushFragmentElement(
     node: ASTNode,
-) : BerryCrushBlockElement(node),
+) : BerryCrushScenarioLikeElement(node),
     PsiNameIdentifierOwner {
     override val keyword = "fragment"
 
