@@ -29,17 +29,27 @@ internal fun PsiBuilder.parseTag() {
 }
 
 private fun PsiBuilder.parseFeatureChildren(featureIndent: Int) {
+    fun PsiBuilder.lookAheadBeyondTags(): Boolean {
+        tailrec fun check(index: Int): Boolean = !eof() &&
+            when (lookAhead(index)) {
+                BerryCrushTokenTypes.WHITE_SPACE,
+                BerryCrushTokenTypes.NEWLINE,
+                BerryCrushTokenTypes.TAG,
+                -> check(index + 1)
+                BerryCrushTokenTypes.FEATURE -> false
+                else -> true
+            }
+        return check(0)
+    }
     while (!eof()) {
         skipNewlines()
 
         val indent = currentLineIndent()
-        if (indent <= featureIndent &&
-            tokenType != BerryCrushTokenTypes.TAG
-        ) {
-            return
-        }
+        if (indent <= featureIndent && tokenType != BerryCrushTokenTypes.TAG) return
 
         consumeLineIndent()
+        // first check if the next token is one of background, scenario or outline
+        if (!lookAheadBeyondTags()) return
         // parse tag
         while (!eof() && tokenType == BerryCrushTokenTypes.TAG) {
             parseTag()

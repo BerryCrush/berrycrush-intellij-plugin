@@ -13,6 +13,7 @@ import com.berrycrush.intellij.psi.BerryCrushIncludeParameterElement
 import com.berrycrush.intellij.psi.BerryCrushOutlineElement
 import com.berrycrush.intellij.psi.BerryCrushParameterEntryElement
 import com.berrycrush.intellij.psi.BerryCrushParametersElement
+import com.berrycrush.intellij.psi.BerryCrushPsiElement
 import com.berrycrush.intellij.psi.BerryCrushScenarioElement
 import com.berrycrush.intellij.psi.BerryCrushStepElement
 import com.intellij.psi.PsiComment
@@ -542,5 +543,23 @@ class BerryCrushParserTest : BerryCrushTestCase() {
         assertEquals("Should one feature", 1, featureElements.size)
 
         assertEquals("Should contain one scenario", 1, featureElements.firstOrNull()?.scenarios?.size)
+    }
+
+    fun testMultipleTaggedFeature() {
+        val file =
+            createScenarioFile(
+                "test",
+                """
+                feature: this
+                @api
+                feature: that
+                """.trimIndent(),
+            )
+
+        val psiFile = psiManager.findFile(file)
+        assertNotNull("PSI file should be created", psiFile)
+
+        val elements = psiFile?.children?.filterIsInstance<BerryCrushPsiElement>()
+        assertEquals("Should find 3 element", 3, elements?.size)
     }
 }

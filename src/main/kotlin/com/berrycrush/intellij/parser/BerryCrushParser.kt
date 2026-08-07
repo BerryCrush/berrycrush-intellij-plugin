@@ -43,8 +43,7 @@ class BerryCrushParser : PsiParser {
     }
 
     private fun parseTopLevel(builder: PsiBuilder) {
-        val tokenType = builder.tokenType
-        when (tokenType) {
+        when (builder.tokenType) {
             BerryCrushTokenTypes.FEATURE -> builder.parseFeature(0)
             BerryCrushTokenTypes.SCENARIO -> builder.parseScenario(0)
             BerryCrushTokenTypes.OUTLINE -> builder.parseOutline(0)
