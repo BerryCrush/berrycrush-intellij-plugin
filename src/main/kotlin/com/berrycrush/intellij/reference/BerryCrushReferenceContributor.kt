@@ -1,7 +1,7 @@
 package com.berrycrush.intellij.reference
 
-import com.berrycrush.intellij.psi.BerryCrushElementTypes
-import com.intellij.openapi.util.TextRange
+import com.berrycrush.intellij.psi.BerryCrushFragmentRefElement
+import com.berrycrush.intellij.psi.BerryCrushOperationRefElement
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiReference
@@ -40,64 +40,10 @@ class BerryCrushLeafReferenceProvider : PsiReferenceProvider() {
             return PsiReference.EMPTY_ARRAY
         }
 
-        val text = element.text
-
-        // Check if this is an operation reference (^operationId)
-        if (text.startsWith("^") && text.length > 1) {
-            val operationId = text.removePrefix("^")
-            if (operationId.matches(Regex("[a-zA-Z_]\\w*"))) {
-                return arrayOf(
-                    BerryCrushOperationReference(
-                        element,
-                        TextRange(1, text.length), // Skip the ^
-                        operationId,
-                    ),
-                )
-            }
+        return when (element) {
+            is BerryCrushOperationRefElement -> arrayOf(BerryCrushOperationReference(element, element.textRange, element.operationId))
+            is BerryCrushFragmentRefElement -> arrayOf(BerryCrushFragmentReference(element, element.textRange, element.name))
+            else -> PsiReference.EMPTY_ARRAY
         }
-
-        // Check if parent is an INCLUDE_DIRECTIVE and this is the fragment name
-        val parent = element.parent
-        if (parent != null && parent.node?.elementType == BerryCrushElementTypes.FRAGMENT_REF) {
-            val fragmentName = text.removePrefix("^")
-            return arrayOf(
-                BerryCrushFragmentReference(
-                    element,
-                    TextRange(0, text.length),
-                    fragmentName,
-                ),
-            )
-        }
-
-        // Check if this element is inside an include directive
-        if (parent != null && isInsideIncludeDirective(parent)) {
-            // Check if this is the fragment name (identifier after "include")
-            val parentText = parent.text
-            if (parentText.startsWith("include ")) {
-                val fragmentName = text.removePrefix("^")
-                if (fragmentName.matches(Regex("[a-zA-Z_][a-zA-Z0-9_.\\-]*"))) {
-                    return arrayOf(
-                        BerryCrushFragmentReference(
-                            element,
-                            TextRange(0, text.length),
-                            fragmentName,
-                        ),
-                    )
-                }
-            }
-        }
-
-        return PsiReference.EMPTY_ARRAY
-    }
-
-    private fun isInsideIncludeDirective(element: PsiElement): Boolean {
-        var current: PsiElement? = element
-        while (current != null) {
-            if (current.node?.elementType == BerryCrushElementTypes.INCLUDE_DIRECTIVE) {
-                return true
-            }
-            current = current.parent
-        }
-        return false
     }
 }
