@@ -152,11 +152,25 @@ class BerryCrushOperationReference(
 
             for (file in specFiles) {
                 val psiFile = psiManager.findFile(file) ?: continue
-                PsiTreeUtil.findChildrenOfType(psiFile, BerryCrushOperationRefElement::class.java)
-                    .forEach { operationIds.add(it.operationId) }
+                extractOperationIdsFromFile(psiFile.text, operationIds)
             }
 
             return operationIds.distinct()
+        }
+
+        /**
+         * Extract operation IDs from OpenAPI file content.
+         */
+        private fun extractOperationIdsFromFile(text: String, result: MutableList<String>) {
+            // YAML format: operationId: someId
+            Regex("""operationId:\s*['"]?(\w+)['"]?""").findAll(text).forEach {
+                result.add(it.groupValues[1])
+            }
+
+            // JSON format: "operationId": "someId"
+            Regex(""""operationId"\s*:\s*"(\w+)"""").findAll(text).forEach {
+                result.add(it.groupValues[1])
+            }
         }
     }
 }

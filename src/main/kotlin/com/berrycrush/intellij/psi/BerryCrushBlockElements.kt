@@ -13,42 +13,43 @@ import com.intellij.psi.PsiNamedElement
  * - background
  * - outline
  */
-abstract class BerryCrushBlockElement(
-    node: ASTNode,
-) : BerryCrushPsiElement(node),
-    PsiNameIdentifierOwner {
-    abstract val keyword: String
-    val description: String?
-        get() = directChildrenOfType<BerryCrushTextElement>().firstOrNull()?.text
+interface BerryCrushBlockElement {
+    val keyword: String
+}
 
+interface BerryCrushParameterizedElement {
     val parameter: BerryCrushParametersElement?
-        get() = directChildrenOfType<BerryCrushParametersElement>().firstOrNull()
+}
+
+abstract class BerryCrushNamedBlockElement(
+    node: ASTNode,
+) : BerryCrushNamedElement(node),
+    BerryCrushBlockElement,
+    BerryCrushParameterizedElement {
+    val description: String?
+        get() = directChildrenOfType<BerryCrushBlockNameElement>().firstOrNull()?.text
+
     override fun getName(): String? = description
+
+    override val parameter: BerryCrushParametersElement?
+        get() = directChildrenOfType<BerryCrushParametersElement>().firstOrNull()
+
+    override fun getNameIdentifier(): PsiElement? = directChildrenOfType<BerryCrushBlockNameElement>().firstOrNull()
+
+    override fun createIdentifier(text: String): PsiElement = BerryCrushElementFactory.createBlockNameIdentifier(project, "$keyword: $text")
 }
 
 /**
- * Fragment definition element.
+ * Fragment, feature, scenario or outline description
  */
-class BerryCrushFragmentElement(
-    node: ASTNode,
-) : BerryCrushScenarioLikeElement(node),
-    PsiNameIdentifierOwner {
-    override val keyword = "fragment"
-
-    val fragmentName: String?
-        get() = description
-
-    override fun setName(name: String): PsiElement = this
-
-    override fun getNameIdentifier(): PsiElement? = directChildrenOfType<BerryCrushTextElement>().firstOrNull()
-}
+class BerryCrushBlockNameElement(node: ASTNode) : BerryCrushPsiElement(node)
 
 /**
  * Feature block element.
  */
 class BerryCrushFeatureElement(
     node: ASTNode,
-) : BerryCrushBlockElement(node),
+) : BerryCrushNamedBlockElement(node),
     PsiNameIdentifierOwner {
     override val keyword = "feature"
 
@@ -67,13 +68,17 @@ class BerryCrushFeatureElement(
 }
 
 /**
- * Scenario block element.
+ * Scenario like block element.
  */
-abstract class BerryCrushScenarioLikeElement(
-    node: ASTNode,
-) : BerryCrushBlockElement(node),
-    PsiNameIdentifierOwner {
+interface BerryCrushScenarioLikeElement : BerryCrushBlockElement {
     val steps: List<BerryCrushStepElement>
+}
+
+abstract class BerryCrushNamedScenarioLikeElement(
+    node: ASTNode,
+) : BerryCrushNamedBlockElement(node),
+    BerryCrushScenarioLikeElement {
+    override val steps: List<BerryCrushStepElement>
         get() = directChildrenOfType()
 
     override fun setName(name: String): PsiElement = this
@@ -82,12 +87,29 @@ abstract class BerryCrushScenarioLikeElement(
 }
 
 /**
+ * Fragment definition element.
+ */
+class BerryCrushFragmentElement(
+    node: ASTNode,
+) : BerryCrushNamedScenarioLikeElement(node),
+    PsiNameIdentifierOwner {
+    override val keyword = "fragment"
+
+    val fragmentName: String?
+        get() = description
+
+    override fun setName(name: String): PsiElement = this
+
+    override fun getNameIdentifier(): PsiElement? = directChildrenOfType<BerryCrushTextElement>().firstOrNull()
+}
+
+/**
  * ```berrycrush
  * scenario: name
  *   steps...
  * ```
  */
-class BerryCrushScenarioElement(node: ASTNode) : BerryCrushScenarioLikeElement(node) {
+class BerryCrushScenarioElement(node: ASTNode) : BerryCrushNamedScenarioLikeElement(node) {
     override val keyword = "scenario"
 }
 
@@ -97,8 +119,12 @@ class BerryCrushScenarioElement(node: ASTNode) : BerryCrushScenarioLikeElement(n
  *   steps...
  * ```
  */
-class BerryCrushBackgroundElement(node: ASTNode) : BerryCrushScenarioLikeElement(node) {
+class BerryCrushBackgroundElement(node: ASTNode) :
+    BerryCrushPsiElement(node),
+    BerryCrushScenarioLikeElement {
     override val keyword = "background"
+    override val steps: List<BerryCrushStepElement>
+        get() = directChildrenOfType()
 }
 
 /**
@@ -108,7 +134,7 @@ class BerryCrushBackgroundElement(node: ASTNode) : BerryCrushScenarioLikeElement
  *   examples:
  * ```
  */
-class BerryCrushOutlineElement(node: ASTNode) : BerryCrushScenarioLikeElement(node) {
+class BerryCrushOutlineElement(node: ASTNode) : BerryCrushNamedScenarioLikeElement(node) {
     override val keyword = "outline"
 }
 

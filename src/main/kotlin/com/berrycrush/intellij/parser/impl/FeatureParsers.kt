@@ -7,7 +7,7 @@ import com.intellij.lang.PsiBuilder
 internal fun PsiBuilder.parseFeature(featureIndent: Int) {
     val marker = mark()
     advanceLexer()
-    skipToEndOfLine()
+    skipToEndOfLine(BerryCrushElementTypes.BLOCK_NAME)
 
     // Parse optional parameters block after feature name
     tryParseParametersBlock(featureIndent)

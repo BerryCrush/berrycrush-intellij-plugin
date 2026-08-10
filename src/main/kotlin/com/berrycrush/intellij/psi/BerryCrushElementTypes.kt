@@ -26,6 +26,9 @@ object BerryCrushElementTypes {
     val FRAGMENT = BerryCrushPsiElementType("FRAGMENT")
 
     @JvmField
+    val BLOCK_NAME = BerryCrushPsiElementType("BLOCK_NAME")
+
+    @JvmField
     val BACKGROUND = BerryCrushPsiElementType("BACKGROUND")
 
     @JvmField

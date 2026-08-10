@@ -6,7 +6,7 @@ import com.intellij.lang.PsiBuilder
 internal fun PsiBuilder.parseFragment() {
     val marker = mark()
     advanceLexer()
-    skipToEndOfLine()
+    skipToEndOfLine(BerryCrushElementTypes.BLOCK_NAME)
     parseScenarioContent(0)
 
     marker.done(BerryCrushElementTypes.FRAGMENT)

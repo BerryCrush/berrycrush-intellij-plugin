@@ -3,6 +3,7 @@ package com.berrycrush.intellij.inspection
 import com.berrycrush.intellij.lexer.BerryCrushTokenTypes
 import com.berrycrush.intellij.psi.BerryCrushAssertElement
 import com.berrycrush.intellij.psi.BerryCrushBackgroundElement
+import com.berrycrush.intellij.psi.BerryCrushBlockNameElement
 import com.berrycrush.intellij.psi.BerryCrushCallElement
 import com.berrycrush.intellij.psi.BerryCrushElseElement
 import com.berrycrush.intellij.psi.BerryCrushExamplesElement
@@ -11,12 +12,12 @@ import com.berrycrush.intellij.psi.BerryCrushFeatureElement
 import com.berrycrush.intellij.psi.BerryCrushFragmentElement
 import com.berrycrush.intellij.psi.BerryCrushIfElement
 import com.berrycrush.intellij.psi.BerryCrushIncludeElement
+import com.berrycrush.intellij.psi.BerryCrushNamedScenarioLikeElement
 import com.berrycrush.intellij.psi.BerryCrushOutlineElement
 import com.berrycrush.intellij.psi.BerryCrushParameterEntryElement
 import com.berrycrush.intellij.psi.BerryCrushParametersElement
 import com.berrycrush.intellij.psi.BerryCrushPsiElement
 import com.berrycrush.intellij.psi.BerryCrushScenarioElement
-import com.berrycrush.intellij.psi.BerryCrushScenarioLikeElement
 import com.berrycrush.intellij.psi.BerryCrushStepElement
 import com.berrycrush.intellij.psi.BerryCrushTagElement
 import com.berrycrush.intellij.psi.BerryCrushTextElement
@@ -57,7 +58,13 @@ class SyntaxCheckInspection : BerryCrushInspection() {
                     }
                     checkFeature(element, holder)
                 }
-                is BerryCrushScenarioLikeElement -> {
+                is BerryCrushBackgroundElement -> {
+                    if (!isScenarioFile) {
+                        holder.registerProblem(element, "Background block is only valid in .scenario files")
+                    }
+                    checkBackground(element, holder)
+                }
+                is BerryCrushNamedScenarioLikeElement -> {
                     if (!isScenarioFile) {
                         holder.registerProblem(element, "Scenario/outline/background blocks are only valid in .scenario files")
                     }
@@ -91,7 +98,7 @@ class SyntaxCheckInspection : BerryCrushInspection() {
         parameter: BerryCrushParametersElement,
         holder: ProblemsHolder,
     ) {
-        blockChildren(parameter).forEach { child ->
+        parameter.children.filterIsInstance<BerryCrushPsiElement>().forEach { child ->
             if (child !is BerryCrushParameterEntryElement) {
                 holder.registerProblem(child, "Invalid parameter entry")
             }
@@ -102,14 +109,16 @@ class SyntaxCheckInspection : BerryCrushInspection() {
         feature: BerryCrushFeatureElement,
         holder: ProblemsHolder,
     ) {
-        blockChildren(feature).forEach { element ->
+        blockChildren<BerryCrushBlockNameElement>(feature, holder).forEach { element ->
             when (element) {
                 is BerryCrushParametersElement -> checkParameter(element, holder)
-                is BerryCrushBackgroundElement -> checkScenarioLike(element, holder)
+                is BerryCrushBackgroundElement -> checkBackground(element, holder)
                 is BerryCrushScenarioElement -> checkScenarioLike(element, holder)
                 is BerryCrushOutlineElement -> checkScenarioLike(element, holder)
                 is BerryCrushTagElement -> checkTag(element, holder)
-                is PsiComment -> Unit
+                is BerryCrushBlockNameElement,
+                is PsiComment,
+                -> Unit
                 else ->
                     if (element.text.isNotBlank()) {
                         holder.registerProblem(
@@ -121,23 +130,30 @@ class SyntaxCheckInspection : BerryCrushInspection() {
         }
     }
 
-    private fun checkScenarioLike(
-        scenario: BerryCrushScenarioLikeElement,
+    private fun checkBackground(
+        background: BerryCrushBackgroundElement,
         holder: ProblemsHolder,
     ) {
-        val allowParameters = scenario !is BerryCrushBackgroundElement
+        background.children.forEach { child ->
+            when (child) {
+                is BerryCrushStepElement -> checkStep(child, holder)
+                is PsiComment -> Unit
+                else -> holder.registerProblem(child, "Background must contain only steps")
+            }
+        }
+    }
+
+    private fun checkScenarioLike(
+        scenario: BerryCrushNamedScenarioLikeElement,
+        holder: ProblemsHolder,
+    ) {
         val allowExamples = scenario is BerryCrushOutlineElement
 
-        blockChildren(scenario).forEach { child ->
+        blockChildren<BerryCrushBlockNameElement>(scenario, holder).forEach { child ->
             when (child) {
-                is BerryCrushParametersElement -> {
-                    if (allowParameters) {
-                        checkParameter(child, holder)
-                    } else {
-                        holder.registerProblem(child, "Background must not contain parameters block")
-                    }
-                }
+                is BerryCrushParametersElement -> checkParameter(child, holder)
                 is BerryCrushStepElement -> checkStep(child, holder)
+                is BerryCrushBlockNameElement -> Unit
                 is BerryCrushExamplesElement -> {
                     if (!allowExamples) {
                         holder.registerProblem(child, "Examples block is only valid in outline")
@@ -159,7 +175,7 @@ class SyntaxCheckInspection : BerryCrushInspection() {
         step: BerryCrushStepElement,
         holder: ProblemsHolder,
     ) {
-        blockChildren(step).forEach { child ->
+        blockChildren<BerryCrushTextElement>(step, holder).forEach { child ->
             when (child) {
                 is BerryCrushCallElement,
                 is BerryCrushWebhookElement,
@@ -184,7 +200,7 @@ class SyntaxCheckInspection : BerryCrushInspection() {
         fragment: BerryCrushFragmentElement,
         holder: ProblemsHolder,
     ) {
-        blockChildren(fragment).forEach { child ->
+        blockChildren<BerryCrushBlockNameElement>(fragment, holder).forEach { child ->
             when (child) {
                 is BerryCrushStepElement -> checkStep(child, holder)
                 is BerryCrushCallElement,
@@ -208,15 +224,16 @@ class SyntaxCheckInspection : BerryCrushInspection() {
         }
     }
 
-    private fun blockChildren(element: PsiElement): List<BerryCrushPsiElement> {
+    private inline fun <reified T> blockChildren(element: PsiElement, holder: ProblemsHolder): List<BerryCrushPsiElement> {
         val children = element.children.filterIsInstance<BerryCrushPsiElement>()
         if (children.isEmpty()) {
             return emptyList()
         }
 
-        return if (children.first() is BerryCrushTextElement) {
+        return if (children.first() is T) {
             children.drop(1)
         } else {
+            holder.registerProblem(element, "Missing description")
             children
         }
     }

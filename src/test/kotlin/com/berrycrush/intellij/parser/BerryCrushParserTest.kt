@@ -204,7 +204,7 @@ class BerryCrushParserTest : BerryCrushTestCase() {
                 "hierarchy",
                 """
                 feature: feature description
-                    background: background description
+                    background:
                         given background given description
                             call ^operationId
                                 id: {{petId}}
@@ -229,7 +229,6 @@ class BerryCrushParserTest : BerryCrushTestCase() {
 
         val background = feature?.backgrounds?.singleOrNull()
         assertNotNull("Feature should contain one background child", background)
-        assertEquals("background description", background?.description)
 
         val nestedScenario = feature?.scenarios?.singleOrNull()
         assertNotNull("Feature should contain one nested scenario child", nestedScenario)

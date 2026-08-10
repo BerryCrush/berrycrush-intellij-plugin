@@ -40,7 +40,20 @@ abstract class BerryCrushPsiElement(
         }
     }
 
-    protected inline fun <reified T : PsiElement> directChildrenOfType(): List<T> = children.filterIsInstance<T>()
+    protected inline fun <reified T> directChildrenOfType(): List<T> = children.filterIsInstance<T>()
+}
+
+abstract class BerryCrushNamedElement(node: ASTNode) :
+    BerryCrushPsiElement(node),
+    PsiNameIdentifierOwner {
+    override fun getName(): String? = nameIdentifier?.text
+    override fun setName(name: String): PsiElement {
+        val identifier = nameIdentifier ?: return this
+        identifier.replace(createIdentifier(name))
+        return this
+    }
+
+    abstract fun createIdentifier(text: String): PsiElement
 }
 
 class BerryCrushConditionElement(node: ASTNode) : BerryCrushPsiElement(node)

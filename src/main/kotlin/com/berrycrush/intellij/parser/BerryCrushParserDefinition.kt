@@ -6,6 +6,7 @@ import com.berrycrush.intellij.lexer.BerryCrushTokenTypes
 import com.berrycrush.intellij.psi.BerryCrushAssertElement
 import com.berrycrush.intellij.psi.BerryCrushAssertOperationElement
 import com.berrycrush.intellij.psi.BerryCrushBackgroundElement
+import com.berrycrush.intellij.psi.BerryCrushBlockNameElement
 import com.berrycrush.intellij.psi.BerryCrushCallElement
 import com.berrycrush.intellij.psi.BerryCrushConditionElement
 import com.berrycrush.intellij.psi.BerryCrushElementTypes
@@ -100,6 +101,7 @@ class BerryCrushParserDefinition : ParserDefinition {
         BerryCrushElementTypes.ASSERTION_OPERATION -> BerryCrushAssertOperationElement(node)
         BerryCrushElementTypes.NOT -> BerryCrushNotElement(node)
         BerryCrushElementTypes.OPERATOR -> BerryCrushOperatorElement(node)
+        BerryCrushElementTypes.BLOCK_NAME -> BerryCrushBlockNameElement(node)
         BerryCrushElementTypes.TEXT -> BerryCrushTextElement(node)
         BerryCrushElementTypes.TAG -> BerryCrushTagElement(node)
         else -> BerryCrushGenericElement(node)
