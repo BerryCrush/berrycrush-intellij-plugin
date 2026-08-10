@@ -3,7 +3,6 @@ package com.berrycrush.intellij.psi
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNameIdentifierOwner
-import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.util.PsiTreeUtil
 
 /**
@@ -56,7 +55,7 @@ class BerryCrushParametersElement(
  */
 class BerryCrushParameterEntryElement(
     node: ASTNode,
-) : BerryCrushPsiElement(node),
+) : BerryCrushNamedElement(node),
     PsiNameIdentifierOwner {
     /**
      * The parameter name (key before the colon).
@@ -74,22 +73,16 @@ class BerryCrushParameterEntryElement(
         .findChildrenOfType(this, BerryCrushParameterEntryElement::class.java)
         .find { it.parameterName == name }
 
-    override fun getName(): String? = parameterName
+    override fun createIdentifier(text: String): PsiElement = BerryCrushElementFactory.createParameterKeyElement(project, text)
 
-    override fun setName(name: String): PsiElement = this
-
-    override fun getNameIdentifier(): PsiElement? = null
+    override fun getNameIdentifier(): PsiElement? = directChildrenOfType<BerryCrushParameterKeyElement>().firstOrNull()
 }
 
 class BerryCrushParameterKeyElement(
     node: ASTNode,
-) : BerryCrushPsiElement(node),
-    PsiNamedElement {
+) : BerryCrushPsiElement(node) {
     val keyName
         get() = node.text.removeSuffix(":").trim()
-
-    override fun getName(): String = keyName
-    override fun setName(name: String): PsiElement = this
 }
 
 // value can be text or other node...

@@ -2,27 +2,40 @@ package com.berrycrush.intellij.psi
 
 import com.berrycrush.intellij.reference.BerryCrushFragmentReference
 import com.berrycrush.intellij.reference.BerryCrushOperationReference
+import com.berrycrush.intellij.reference.BerryCrushParameterReference
+import com.berrycrush.intellij.reference.BerryCrushVariableReference
 import com.intellij.lang.ASTNode
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.PsiReference
+
+interface BerryCrushReferenceElement : PsiElement
 
 /**
  * Variable ref `{{var}}`
  */
 class BerryCrushVariableRefElement(
     node: ASTNode,
-) : BerryCrushPsiElement(node),
-    PsiNameIdentifierOwner {
+) : BerryCrushPsiElement(node), BerryCrushReferenceElement {
     val variableName
         get() = node.text.removePrefix("{{").removeSuffix("}}")
 
-    override fun getName(): String = variableName
+    val isParameterReference: Boolean
+        get() = variableName.startsWith("param.")
 
-    override fun setName(name: String): PsiElement = this
+    override fun getReference(): PsiReference = if (isParameterReference) {
+        BerryCrushParameterReference(this,
+            TextRange(2 + "param.".length, textLength - 2),
+            variableName.removePrefix("param.").split(".")
+            )
+    } else {
+        BerryCrushVariableReference(
+            this,
+            TextRange(2, textLength - 2),
+            variableName,
+        )
+    }
 
-    override fun getNameIdentifier(): PsiElement? = null
 }
 
 /**
@@ -30,7 +43,7 @@ class BerryCrushVariableRefElement(
  */
 class BerryCrushOperationRefElement(
     node: ASTNode,
-) : BerryCrushPsiElement(node) {
+) : BerryCrushPsiElement(node), BerryCrushReferenceElement {
     val operationId: String
         get() = node.text.removePrefix("^")
 
@@ -51,7 +64,7 @@ class BerryCrushOperationRefElement(
  */
 class BerryCrushFragmentRefElement(
     node: ASTNode,
-) : BerryCrushPsiElement(node) {
+) : BerryCrushPsiElement(node), BerryCrushReferenceElement {
     override fun getName(): String = node.text
 
     override fun getReference(): PsiReference = BerryCrushFragmentReference(
@@ -60,9 +73,3 @@ class BerryCrushFragmentRefElement(
         name,
     )
 }
-
-/**
- * Parameter reference.
- * Similar to `{{var}}` but prefixed with `param.`. e.g. `{{param.name}}`
- */
-class BerryCrushParameterRefElement(node: ASTNode) : BerryCrushPsiElement(node)

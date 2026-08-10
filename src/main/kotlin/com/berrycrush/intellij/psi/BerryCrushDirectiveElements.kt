@@ -3,7 +3,6 @@ package com.berrycrush.intellij.psi
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNameIdentifierOwner
-import com.intellij.psi.PsiNamedElement
 
 /**
  * Base directive element
@@ -56,22 +55,12 @@ class BerryCrushCallElement(
  */
 class BerryCrushIncludeElement(
     node: ASTNode,
-) : BerryCrushIncludeLikeElement("include", node),
-    PsiNameIdentifierOwner {
+) : BerryCrushIncludeLikeElement("include", node) {
     val fragmentRef: BerryCrushFragmentRefElement?
         get() = directChildrenOfType<BerryCrushFragmentRefElement>().firstOrNull()
 
     val fragmentName: String?
         get() = fragmentRef?.name
-
-    override fun getName(): String? = fragmentName
-
-    override fun setName(name: String): PsiElement = this
-
-    override fun getNameIdentifier(): PsiElement? {
-        val childNode = node.findChildByType(BerryCrushElementTypes.FRAGMENT_REF)
-        return childNode?.psi
-    }
 }
 
 /**
@@ -106,12 +95,19 @@ class BerryCrushAssertElement(
 class BerryCrushExtractElement(
     node: ASTNode,
 ) : BerryCrushDirectiveElement("extract", node),
-    PsiNamedElement {
+    PsiNameIdentifierOwner {
     val extractName
-        get() = node.text.trim()
+        get() = name
 
-    override fun getName(): String = extractName
-    override fun setName(name: String): PsiElement = this
+    override fun getName(): String? = nameIdentifier?.text
+    override fun setName(name: String): PsiElement {
+        nameIdentifier?.let {
+            replace(BerryCrushElementFactory.createTextElement(project, name))
+        }
+        return this
+    }
+
+    override fun getNameIdentifier(): PsiElement? = directChildrenOfType<BerryCrushTextElement>().lastOrNull()
 }
 
 /**

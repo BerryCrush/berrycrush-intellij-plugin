@@ -1,6 +1,7 @@
 package com.berrycrush.intellij.reference
 
 import com.berrycrush.intellij.index.FragmentIndex
+import com.berrycrush.intellij.psi.BerryCrushElementFactory
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
@@ -17,7 +18,7 @@ class BerryCrushFragmentReference(
     element: PsiElement,
     textRange: TextRange,
     private val fragmentName: String,
-) : PsiReferenceBase<PsiElement>(element, textRange, true) {
+) : PsiReferenceBase<PsiElement>(element, textRange, false) {
     override fun resolve(): PsiElement? {
         val project = element.project
         return findFragmentByName(project, fragmentName)
@@ -28,6 +29,10 @@ class BerryCrushFragmentReference(
         return findAllFragments(project)
             .map { it.nameWithoutExtension }
             .toTypedArray()
+    }
+
+    override fun handleElementRename(newElementName: String): PsiElement {
+        return element.replace(BerryCrushElementFactory.createFragmentRefElement(element.project, newElementName))
     }
 
     companion object {

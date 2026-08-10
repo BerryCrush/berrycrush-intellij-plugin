@@ -1,20 +1,55 @@
 package com.berrycrush.intellij.refactoring
 
 import com.berrycrush.intellij.BerryCrushTestCase
+import com.berrycrush.intellij.psi.BerryCrushFragmentElement
 import com.berrycrush.intellij.refactoring.fragment.FragmentRenameProcessor
 import com.berrycrush.intellij.refactoring.variable.VariableRenameProcessor
+import com.intellij.openapi.vfs.readText
+import com.intellij.psi.PsiElement
+import com.intellij.psi.util.PsiTreeUtil
+import com.intellij.testFramework.utils.vfs.getPsiFile
 
 /**
  * Tests for BerryCrush refactoring support.
  */
 class RefactoringTest : BerryCrushTestCase() {
+    fun testRename() {
+        val fragmentFile = createFragmentFile(
+            "test-fragment",
+            """
+                fragment: my-fragment
+                  given ok
+            """.trimIndent()
+        )
+        val scenarioContent =
+            """
+                scenario: my scenario
+                  given test
+                    include my-<caret>fragment
+            """.trimIndent()
+
+        myFixture.configureByText("test-scenario.scenario", scenarioContent)
+
+        val leaf = myFixture.file.findElementAt(
+            myFixture.editor.caretModel.offset
+        )!!
+
+        println("leaf = $leaf")
+        println("elementType = ${leaf.node.elementType}")
+        println("elementType class = ${leaf.node.elementType.javaClass}")
+
+        myFixture.renameElementAtCaret("superb-fragment")
+        val psiFile = psiManager.findFile(fragmentFile)
+        val fragment = PsiTreeUtil.findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
+    }
+
     fun testRefactoringSupportProviderDetectsFragmentDefinition() {
         val file =
             createFragmentFile(
                 "test",
                 """
                 fragment: my-fragment
-                given step one
+                  given step one
                 """.trimIndent(),
             )
 
@@ -36,8 +71,8 @@ class RefactoringTest : BerryCrushTestCase() {
                 "test",
                 """
                 scenario: Test
-                include my-fragment
-                then done
+                  include my-fragment
+                  then done
                 """.trimIndent(),
             )
 
@@ -57,7 +92,7 @@ class RefactoringTest : BerryCrushTestCase() {
                 "test",
                 """
                 scenario: Test
-                given step with {{myVar}}
+                  given step with {{myVar}}
                 """.trimIndent(),
             )
 
@@ -77,7 +112,7 @@ class RefactoringTest : BerryCrushTestCase() {
                 "test",
                 """
                 fragment: my-fragment
-                given step
+                  given step
                 """.trimIndent(),
             )
 
@@ -98,7 +133,7 @@ class RefactoringTest : BerryCrushTestCase() {
                 """
                 scenario: Test
                 include my-fragment
-                """.trimIndent(),
+                  """.trimIndent(),
             )
 
         val psiFile = psiManager.findFile(file)
@@ -117,7 +152,7 @@ class RefactoringTest : BerryCrushTestCase() {
                 "test",
                 """
                 scenario: Test
-                given step with {{petId}}
+                  given step with {{petId}}
                 """.trimIndent(),
             )
 
@@ -137,7 +172,7 @@ class RefactoringTest : BerryCrushTestCase() {
                 "test",
                 """
                 scenario: Test
-                extract $.id => petId
+                  extract $.id => petId
                 """.trimIndent(),
             )
 

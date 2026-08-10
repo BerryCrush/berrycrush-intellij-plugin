@@ -3,7 +3,6 @@ package com.berrycrush.intellij.psi
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNameIdentifierOwner
-import com.intellij.psi.PsiNamedElement
 
 /**
  * Block element interface
@@ -13,7 +12,7 @@ import com.intellij.psi.PsiNamedElement
  * - background
  * - outline
  */
-interface BerryCrushBlockElement {
+interface BerryCrushBlockElement : PsiElement {
     val keyword: String
 }
 
@@ -61,10 +60,6 @@ class BerryCrushFeatureElement(
 
     val scenarios: List<BerryCrushScenarioElement>
         get() = directChildrenOfType()
-
-    override fun setName(name: String): PsiElement = this
-
-    override fun getNameIdentifier(): PsiElement? = null
 }
 
 /**
@@ -80,10 +75,6 @@ abstract class BerryCrushNamedScenarioLikeElement(
     BerryCrushScenarioLikeElement {
     override val steps: List<BerryCrushStepElement>
         get() = directChildrenOfType()
-
-    override fun setName(name: String): PsiElement = this
-
-    override fun getNameIdentifier(): PsiElement? = null
 }
 
 /**
@@ -97,10 +88,6 @@ class BerryCrushFragmentElement(
 
     val fragmentName: String?
         get() = description
-
-    override fun setName(name: String): PsiElement = this
-
-    override fun getNameIdentifier(): PsiElement? = directChildrenOfType<BerryCrushTextElement>().firstOrNull()
 }
 
 /**
@@ -141,11 +128,9 @@ class BerryCrushOutlineElement(node: ASTNode) : BerryCrushNamedScenarioLikeEleme
 class BerryCrushExamplesElement(node: ASTNode) : BerryCrushPsiElement(node)
 
 class BerryCrushExampleRowElement(node: ASTNode) : BerryCrushPsiElement(node)
-class BerryCrushExampleHeaderElement(node: ASTNode) :
-    BerryCrushPsiElement(node),
-    PsiNamedElement {
-    override fun getName(): String = node.text
-    override fun setName(name: String): PsiElement = this
+class BerryCrushExampleHeaderElement(node: ASTNode) : BerryCrushNamedElement(node) {
+    override fun getNameIdentifier(): PsiElement = this
+    override fun createIdentifier(text: String): PsiElement = BerryCrushElementFactory.createExampleHeaderElement(project, text)
 }
 class BerryCrushExampleValueElement(node: ASTNode) : BerryCrushPsiElement(node)
 

@@ -1,5 +1,6 @@
 package com.berrycrush.intellij.reference
 
+import com.berrycrush.intellij.lexer.BerryCrushTokenTypes
 import com.berrycrush.intellij.psi.BerryCrushFragmentRefElement
 import com.berrycrush.intellij.psi.BerryCrushOperationRefElement
 import com.intellij.patterns.PlatformPatterns
