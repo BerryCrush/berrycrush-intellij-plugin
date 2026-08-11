@@ -3,6 +3,7 @@ package com.berrycrush.intellij.reference
 import com.berrycrush.intellij.psi.BerryCrushElementFactory
 import com.berrycrush.intellij.psi.BerryCrushExampleHeaderElement
 import com.berrycrush.intellij.psi.BerryCrushExtractElement
+import com.berrycrush.intellij.psi.BerryCrushFeatureElement
 import com.berrycrush.intellij.psi.BerryCrushOutlineElement
 import com.berrycrush.intellij.psi.BerryCrushScenarioLikeElement
 import com.intellij.openapi.util.TextRange
@@ -15,43 +16,24 @@ class BerryCrushVariableReference(
     element: PsiElement,
     rangeInElement: TextRange,
     private val variableName: String,
-) : PsiReferenceBase<PsiElement>(
-    element,
-    rangeInElement,
-    true,
-) {
+) : PsiReferenceBase<PsiElement>(element, rangeInElement, false) {
 
     override fun resolve(): PsiElement? = resolve(
         element,
         variableName,
     )
 
-    override fun handleElementRename(
-        newElementName: String,
-    ): PsiElement {
-        val range = rangeInElement
-
-        val newText =
-            element.text.replaceRange(
-                range.startOffset,
-                range.endOffset,
-                newElementName,
-            )
-
-        return element.replace(
-            BerryCrushElementFactory.createVariableRefElement(
-                element.project,
-                newText,
-            ),
-        )
-    }
+    override fun handleElementRename(newElementName: String): PsiElement = element.replace(
+        BerryCrushElementFactory.createVariableRefElement(
+            element.project,
+            newElementName,
+        ),
+    )
 
     override fun getVariants(): Array<Any> = emptyArray()
 
     companion object {
-        fun declarations(
-            scenario: BerryCrushScenarioLikeElement,
-        ): Sequence<PsiElement> = sequence {
+        fun declarations(scenario: BerryCrushScenarioLikeElement): Sequence<PsiElement> = sequence {
             yieldAll(
                 scenario
                     .steps
@@ -80,16 +62,14 @@ class BerryCrushVariableReference(
         fun resolve(
             context: PsiElement,
             name: String,
-        ): PsiElement? {
-            val scenario =
-                PsiTreeUtil.getParentOfType(
-                    context,
-                    BerryCrushScenarioLikeElement::class.java,
-                ) ?: return null
-
-            return declarations(scenario)
-                .filter { it is PsiNamedElement }
-                .map { it as PsiNamedElement }
+        ): PsiElement? = PsiTreeUtil.getParentOfType(context, BerryCrushFeatureElement::class.java)?.let { feature ->
+            PsiTreeUtil.getChildrenOfType(feature, BerryCrushScenarioLikeElement::class.java)
+                ?.flatMap { declarations(it) }
+                ?.filterIsInstance<PsiNamedElement>()
+                ?.singleOrNull { it.name == name }
+        } ?: PsiTreeUtil.getParentOfType(context, BerryCrushScenarioLikeElement::class.java)?.let { scenario ->
+            declarations(scenario)
+                .filterIsInstance<PsiNamedElement>()
                 .singleOrNull { it.name == name }
         }
     }

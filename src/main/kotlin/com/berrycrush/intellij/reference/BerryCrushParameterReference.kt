@@ -15,7 +15,7 @@ class BerryCrushParameterReference(
 ) : PsiReferenceBase<PsiElement>(
     element,
     rangeInElement,
-    true,
+    false,
 ) {
 
     override fun resolve(): PsiElement? = resolve(element, path)

@@ -18,13 +18,7 @@ import com.intellij.psi.util.PsiTreeUtil
  * refactoring operations like Safe Delete and Rename.
  */
 class BerryCrushTargetElementEvaluator : TargetElementEvaluatorEx2() {
-    override fun isAcceptableNamedParent(parent: PsiElement): Boolean {
-        if (parent.containingFile !is BerryCrushFile) {
-            return false
-        }
-
-        return parent is PsiNameIdentifierOwner || parent is BerryCrushFragmentElement
-    }
+    override fun isAcceptableNamedParent(parent: PsiElement): Boolean = parent.containingFile is BerryCrushFile && parent is PsiNameIdentifierOwner
 
     override fun getNamedElement(element: PsiElement): PsiElement? {
         if (element.containingFile !is BerryCrushFile) {

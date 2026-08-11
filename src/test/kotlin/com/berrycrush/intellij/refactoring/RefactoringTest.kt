@@ -1,10 +1,11 @@
 package com.berrycrush.intellij.refactoring
 
 import com.berrycrush.intellij.BerryCrushTestCase
+import com.berrycrush.intellij.psi.BerryCrushExampleHeaderElement
+import com.berrycrush.intellij.psi.BerryCrushExtractElement
 import com.berrycrush.intellij.psi.BerryCrushFragmentElement
 import com.berrycrush.intellij.psi.BerryCrushFragmentRefElement
 import com.berrycrush.intellij.psi.BerryCrushVariableRefElement
-import com.berrycrush.intellij.refactoring.variable.VariableRenameProcessor
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.testFramework.utils.vfs.getPsiFile
 
@@ -18,7 +19,48 @@ class RefactoringTest : BerryCrushTestCase() {
         return index + shift
     }
 
-    fun testRenameOnIncludeDirective() {
+    fun testRenameExtractVariable() {
+        val scenario = """
+            scenario: foo
+              given extract id
+                extract $.id => id
+              when I call
+                call ^operationId
+                  id: {{id<caret>}}
+        """.trimIndent()
+        val file = myFixture.configureByText("test.scenario", scenario)
+        val newName = "petId"
+        myFixture.renameElementAtCaret(newName)
+        val extract = PsiTreeUtil.findChildOfType(file, BerryCrushExtractElement::class.java)
+        assertNotNull(extract)
+        assertEquals(newName, extract!!.name)
+        val ref = PsiTreeUtil.findChildOfType(file, BerryCrushVariableRefElement::class.java)
+        assertNotNull(ref)
+        assertEquals(newName, ref!!.name)
+    }
+
+    fun testRenameOutlineHeader() {
+        val scenario = """
+            outline: foo
+              when I call
+                call ^operationId
+                  id: {{id<caret>}}
+              examples:
+                | id |
+                |  1 |
+        """.trimIndent()
+        val file = myFixture.configureByText("test.scenario", scenario)
+        val newName = "petId"
+        myFixture.renameElementAtCaret(newName)
+        val header = PsiTreeUtil.findChildOfType(file, BerryCrushExampleHeaderElement::class.java)
+        assertNotNull(header)
+        assertEquals(newName, header!!.name)
+        val ref = PsiTreeUtil.findChildOfType(file, BerryCrushVariableRefElement::class.java)
+        assertNotNull(ref)
+        assertEquals(newName, ref!!.name)
+    }
+
+    fun testRenameFragmentOnIncludeDirective() {
         val file =
             createFragmentFile(
                 "test",
@@ -78,8 +120,8 @@ class RefactoringTest : BerryCrushTestCase() {
                 "test",
                 """
                 scenario: Test
-                                    include my-fragment
                   then done
+                    include my-fragment
                 """.trimIndent(),
             )
 
@@ -99,8 +141,8 @@ class RefactoringTest : BerryCrushTestCase() {
                 "test",
                 """
                 scenario: Test
-                                    extract $.id => myVar
-                                    given step with {{myVar}}
+                  given step with {{myVar}}
+                    extract $.id => myVar
                 """.trimIndent(),
             )
 
@@ -112,50 +154,5 @@ class RefactoringTest : BerryCrushTestCase() {
         assertNotNull(element)
 
         assertTrue(provider.isInplaceRenameAvailable(element!!, null))
-    }
-
-    fun testVariableRenameProcessorCanProcessExtractVariableUsage() {
-        val file =
-            createScenarioFile(
-                "test",
-                """
-                scenario: Test
-                                    given capture id
-                                        extract $.id => petId
-                  given step with {{petId}}
-                """.trimIndent(),
-            )
-
-        val psiFile = psiManager.findFile(file)
-        assertNotNull(psiFile)
-
-        val processor = VariableRenameProcessor()
-        val element = PsiTreeUtil.findChildrenOfType(psiFile, BerryCrushVariableRefElement::class.java)
-            .firstOrNull { it.text.contains("petId") }
-        assertNotNull(element)
-
-        assertTrue(processor.canProcessElement(element!!))
-    }
-
-    fun testVariableRenameProcessorCanProcessParameterDefinition() {
-        val file =
-            createScenarioFile(
-                "test",
-                """
-                scenario: Test
-                  parameters:
-                    petId: 123
-                  when use {{param.petId}}
-                """.trimIndent(),
-            )
-
-        val psiFile = psiManager.findFile(file)
-        assertNotNull(psiFile)
-
-        val processor = VariableRenameProcessor()
-        val element = psiFile!!.findElementAt(elementInside(psiFile.text, "petId", 1))
-        assertNotNull(element)
-
-        assertTrue(processor.canProcessElement(element!!))
     }
 }

@@ -218,9 +218,6 @@
         <lang.refactoringSupport language="BerryCrush"
                                  implementationClass="com.berrycrush.intellij.refactoring.BerryCrushRefactoringSupportProvider"/>
 
-        <renamePsiElementProcessor
-                implementation="com.berrycrush.intellij.refactoring.variable.VariableRenameProcessor"/>
-
         <refactoring.safeDeleteProcessor
                 implementation="com.berrycrush.intellij.refactoring.safedelete.BerryCrushSafeDeleteProcessor"/>
 

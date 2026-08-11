@@ -129,6 +129,7 @@ class BerryCrushExamplesElement(node: ASTNode) : BerryCrushPsiElement(node)
 
 class BerryCrushExampleRowElement(node: ASTNode) : BerryCrushPsiElement(node)
 class BerryCrushExampleHeaderElement(node: ASTNode) : BerryCrushNamedElement(node) {
+    override fun getName(): String = node.text
     override fun getNameIdentifier(): PsiElement = this
     override fun createIdentifier(text: String): PsiElement = BerryCrushElementFactory.createExampleHeaderElement(project, text)
 }

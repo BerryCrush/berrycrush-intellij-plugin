@@ -104,8 +104,8 @@ class BerryCrushExtractElement(
     override fun getName(): String? = extractNamePattern.find(text)?.groupValues?.get(2)
 
     override fun setName(name: String): PsiElement {
-        val updated = extractNamePattern.replace(text, "$1$name")
-        replace(BerryCrushElementFactory.createExtractElement(project, updated))
+        val nameIdentifier = nameIdentifier ?: return this
+        nameIdentifier.replace(BerryCrushElementFactory.createExtractVariableNameElement(project, name).nameIdentifier!!)
         return this
     }
 

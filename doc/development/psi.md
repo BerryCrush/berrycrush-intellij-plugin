@@ -214,6 +214,20 @@ object BerryCrushElementTypes {
 
 ## References
 
+### Rename Contract
+
+Rename is declaration/reference driven.
+The plugin does not use a custom rename handler for BerryCrush files.
+
+Current renameable declaration/reference pairs:
+
+- Fragment declaration (`fragment: ...`) <-> `include` fragment references
+- Extract declaration (`extract ... => name`) <-> `{{name}}` references
+- Parameter declaration (`parameters: key: ...`) <-> `{{param.key}}` references
+- Example header declaration (`examples` header cell) <-> linked variable references
+
+Rename entry points work from either side (definition or reference) through PSI resolution.
+
 ### Fragment Reference
 
 ```kotlin

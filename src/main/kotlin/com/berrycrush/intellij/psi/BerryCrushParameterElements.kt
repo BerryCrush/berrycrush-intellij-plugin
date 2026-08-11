@@ -71,6 +71,8 @@ class BerryCrushParameterEntryElement(
     val parameterValue: String?
         get() = extractParamValue(node.text.trim())
 
+    override fun getName(): String? = parameterName
+
     fun findNestedParameter(name: String): BerryCrushParameterEntryElement? = PsiTreeUtil
         .findChildrenOfType(this, BerryCrushParameterEntryElement::class.java)
         .find { it.parameterName == name }

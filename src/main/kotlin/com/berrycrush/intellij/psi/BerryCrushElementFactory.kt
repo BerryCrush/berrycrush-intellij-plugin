@@ -27,41 +27,19 @@ object BerryCrushElementFactory {
             ?: throw InternalError("BerryCrushParameterKeyElement not found")
     }
 
-    fun createTextElement(project: Project, name: String): PsiElement {
-        val file = PsiFileFactory.getInstance(project)
-            .createFileFromText(BerryCrushLanguage, name)
-        return PsiTreeUtil.findChildOfType(file, BerryCrushTextElement::class.java)
-            ?: throw InternalError("BerryCrushTextElement not found")
-    }
-
-    fun createExtractVariableNameElement(project: Project, name: String): PsiElement {
+    fun createExtractVariableNameElement(project: Project, name: String): BerryCrushExtractElement {
         val file = PsiFileFactory.getInstance(project)
             .createFileFromText(
                 BerryCrushLanguage,
                 """
                     scenario: foo
-                      extract $.id => $name
+                      given step 
+                        extract $.id => $name
                 """.trimIndent(),
             )
 
         return PsiTreeUtil.findChildOfType(file, BerryCrushExtractElement::class.java)
-            ?.nameIdentifier
             ?: throw InternalError("Extract variable identifier not found")
-    }
-
-    fun createExtractElement(project: Project, extractLine: String): BerryCrushExtractElement {
-        val file = PsiFileFactory.getInstance(project)
-            .createFileFromText(
-                BerryCrushLanguage,
-                """
-                    scenario: foo
-                      given capture value
-                        $extractLine
-                """.trimIndent(),
-            )
-
-        return PsiTreeUtil.findChildOfType(file, BerryCrushExtractElement::class.java)
-            ?: throw InternalError("BerryCrushExtractElement not found")
     }
 
     fun createExampleHeaderElement(project: Project, name: String): PsiElement {

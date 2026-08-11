@@ -106,7 +106,8 @@ private fun PsiBuilder.parseExtractVariable() {
         when (tokenType) {
             BerryCrushTokenTypes.JSON_PATH -> markAs(BerryCrushElementTypes.JSON_PATH)
             BerryCrushTokenTypes.VARIABLE -> markAs(BerryCrushElementTypes.VARIABLE_REF)
-            BerryCrushTokenTypes.ARRAY_SIZE -> markAs(BerryCrushElementTypes.ARROW)
+            BerryCrushTokenTypes.ARROW -> markAs(BerryCrushElementTypes.ARROW)
+            BerryCrushTokenTypes.TEXT -> markAs(BerryCrushElementTypes.TEXT)
             else -> advanceLexer()
         }
     }

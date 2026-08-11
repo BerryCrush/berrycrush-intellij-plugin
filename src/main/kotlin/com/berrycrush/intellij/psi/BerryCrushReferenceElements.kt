@@ -24,6 +24,8 @@ class BerryCrushVariableRefElement(
     val isParameterReference: Boolean
         get() = variableName.startsWith("param.")
 
+    override fun getName(): String = variableName
+
     override fun getReference(): PsiReference? = if (isParameterReference) {
         val start = 2 + "param.".length
         val end = textLength - 2
@@ -83,13 +85,6 @@ class BerryCrushFragmentRefElement(
 ) : BerryCrushPsiElement(node),
     BerryCrushReferenceElement {
     override fun getName(): String = node.text
-
-//    override fun setName(name: String): PsiElement {
-//        replace(BerryCrushElementFactory.createFragmentRefElement(project, name))
-//        return this
-//    }
-//
-//    override fun getNameIdentifier(): PsiElement = this
 
     override fun getReference(): PsiReference = BerryCrushFragmentReference(
         this,
