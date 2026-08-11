@@ -2,45 +2,54 @@ package com.berrycrush.intellij.refactoring
 
 import com.berrycrush.intellij.BerryCrushTestCase
 import com.berrycrush.intellij.psi.BerryCrushFragmentElement
-import com.berrycrush.intellij.refactoring.fragment.FragmentRenameProcessor
+import com.berrycrush.intellij.psi.BerryCrushFragmentRefElement
+import com.berrycrush.intellij.psi.BerryCrushVariableRefElement
 import com.berrycrush.intellij.refactoring.variable.VariableRenameProcessor
-import com.intellij.openapi.vfs.readText
-import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.testFramework.utils.vfs.getPsiFile
 
 /**
- * Tests for BerryCrush refactoring support.
+ * Generic tests for refactoring support and processor eligibility.
  */
 class RefactoringTest : BerryCrushTestCase() {
-    fun testRename() {
-        val fragmentFile = createFragmentFile(
-            "test-fragment",
-            """
+    private fun elementInside(fileText: String, needle: String, shift: Int = 0): Int {
+        val index = fileText.indexOf(needle)
+        assertTrue("Expected to find '$needle' in fixture", index >= 0)
+        return index + shift
+    }
+
+    fun testRenameOnIncludeDirective() {
+        val file =
+            createFragmentFile(
+                "test",
+                """
                 fragment: my-fragment
-                  given ok
-            """.trimIndent()
-        )
-        val scenarioContent =
-            """
-                scenario: my scenario
-                  given test
-                    include my-<caret>fragment
-            """.trimIndent()
+                  given step one
+                """.trimIndent(),
+            )
 
-        myFixture.configureByText("test-scenario.scenario", scenarioContent)
+        val scenario = """
+            scenario: my-scenario
+              given step one
+                include <caret>my-fragment
+        """.trimIndent()
+        myFixture.configureByText("test.scenario", scenario)
+        val offset = myFixture.editor.caretModel.offset
+        val leaf = myFixture.file.findElementAt(offset)
+        assertNotNull(leaf)
+        val e = leaf?.parent
+        assertTrue(e is BerryCrushFragmentRefElement)
+        val newName = "superb-fragment"
+        myFixture.renameElementAtCaret(newName)
 
-        val leaf = myFixture.file.findElementAt(
-            myFixture.editor.caretModel.offset
-        )!!
+        val fragment = PsiTreeUtil.findChildOfType(file.getPsiFile(project), BerryCrushFragmentElement::class.java)
+        assertEquals(newName, fragment?.fragmentName)
 
-        println("leaf = $leaf")
-        println("elementType = ${leaf.node.elementType}")
-        println("elementType class = ${leaf.node.elementType.javaClass}")
-
-        myFixture.renameElementAtCaret("superb-fragment")
-        val psiFile = psiManager.findFile(fragmentFile)
-        val fragment = PsiTreeUtil.findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
+        val leaf2 = myFixture.file.findElementAt(offset)
+        assertNotNull(leaf2)
+        val e2 = leaf2?.parent
+        assertTrue(e2 is BerryCrushFragmentRefElement)
+        assertEquals(newName, e2?.text)
     }
 
     fun testRefactoringSupportProviderDetectsFragmentDefinition() {
@@ -57,11 +66,9 @@ class RefactoringTest : BerryCrushTestCase() {
         assertNotNull(psiFile)
 
         val provider = BerryCrushRefactoringSupportProvider()
-        // Find element on the fragment definition line
-        val element = psiFile!!.findElementAt(10) // Inside "fragment: my-fragment"
+        val element = psiFile!!.findElementAt(elementInside(psiFile.text, "my-fragment", 2))
         assertNotNull(element)
 
-        // Provider should allow rename
         assertTrue(provider.isInplaceRenameAvailable(element!!, null))
     }
 
@@ -71,7 +78,7 @@ class RefactoringTest : BerryCrushTestCase() {
                 "test",
                 """
                 scenario: Test
-                  include my-fragment
+                                    include my-fragment
                   then done
                 """.trimIndent(),
             )
@@ -80,7 +87,7 @@ class RefactoringTest : BerryCrushTestCase() {
         assertNotNull(psiFile)
 
         val provider = BerryCrushRefactoringSupportProvider()
-        val element = psiFile!!.findElementAt(24) // Inside "include my-fragment"
+        val element = psiFile!!.findElementAt(elementInside(psiFile.text, "my-fragment", 2))
         assertNotNull(element)
 
         assertTrue(provider.isInplaceRenameAvailable(element!!, null))
@@ -92,7 +99,8 @@ class RefactoringTest : BerryCrushTestCase() {
                 "test",
                 """
                 scenario: Test
-                  given step with {{myVar}}
+                                    extract $.id => myVar
+                                    given step with {{myVar}}
                 """.trimIndent(),
             )
 
@@ -100,58 +108,20 @@ class RefactoringTest : BerryCrushTestCase() {
         assertNotNull(psiFile)
 
         val provider = BerryCrushRefactoringSupportProvider()
-        val element = psiFile!!.findElementAt(35) // Inside "{{myVar}}"
+        val element = psiFile!!.findElementAt(elementInside(psiFile.text, "{{myVar}}", 3))
         assertNotNull(element)
 
         assertTrue(provider.isInplaceRenameAvailable(element!!, null))
     }
 
-    fun testFragmentRenameProcessorCanProcessFragmentDefinition() {
-        val file =
-            createFragmentFile(
-                "test",
-                """
-                fragment: my-fragment
-                  given step
-                """.trimIndent(),
-            )
-
-        val psiFile = psiManager.findFile(file)
-        assertNotNull(psiFile)
-
-        val processor = FragmentRenameProcessor()
-        val element = psiFile!!.findElementAt(10)
-        assertNotNull(element)
-
-        assertTrue(processor.canProcessElement(element!!))
-    }
-
-    fun testFragmentRenameProcessorCanProcessIncludeDirective() {
+    fun testVariableRenameProcessorCanProcessExtractVariableUsage() {
         val file =
             createScenarioFile(
                 "test",
                 """
                 scenario: Test
-                include my-fragment
-                  """.trimIndent(),
-            )
-
-        val psiFile = psiManager.findFile(file)
-        assertNotNull(psiFile)
-
-        val processor = FragmentRenameProcessor()
-        val element = psiFile!!.findElementAt(24)
-        assertNotNull(element)
-
-        assertTrue(processor.canProcessElement(element!!))
-    }
-
-    fun testVariableRenameProcessorCanProcessVariableUsage() {
-        val file =
-            createScenarioFile(
-                "test",
-                """
-                scenario: Test
+                                    given capture id
+                                        extract $.id => petId
                   given step with {{petId}}
                 """.trimIndent(),
             )
@@ -160,19 +130,22 @@ class RefactoringTest : BerryCrushTestCase() {
         assertNotNull(psiFile)
 
         val processor = VariableRenameProcessor()
-        val element = psiFile!!.findElementAt(35) // Inside {{petId}}
+        val element = PsiTreeUtil.findChildrenOfType(psiFile, BerryCrushVariableRefElement::class.java)
+            .firstOrNull { it.text.contains("petId") }
         assertNotNull(element)
 
         assertTrue(processor.canProcessElement(element!!))
     }
 
-    fun testVariableRenameProcessorCanProcessVariableDefinition() {
+    fun testVariableRenameProcessorCanProcessParameterDefinition() {
         val file =
             createScenarioFile(
                 "test",
                 """
                 scenario: Test
-                  extract $.id => petId
+                  parameters:
+                    petId: 123
+                  when use {{param.petId}}
                 """.trimIndent(),
             )
 
@@ -180,7 +153,7 @@ class RefactoringTest : BerryCrushTestCase() {
         assertNotNull(psiFile)
 
         val processor = VariableRenameProcessor()
-        val element = psiFile!!.findElementAt(30) // Near "=> petId"
+        val element = psiFile!!.findElementAt(elementInside(psiFile.text, "petId", 1))
         assertNotNull(element)
 
         assertTrue(processor.canProcessElement(element!!))

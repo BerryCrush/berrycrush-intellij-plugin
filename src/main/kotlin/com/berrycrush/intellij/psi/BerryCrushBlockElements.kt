@@ -16,7 +16,7 @@ interface BerryCrushBlockElement : PsiElement {
     val keyword: String
 }
 
-interface BerryCrushParameterizedElement {
+interface BerryCrushParameterizedElement : PsiElement {
     val parameter: BerryCrushParametersElement?
 }
 

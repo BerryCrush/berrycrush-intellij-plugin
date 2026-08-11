@@ -218,11 +218,6 @@
         <lang.refactoringSupport language="BerryCrush"
                                  implementationClass="com.berrycrush.intellij.refactoring.BerryCrushRefactoringSupportProvider"/>
 
-<!--        <renameHandler implementation="com.berrycrush.intellij.refactoring.BerryCrushRenameHandler"/>-->
-
-        <renamePsiElementProcessor
-                implementation="com.berrycrush.intellij.refactoring.fragment.FragmentRenameProcessor"/>
-
         <renamePsiElementProcessor
                 implementation="com.berrycrush.intellij.refactoring.variable.VariableRenameProcessor"/>
 

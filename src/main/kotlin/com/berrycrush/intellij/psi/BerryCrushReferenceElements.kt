@@ -16,26 +16,39 @@ interface BerryCrushReferenceElement : PsiElement
  */
 class BerryCrushVariableRefElement(
     node: ASTNode,
-) : BerryCrushPsiElement(node), BerryCrushReferenceElement {
+) : BerryCrushPsiElement(node),
+    BerryCrushReferenceElement {
     val variableName
         get() = node.text.removePrefix("{{").removeSuffix("}}")
 
     val isParameterReference: Boolean
         get() = variableName.startsWith("param.")
 
-    override fun getReference(): PsiReference = if (isParameterReference) {
-        BerryCrushParameterReference(this,
-            TextRange(2 + "param.".length, textLength - 2),
-            variableName.removePrefix("param.").split(".")
+    override fun getReference(): PsiReference? = if (isParameterReference) {
+        val start = 2 + "param.".length
+        val end = textLength - 2
+        if (start < end) {
+            BerryCrushParameterReference(
+                this,
+                TextRange(2 + "param.".length, textLength - 2),
+                variableName.removePrefix("param.").split("."),
             )
+        } else {
+            null
+        }
     } else {
-        BerryCrushVariableReference(
-            this,
-            TextRange(2, textLength - 2),
-            variableName,
-        )
+        if (2 < this.textLength - 2) {
+            BerryCrushVariableReference(
+                this,
+                TextRange(2, textLength - 2),
+                variableName,
+            )
+        } else {
+            null
+        }
     }
 
+    override fun getReferences(): Array<PsiReference> = reference?.let { arrayOf(it) } ?: emptyArray()
 }
 
 /**
@@ -43,7 +56,8 @@ class BerryCrushVariableRefElement(
  */
 class BerryCrushOperationRefElement(
     node: ASTNode,
-) : BerryCrushPsiElement(node), BerryCrushReferenceElement {
+) : BerryCrushPsiElement(node),
+    BerryCrushReferenceElement {
     val operationId: String
         get() = node.text.removePrefix("^")
 
@@ -57,6 +71,8 @@ class BerryCrushOperationRefElement(
             operationId,
         )
     }
+
+    override fun getReferences(): Array<PsiReference> = arrayOf(reference)
 }
 
 /**
@@ -64,12 +80,22 @@ class BerryCrushOperationRefElement(
  */
 class BerryCrushFragmentRefElement(
     node: ASTNode,
-) : BerryCrushPsiElement(node), BerryCrushReferenceElement {
+) : BerryCrushPsiElement(node),
+    BerryCrushReferenceElement {
     override fun getName(): String = node.text
+
+//    override fun setName(name: String): PsiElement {
+//        replace(BerryCrushElementFactory.createFragmentRefElement(project, name))
+//        return this
+//    }
+//
+//    override fun getNameIdentifier(): PsiElement = this
 
     override fun getReference(): PsiReference = BerryCrushFragmentReference(
         this,
         TextRange(0, textLength),
         name,
     )
+
+    override fun getReferences(): Array<PsiReference> = arrayOf(reference)
 }

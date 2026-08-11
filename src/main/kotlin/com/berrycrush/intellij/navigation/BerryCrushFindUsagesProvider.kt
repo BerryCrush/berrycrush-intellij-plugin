@@ -3,7 +3,6 @@ package com.berrycrush.intellij.navigation
 import com.berrycrush.intellij.lexer.BerryCrushLexer
 import com.berrycrush.intellij.lexer.BerryCrushTokenTypes
 import com.berrycrush.intellij.psi.BerryCrushFile
-import com.berrycrush.intellij.psi.BerryCrushReferenceElement
 import com.intellij.lang.cacheBuilder.DefaultWordsScanner
 import com.intellij.lang.cacheBuilder.WordsScanner
 import com.intellij.lang.findUsages.FindUsagesProvider

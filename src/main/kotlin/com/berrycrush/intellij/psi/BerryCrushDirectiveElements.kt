@@ -96,18 +96,21 @@ class BerryCrushExtractElement(
     node: ASTNode,
 ) : BerryCrushDirectiveElement("extract", node),
     PsiNameIdentifierOwner {
+    private val extractNamePattern = Regex("""(=>\s*)([A-Za-z_][A-Za-z0-9_]*)""")
+
     val extractName
         get() = name
 
-    override fun getName(): String? = nameIdentifier?.text
+    override fun getName(): String? = extractNamePattern.find(text)?.groupValues?.get(2)
+
     override fun setName(name: String): PsiElement {
-        nameIdentifier?.let {
-            replace(BerryCrushElementFactory.createTextElement(project, name))
-        }
+        val updated = extractNamePattern.replace(text, "$1$name")
+        replace(BerryCrushElementFactory.createExtractElement(project, updated))
         return this
     }
 
-    override fun getNameIdentifier(): PsiElement? = directChildrenOfType<BerryCrushTextElement>().lastOrNull()
+    override fun getNameIdentifier(): PsiElement? = directChildrenOfType<BerryCrushVariableRefElement>().lastOrNull()
+        ?: directChildrenOfType<BerryCrushTextElement>().lastOrNull()
 }
 
 /**

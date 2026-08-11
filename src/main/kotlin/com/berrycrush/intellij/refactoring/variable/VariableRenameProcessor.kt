@@ -1,35 +1,38 @@
 package com.berrycrush.intellij.refactoring.variable
 
+import com.berrycrush.intellij.psi.BerryCrushExampleHeaderElement
+import com.berrycrush.intellij.psi.BerryCrushExtractElement
 import com.berrycrush.intellij.psi.BerryCrushFile
+import com.berrycrush.intellij.psi.BerryCrushNamedBlockElement
 import com.berrycrush.intellij.psi.BerryCrushParameterEntryElement
-import com.intellij.openapi.util.TextRange
+import com.berrycrush.intellij.psi.BerryCrushScenarioLikeElement
+import com.berrycrush.intellij.psi.BerryCrushVariableRefElement
+import com.berrycrush.intellij.reference.BerryCrushParameterReference
+import com.intellij.openapi.editor.Editor
 import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiFile
+import com.intellij.psi.SmartPointerManager
+import com.intellij.psi.SmartPsiElementPointer
 import com.intellij.psi.search.SearchScope
+import com.intellij.psi.util.PsiTreeUtil
+import com.intellij.refactoring.listeners.RefactoringElementListener
 import com.intellij.refactoring.rename.RenamePsiElementProcessor
+import com.intellij.usageView.UsageInfo
 
 /**
- * Handles renaming of variable placeholders within scenario scope.
- *
- * Variables in BerryCrush:
- * - Definition: `extract $.id => petId`
- * - Usage: `{{petId}}`
- * - Parameter definition: `paramName: value` in parameters block
- *
- * Scope: Variables are scoped to the scenario they're defined in.
- * Renaming updates all occurrences (definition and usages) within the same scenario.
+ * Handles PSI-based rename for variable-like declarations and references:
+ * - extract declarations (`extract ... => name`) and `{{name}}` usages
+ * - parameter entries and `{{param.name}}` usages
+ * - example headers and linked variable usages in outlines
  */
 class VariableRenameProcessor : RenamePsiElementProcessor() {
+    override fun substituteElementToRename(element: PsiElement, editor: Editor?): PsiElement? = resolveRenameTarget(element) ?: element
+
     override fun canProcessElement(element: PsiElement): Boolean {
         if (element.containingFile !is BerryCrushFile) return false
 
-        // Check if it's a parameter entry element
-        if (element is BerryCrushParameterEntryElement) return true
-
-        val text = element.text
-        val lineText = getLineText(element)
-
-        return isVariableUsage(text) || isVariableDefinition(lineText)
+        return resolveRenameTarget(element) != null ||
+            element is BerryCrushVariableRefElement ||
+            PsiTreeUtil.getParentOfType(element, BerryCrushVariableRefElement::class.java) != null
     }
 
     override fun prepareRenaming(
@@ -38,169 +41,119 @@ class VariableRenameProcessor : RenamePsiElementProcessor() {
         allRenames: MutableMap<PsiElement, String>,
         scope: SearchScope,
     ) {
-        val file = element.containingFile ?: return
-
-        // Handle parameter entry rename
-        if (element is BerryCrushParameterEntryElement) {
-            val paramName = element.parameterName ?: return
-            // Find all ${param.paramName} references
-            findParameterReferences(file, paramName)
-                .filter { it !== element }
-                .forEach { ref -> allRenames[ref] = "{{param.$newName}}" }
-            return
+        val target = resolveRenameTarget(element) ?: return
+        if (target != element) {
+            allRenames[target] = newName
         }
-
-        // Legacy variable handling
-        val variableName = extractVariableName(element) ?: return
-        val scenarioScope = findScenarioScope(element)
-
-        // Find all variable usages in the scenario scope
-        findVariableUsages(file, variableName, scenarioScope)
-            .filter { it !== element }
-            .forEach { usage -> allRenames[usage] = newName }
-
-        // Also update variable
-        findVariableInterpolations(file, variableName, scenarioScope)
-            .filter { it !== element }
-            .forEach { usage ->
-                allRenames[usage] = "{{$newName}}"
-            }
     }
 
-    /**
-     * Find all ${param.paramName} references in the file.
-     */
-    private fun findParameterReferences(
-        file: PsiFile,
-        paramName: String,
-    ): List<PsiElement> {
-        val text = file.text
-        val usages = mutableListOf<PsiElement>()
-
-        val pattern = Regex("""{{param\.${Regex.escape(paramName)}}""")
-        pattern.findAll(text).forEach { match ->
-            file.findElementAt(match.range.first)?.let { usages.add(it) }
+    override fun renameElement(
+        element: PsiElement,
+        newName: String,
+        usages: Array<out UsageInfo>,
+        listener: RefactoringElementListener?,
+    ) {
+        val parameterEntry = element as? BerryCrushParameterEntryElement
+        val oldParameterName = parameterEntry?.parameterName
+        val parameterReferences = if (!oldParameterName.isNullOrBlank()) {
+            collectParameterReferencePointers(parameterEntry, oldParameterName)
+        } else {
+            emptyList()
         }
 
-        return usages
-    }
+        super.renameElement(element, newName, usages, listener)
 
-    /**
-     * Find all variable interpolations (${varName}, ${context.varName}) in scope.
-     */
-    private fun findVariableInterpolations(
-        file: PsiFile,
-        variableName: String,
-        scope: TextRange?,
-    ): List<PsiElement> {
-        val text = file.text
-        val usages = mutableListOf<PsiElement>()
+        if (parameterReferences.isNotEmpty()) {
+            parameterReferences.forEach { pointer ->
+                val referenceElement = pointer.element ?: return@forEach
+                if (!referenceElement.isValid) return@forEach
 
-        // Find ${variableName} usages
-        val pattern1 = Regex("""{{${Regex.escape(variableName)}}""")
-        pattern1.findAll(text).forEach { match ->
-            if (scope == null || scope.contains(match.range.first)) {
-                file.findElementAt(match.range.first)?.let { usages.add(it) }
+                val currentName = referenceElement.variableName.removePrefix("param.").substringBefore('.')
+                if (currentName == newName) return@forEach
+
+                (referenceElement.reference as? BerryCrushParameterReference)?.handleElementRename(newName)
             }
         }
-        return usages
     }
 
-    /**
-     * Extracts variable name from element.
-     * Handles both {{varName}} and "=> varName" syntaxes.
-     */
-    private fun extractVariableName(element: PsiElement): String? {
-        val text = element.text
-        val lineText = getLineText(element)
+    private fun collectParameterReferencePointers(
+        parameterEntry: BerryCrushParameterEntryElement,
+        parameterName: String,
+    ): List<SmartPsiElementPointer<BerryCrushVariableRefElement>> {
+        val namedBlock = PsiTreeUtil.getParentOfType(parameterEntry, BerryCrushNamedBlockElement::class.java)
+            ?: return emptyList()
 
-        // From {{varName}} usage
-        VARIABLE_USAGE_PATTERN.find(text)?.let { return it.groupValues[1] }
-
-        // From "=> varName" definition
-        VARIABLE_DEF_PATTERN.find(lineText)?.let { return it.groupValues[1] }
-
-        return null
+        val pointerManager = SmartPointerManager.getInstance(parameterEntry.project)
+        return PsiTreeUtil.findChildrenOfType(namedBlock, BerryCrushVariableRefElement::class.java)
+            .asSequence()
+            .filter { it.isParameterReference }
+            .filter { it.variableName.removePrefix("param.").substringBefore('.') == parameterName }
+            .map { pointerManager.createSmartPsiElementPointer(it) }
+            .toList()
     }
 
-    /**
-     * Finds the scenario scope (text range) containing this element.
-     * Returns null if element is at file scope.
-     */
-    private fun findScenarioScope(element: PsiElement): TextRange? {
-        val file = element.containingFile ?: return null
-        val text = file.text
-        val elementOffset = element.textOffset
-
-        // Find scenario boundaries by looking for "scenario:" or "Scenario:" keywords
-        var scenarioStart = 0
-        var scenarioEnd = text.length
-
-        // Find preceding scenario start
-        val beforeElement = text.substring(0, elementOffset)
-        val lastScenarioMatch = SCENARIO_PATTERN.findAll(beforeElement).lastOrNull()
-        if (lastScenarioMatch != null) {
-            scenarioStart = lastScenarioMatch.range.first
+    private fun resolveRenameTarget(element: PsiElement): PsiElement? {
+        val declarationTarget = resolveDeclarationTarget(element)
+        if (declarationTarget != null) {
+            return declarationTarget
         }
 
-        // Find following scenario start (which ends current scenario)
-        val afterElement = text.substring(elementOffset)
-        val nextScenarioMatch = SCENARIO_PATTERN.find(afterElement)
-        if (nextScenarioMatch != null) {
-            scenarioEnd = elementOffset + nextScenarioMatch.range.first
+        val variableRef = PsiTreeUtil.getParentOfType(element, BerryCrushVariableRefElement::class.java)
+            ?: return null
+
+        val resolvedReferenceTarget = variableRef.reference?.resolve()
+        if (resolvedReferenceTarget is BerryCrushExtractElement ||
+            resolvedReferenceTarget is BerryCrushParameterEntryElement ||
+            resolvedReferenceTarget is BerryCrushExampleHeaderElement
+        ) {
+            return resolvedReferenceTarget
         }
 
-        return TextRange(scenarioStart, scenarioEnd)
-    }
+        val variableName = variableRef.variableName
 
-    /**
-     * Finds all occurrences of a variable in the file within the given scope.
-     */
-    private fun findVariableUsages(
-        file: PsiFile,
-        variableName: String,
-        scope: TextRange?,
-    ): List<PsiElement> {
-        val text = file.text
-        val usages = mutableListOf<PsiElement>()
-
-        // Find {{variableName}} usages
-        val usagePattern = Regex("""{{${Regex.escape(variableName)}}}""")
-        usagePattern.findAll(text).forEach { match ->
-            if (scope == null || scope.contains(match.range.first)) {
-                file.findElementAt(match.range.first)?.let { usages.add(it) }
-            }
+        if (variableRef.isParameterReference) {
+            val parameterName = variableName.removePrefix("param.").substringBefore('.')
+            val scope = PsiTreeUtil.getParentOfType(variableRef, BerryCrushNamedBlockElement::class.java)
+            return scope?.parameter?.entries?.firstOrNull { it.parameterName == parameterName }
         }
 
-        // Find "=> variableName" definitions
-        val defPattern = Regex("""=>\s*${Regex.escape(variableName)}(?:\s|$)""")
-        defPattern.findAll(text).forEach { match ->
-            if (scope == null || scope.contains(match.range.first)) {
-                // Position at the variable name, not the =>
-                val varStart = match.range.first + match.value.indexOf(variableName)
-                file.findElementAt(varStart)?.let { usages.add(it) }
-            }
+        val scenario = PsiTreeUtil.getParentOfType(variableRef, BerryCrushScenarioLikeElement::class.java)
+            ?: return null
+
+        val extractDeclaration = PsiTreeUtil.findChildrenOfType(scenario, BerryCrushExtractElement::class.java)
+            .firstOrNull { it.extractName == variableName }
+        if (extractDeclaration != null) {
+            return extractDeclaration
         }
 
-        return usages
+        val exampleHeader = PsiTreeUtil.findChildrenOfType(scenario, BerryCrushExampleHeaderElement::class.java)
+            .firstOrNull { it.name == variableName }
+
+        if (exampleHeader != null) {
+            return exampleHeader
+        }
+
+        return variableRef
     }
 
-    private fun isVariableUsage(text: String): Boolean = VARIABLE_USAGE_PATTERN.containsMatchIn(text)
+    private fun resolveDeclarationTarget(element: PsiElement): PsiElement? {
+        if (element is BerryCrushExtractElement ||
+            element is BerryCrushParameterEntryElement ||
+            element is BerryCrushExampleHeaderElement
+        ) {
+            return element
+        }
 
-    private fun isVariableDefinition(lineText: String): Boolean = VARIABLE_DEF_PATTERN.containsMatchIn(lineText)
+        val extract = PsiTreeUtil.getParentOfType(element, BerryCrushExtractElement::class.java)
+        if (extract != null) {
+            return extract
+        }
 
-    private fun getLineText(element: PsiElement): String {
-        val document = element.containingFile?.viewProvider?.document ?: return ""
-        val offset = element.textOffset
-        val lineNumber = document.getLineNumber(offset)
-        val lineStart = document.getLineStartOffset(lineNumber)
-        val lineEnd = document.getLineEndOffset(lineNumber)
-        return document.getText(TextRange(lineStart, lineEnd))
-    }
+        val parameter = PsiTreeUtil.getParentOfType(element, BerryCrushParameterEntryElement::class.java)
+        if (parameter != null) {
+            return parameter
+        }
 
-    companion object {
-        private val VARIABLE_USAGE_PATTERN = Regex("""\{\{([^}]+)}}""")
-        private val VARIABLE_DEF_PATTERN = Regex("""=>\s*([a-zA-Z_][a-zA-Z0-9_]*)""")
-        private val SCENARIO_PATTERN = Regex("""(?m)^\s*[Ss]cenario:\s*""")
+        return PsiTreeUtil.getParentOfType(element, BerryCrushExampleHeaderElement::class.java)
     }
 }

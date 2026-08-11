@@ -18,29 +18,19 @@ class BerryCrushParameterReference(
     true,
 ) {
 
-    override fun resolve(): PsiElement? {
-        val parameterRoot =
-            PsiTreeUtil.getParentOfType(
-                element,
-                BerryCrushNamedBlockElement::class.java,
-            ) ?: return null
-
-        return resolve(
-            parameterRoot,
-            path,
-        )
-    }
+    override fun resolve(): PsiElement? = resolve(element, path)
 
     override fun handleElementRename(
         newElementName: String,
     ): PsiElement {
         val oldRange = rangeInElement
+        val normalizedName = newElementName.removePrefix("param.")
 
         val newText =
             element.text.replaceRange(
                 oldRange.startOffset,
                 oldRange.endOffset,
-                newElementName,
+                normalizedName,
             )
 
         return element.replace(
@@ -61,10 +51,12 @@ class BerryCrushParameterReference(
             }
 
             val scope =
-                PsiTreeUtil.getParentOfType(
-                    context,
-                    BerryCrushNamedBlockElement::class.java,
-                ) ?: return null
+                (context as? BerryCrushNamedBlockElement)
+                    ?: PsiTreeUtil.getParentOfType(
+                        context,
+                        BerryCrushNamedBlockElement::class.java,
+                    )
+                    ?: return null
 
             val parameters =
                 scope.parameter

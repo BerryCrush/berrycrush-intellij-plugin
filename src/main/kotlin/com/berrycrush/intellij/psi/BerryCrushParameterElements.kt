@@ -3,6 +3,8 @@ package com.berrycrush.intellij.psi
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNameIdentifierOwner
+import com.intellij.psi.search.LocalSearchScope
+import com.intellij.psi.search.SearchScope
 import com.intellij.psi.util.PsiTreeUtil
 
 /**
@@ -72,6 +74,11 @@ class BerryCrushParameterEntryElement(
     fun findNestedParameter(name: String): BerryCrushParameterEntryElement? = PsiTreeUtil
         .findChildrenOfType(this, BerryCrushParameterEntryElement::class.java)
         .find { it.parameterName == name }
+
+    override fun getUseScope(): SearchScope {
+        val namedBlock = PsiTreeUtil.getParentOfType(this, BerryCrushNamedBlockElement::class.java)
+        return if (namedBlock != null) LocalSearchScope(namedBlock) else super.getUseScope()
+    }
 
     override fun createIdentifier(text: String): PsiElement = BerryCrushElementFactory.createParameterKeyElement(project, text)
 

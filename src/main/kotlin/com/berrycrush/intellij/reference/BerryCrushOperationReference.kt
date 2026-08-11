@@ -19,7 +19,7 @@ class BerryCrushOperationReference(
     element: PsiElement,
     textRange: TextRange,
     private val operationId: String,
-) : PsiReferenceBase<PsiElement>(element, textRange, true) {
+) : PsiReferenceBase<PsiElement>(element, textRange, false) {
     override fun resolve(): PsiElement? {
         val project = element.project
         return findOperationInOpenAPI(project, operationId)

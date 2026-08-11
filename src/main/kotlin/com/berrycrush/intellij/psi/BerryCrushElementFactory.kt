@@ -34,6 +34,36 @@ object BerryCrushElementFactory {
             ?: throw InternalError("BerryCrushTextElement not found")
     }
 
+    fun createExtractVariableNameElement(project: Project, name: String): PsiElement {
+        val file = PsiFileFactory.getInstance(project)
+            .createFileFromText(
+                BerryCrushLanguage,
+                """
+                    scenario: foo
+                      extract $.id => $name
+                """.trimIndent(),
+            )
+
+        return PsiTreeUtil.findChildOfType(file, BerryCrushExtractElement::class.java)
+            ?.nameIdentifier
+            ?: throw InternalError("Extract variable identifier not found")
+    }
+
+    fun createExtractElement(project: Project, extractLine: String): BerryCrushExtractElement {
+        val file = PsiFileFactory.getInstance(project)
+            .createFileFromText(
+                BerryCrushLanguage,
+                """
+                    scenario: foo
+                      given capture value
+                        $extractLine
+                """.trimIndent(),
+            )
+
+        return PsiTreeUtil.findChildOfType(file, BerryCrushExtractElement::class.java)
+            ?: throw InternalError("BerryCrushExtractElement not found")
+    }
+
     fun createExampleHeaderElement(project: Project, name: String): PsiElement {
         val file = PsiFileFactory.getInstance(project)
             .createFileFromText(
@@ -49,12 +79,13 @@ object BerryCrushElementFactory {
     }
 
     fun createVariableRefElement(project: Project, name: String): PsiElement {
+        val variableRefText = if (name.startsWith("{{") && name.endsWith("}}")) name else "{{$name}}"
         val file = PsiFileFactory.getInstance(project)
             .createFileFromText(
                 BerryCrushLanguage,
                 """
                     outline: foo
-                      when {{$name}}
+                      when $variableRefText
                 """.trimIndent(),
             )
         return PsiTreeUtil.findChildOfType(file, BerryCrushVariableRefElement::class.java)
