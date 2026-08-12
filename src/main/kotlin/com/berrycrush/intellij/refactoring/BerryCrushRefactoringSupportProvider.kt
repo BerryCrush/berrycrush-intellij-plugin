@@ -4,6 +4,7 @@ import com.berrycrush.intellij.language.FragmentFileType
 import com.berrycrush.intellij.psi.BerryCrushFile
 import com.berrycrush.intellij.psi.BerryCrushFragmentElement
 import com.berrycrush.intellij.psi.BerryCrushFragmentRefElement
+import com.berrycrush.intellij.psi.BerryCrushReferenceElement
 import com.berrycrush.intellij.psi.BerryCrushVariableRefElement
 import com.intellij.lang.refactoring.RefactoringSupportProvider
 import com.intellij.psi.PsiElement
@@ -52,7 +53,7 @@ class BerryCrushRefactoringSupportProvider : RefactoringSupportProvider() {
             return true
         }
 
-        val referenceParent = PsiTreeUtil.getParentOfType(
+        val referenceParent: BerryCrushReferenceElement? = PsiTreeUtil.getParentOfType(
             element,
             BerryCrushVariableRefElement::class.java,
             BerryCrushFragmentRefElement::class.java,

@@ -115,6 +115,12 @@ class RefactoringTest : BerryCrushTestCase() {
     }
 
     fun testRefactoringSupportProviderDetectsIncludeDirective() {
+        createFragmentFile("my-fragment",
+            """
+                fragment: my-fragment
+                  given step one
+                    call ^operationId
+            """.trimIndent())
         val file =
             createScenarioFile(
                 "test",

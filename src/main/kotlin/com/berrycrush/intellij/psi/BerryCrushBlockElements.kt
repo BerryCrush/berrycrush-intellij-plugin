@@ -20,12 +20,17 @@ interface BerryCrushParameterizedElement : PsiElement {
     val parameter: BerryCrushParametersElement?
 }
 
-abstract class BerryCrushNamedBlockElement(
-    node: ASTNode,
-) : BerryCrushNamedElement(node),
+interface BerryCrushNamedBlockElement :
     BerryCrushBlockElement,
     BerryCrushParameterizedElement {
     val description: String?
+}
+
+abstract class BerryCrushNamedBlockIdentifierElement(
+    node: ASTNode,
+) : BerryCrushNamedElement(node),
+    BerryCrushNamedBlockElement {
+    override val description: String?
         get() = directChildrenOfType<BerryCrushBlockNameElement>().firstOrNull()?.text
 
     override fun getName(): String? = description
@@ -38,6 +43,18 @@ abstract class BerryCrushNamedBlockElement(
     override fun createIdentifier(text: String): PsiElement = BerryCrushElementFactory.createBlockNameIdentifier(project, "$keyword: $text")
 }
 
+abstract class BerryCrushUnrenamableNamedBlockElement(node: ASTNode) :
+    BerryCrushPsiElement(node),
+    BerryCrushNamedBlockElement {
+    override val description: String?
+        get() = directChildrenOfType<BerryCrushBlockNameElement>().firstOrNull()?.text
+
+    override fun getName(): String? = description
+
+    override val parameter: BerryCrushParametersElement?
+        get() = directChildrenOfType<BerryCrushParametersElement>().firstOrNull()
+}
+
 /**
  * Fragment, feature, scenario or outline description
  */
@@ -48,8 +65,7 @@ class BerryCrushBlockNameElement(node: ASTNode) : BerryCrushPsiElement(node)
  */
 class BerryCrushFeatureElement(
     node: ASTNode,
-) : BerryCrushNamedBlockElement(node),
-    PsiNameIdentifierOwner {
+) : BerryCrushUnrenamableNamedBlockElement(node) {
     override val keyword = "feature"
 
     val blocks: List<BerryCrushScenarioLikeElement>
@@ -69,25 +85,35 @@ interface BerryCrushScenarioLikeElement : BerryCrushBlockElement {
     val steps: List<BerryCrushStepElement>
 }
 
-abstract class BerryCrushNamedScenarioLikeElement(
-    node: ASTNode,
-) : BerryCrushNamedBlockElement(node),
-    BerryCrushScenarioLikeElement {
-    override val steps: List<BerryCrushStepElement>
-        get() = directChildrenOfType()
-}
+interface BerryCrushNamedScenarioLikeElement :
+    BerryCrushNamedBlockElement,
+    BerryCrushScenarioLikeElement
 
 /**
  * Fragment definition element.
  */
 class BerryCrushFragmentElement(
     node: ASTNode,
-) : BerryCrushNamedScenarioLikeElement(node),
+) : BerryCrushNamedBlockIdentifierElement(node),
+    BerryCrushNamedScenarioLikeElement,
     PsiNameIdentifierOwner {
+    override val steps: List<BerryCrushStepElement>
+        get() = directChildrenOfType()
+
     override val keyword = "fragment"
 
     val fragmentName: String?
         get() = description
+
+    // Only for fragment, this would be a identifier
+    override fun getIdentifyingElement(): PsiElement? = directChildrenOfType<BerryCrushBlockNameElement>().firstOrNull()
+}
+
+abstract class BerryCrushUnrenamableScenarioLikeElement(node: ASTNode) :
+    BerryCrushUnrenamableNamedBlockElement(node),
+    BerryCrushNamedScenarioLikeElement {
+    override val steps: List<BerryCrushStepElement>
+        get() = directChildrenOfType()
 }
 
 /**
@@ -96,7 +122,7 @@ class BerryCrushFragmentElement(
  *   steps...
  * ```
  */
-class BerryCrushScenarioElement(node: ASTNode) : BerryCrushNamedScenarioLikeElement(node) {
+class BerryCrushScenarioElement(node: ASTNode) : BerryCrushUnrenamableScenarioLikeElement(node) {
     override val keyword = "scenario"
 }
 
@@ -121,7 +147,7 @@ class BerryCrushBackgroundElement(node: ASTNode) :
  *   examples:
  * ```
  */
-class BerryCrushOutlineElement(node: ASTNode) : BerryCrushNamedScenarioLikeElement(node) {
+class BerryCrushOutlineElement(node: ASTNode) : BerryCrushUnrenamableScenarioLikeElement(node) {
     override val keyword = "outline"
 }
 

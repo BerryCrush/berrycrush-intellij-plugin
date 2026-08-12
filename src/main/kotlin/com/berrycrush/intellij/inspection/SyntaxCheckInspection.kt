@@ -200,7 +200,12 @@ class SyntaxCheckInspection : BerryCrushInspection() {
         fragment: BerryCrushFragmentElement,
         holder: ProblemsHolder,
     ) {
-        blockChildren<BerryCrushBlockNameElement>(fragment, holder).forEach { child ->
+        blockChildren<BerryCrushBlockNameElement>(fragment, holder) { element, holder ->
+            val text = element.text
+            if (!text.all { c -> c.isLetterOrDigit() || c in listOf('_', '-', '.') }) {
+                holder.registerProblem(element, "Fragment name must be an identifier")
+            }
+        }.forEach { child ->
             when (child) {
                 is BerryCrushStepElement -> checkStep(child, holder)
                 is BerryCrushCallElement,
@@ -224,13 +229,18 @@ class SyntaxCheckInspection : BerryCrushInspection() {
         }
     }
 
-    private inline fun <reified T> blockChildren(element: PsiElement, holder: ProblemsHolder): List<BerryCrushPsiElement> {
+    private inline fun <reified T> blockChildren(
+        element: PsiElement, holder: ProblemsHolder,
+        nameValidator: (T, ProblemsHolder) -> Unit = { _, _ -> })
+    : List<BerryCrushPsiElement> {
         val children = element.children.filterIsInstance<BerryCrushPsiElement>()
         if (children.isEmpty()) {
             return emptyList()
         }
 
-        return if (children.first() is T) {
+        val first = children.first()
+        return if (first is T) {
+            nameValidator(first, holder)
             children.drop(1)
         } else {
             holder.registerProblem(element, "Missing description")

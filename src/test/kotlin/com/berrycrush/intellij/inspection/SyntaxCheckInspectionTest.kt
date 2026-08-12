@@ -247,6 +247,25 @@ class SyntaxCheckInspectionTest : BerryCrushInspectionTestCase(SyntaxCheckInspec
         )
     }
 
+    fun testNonIdentifierFragmentNameShouldCauseError() {
+        val psiFile =
+            myFixture.addFileToProject(
+                "test.fragment",
+                """
+                fragment: part1 part2
+                  given setup
+                    call ^login
+                      username: demo
+                """.trimIndent(),
+            )
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "non identifer fragment name should be flagged",
+            problems.isNotEmpty(),
+        )
+    }
+
     fun testCallDirectiveInStep() {
         // Step followed by directive should not be flagged
         val psiFile =
