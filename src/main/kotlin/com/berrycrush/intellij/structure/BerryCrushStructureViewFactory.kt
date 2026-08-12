@@ -2,6 +2,7 @@ package com.berrycrush.intellij.structure
 
 import com.berrycrush.intellij.BerryCrushIcons
 import com.berrycrush.intellij.psi.BerryCrushAssertElement
+import com.berrycrush.intellij.psi.BerryCrushBackgroundElement
 import com.berrycrush.intellij.psi.BerryCrushBlockElement
 import com.berrycrush.intellij.psi.BerryCrushCallElement
 import com.berrycrush.intellij.psi.BerryCrushDirectiveElement
@@ -12,7 +13,9 @@ import com.berrycrush.intellij.psi.BerryCrushFile
 import com.berrycrush.intellij.psi.BerryCrushFragmentElement
 import com.berrycrush.intellij.psi.BerryCrushIfElement
 import com.berrycrush.intellij.psi.BerryCrushIncludeElement
+import com.berrycrush.intellij.psi.BerryCrushNamedBlockElement
 import com.berrycrush.intellij.psi.BerryCrushOutlineElement
+import com.berrycrush.intellij.psi.BerryCrushParameterizedElement
 import com.berrycrush.intellij.psi.BerryCrushParametersElement
 import com.berrycrush.intellij.psi.BerryCrushPsiElement
 import com.berrycrush.intellij.psi.BerryCrushScenarioElement
@@ -138,7 +141,9 @@ class BerryCrushStructureViewElement(
         scenarioLike: BerryCrushScenarioLikeElement,
         result: MutableList<TreeElement>,
     ) {
-        scenarioLike.parameter?.let { result.add(BerryCrushStructureViewElement(it)) }
+        if (scenarioLike is BerryCrushParameterizedElement) {
+            scenarioLike.parameter?.let { result.add(BerryCrushStructureViewElement(it)) }
+        }
 
         val steps = scenarioLike.steps
         steps.sortedBy { it.textOffset }.forEach { result.add(BerryCrushStructureViewElement(it)) }
@@ -195,7 +200,8 @@ class BerryCrushStructureViewElement(
 
     private fun getElementText(): String = when (element) {
         is BerryCrushFile -> element.name
-        is BerryCrushBlockElement -> "${element.keyword}: ${element.description ?: ""}"
+        is BerryCrushBackgroundElement -> "background"
+        is BerryCrushNamedBlockElement -> "${element.keyword}: ${element.description ?: ""}"
         is BerryCrushStepElement -> "${element.keyword?.lowercase() ?: ""} ${element.stepText ?: ""}".trim().take(60)
         is BerryCrushCallElement -> "call ^${element.operationId ?: ""}"
         is BerryCrushAssertElement ->

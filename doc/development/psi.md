@@ -49,6 +49,34 @@ FILE
 Implementation note:
 - Prefer typed PSI accessors in `BerryCrushElements.kt` (for example feature blocks, scenario steps, call parameters) over ad-hoc token scans in consumers.
 
+### String Interpolation Invariants
+
+- Quoted string literals are wrapped as `STRING_LITERAL` PSI nodes.
+- Interpolation inside strings uses `{{...}}` syntax and is segmented in source order.
+- Segment model for string content:
+    - `BerryCrushStringTextSegment` for normal text content
+    - `BerryCrushStringIndentSegment` for indentation-only runs in multiline content
+    - `BerryCrushStringVariableSegment` for interpolation placeholders
+- Multiline string segmentation must preserve line breaks and indentation boundaries.
+- Interpolation references in strings resolve with the same declaration rules as existing variable references:
+    - `{{name}}` resolves as context/extract/example variable
+    - `{{param.name}}` resolves as parameter reference
+
+Example segment shape:
+
+```text
+STRING_LITERAL("\"hello {{name}}\"")
+├─ TEXT("hello ")
+└─ VARIABLE("{{name}}")
+
+STRING_LITERAL("\"\"\"\n  hello\n    {{param.level}}\n\"\"\"")
+├─ TEXT("\n")
+├─ INDENT("  ")
+├─ TEXT("hello\n")
+├─ INDENT("    ")
+└─ VARIABLE("{{param.level}}")
+```
+
 ## Core Elements
 
 ### BerryCrushFile
@@ -213,6 +241,20 @@ object BerryCrushElementTypes {
 ```
 
 ## References
+
+### Rename Contract
+
+Rename is declaration/reference driven.
+The plugin does not use a custom rename handler for BerryCrush files.
+
+Current renameable declaration/reference pairs:
+
+- Fragment declaration (`fragment: ...`) <-> `include` fragment references
+- Extract declaration (`extract ... => name`) <-> `{{name}}` references
+- Parameter declaration (`parameters: key: ...`) <-> `{{param.key}}` references
+- Example header declaration (`examples` header cell) <-> linked variable references
+
+Rename entry points work from either side (definition or reference) through PSI resolution.
 
 ### Fragment Reference
 

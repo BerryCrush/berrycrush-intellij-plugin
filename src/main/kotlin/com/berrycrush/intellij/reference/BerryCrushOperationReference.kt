@@ -1,5 +1,6 @@
 package com.berrycrush.intellij.reference
 
+import com.berrycrush.intellij.psi.BerryCrushOperationRefElement
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
@@ -9,6 +10,7 @@ import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiReferenceBase
 import com.intellij.psi.search.FilenameIndex
 import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.psi.util.PsiTreeUtil
 
 /**
  * Reference from `call ^operationId` to the OpenAPI specification.
@@ -17,7 +19,7 @@ class BerryCrushOperationReference(
     element: PsiElement,
     textRange: TextRange,
     private val operationId: String,
-) : PsiReferenceBase<PsiElement>(element, textRange, true) {
+) : PsiReferenceBase<PsiElement>(element, textRange, false) {
     override fun resolve(): PsiElement? {
         val project = element.project
         return findOperationInOpenAPI(project, operationId)
@@ -137,31 +139,8 @@ class BerryCrushOperationReference(
         private fun findOperationInFile(
             psiFile: PsiFile,
             operationId: String,
-        ): PsiElement? {
-            val text = psiFile.text
-
-            // Search for operationId in YAML/JSON
-            // Look for patterns like: operationId: getUserById or "operationId": "getUserById"
-            val patterns =
-                listOf(
-                    Regex("""operationId:\s*['"]?($operationId)['"]?"""),
-                    Regex(""""operationId"\s*:\s*"($operationId)""""),
-                )
-
-            for (pattern in patterns) {
-                val match = pattern.find(text)
-                if (match != null) {
-                    // Find the position of the operationId value, not the key
-                    val operationIdMatch = match.groups[1]
-                    if (operationIdMatch != null) {
-                        val offset = operationIdMatch.range.first
-                        return psiFile.findElementAt(offset)
-                    }
-                }
-            }
-
-            return null
-        }
+        ): PsiElement? = PsiTreeUtil.findChildrenOfType(psiFile, BerryCrushOperationRefElement::class.java)
+            .firstOrNull { it.operationId == operationId }
 
         /**
          * Extract all operation IDs from the project's OpenAPI specs.
@@ -180,12 +159,9 @@ class BerryCrushOperationReference(
         }
 
         /**
-         * Extract operation IDs from file content.
+         * Extract operation IDs from OpenAPI file content.
          */
-        private fun extractOperationIdsFromFile(
-            text: String,
-            result: MutableList<String>,
-        ) {
+        private fun extractOperationIdsFromFile(text: String, result: MutableList<String>) {
             // YAML format: operationId: someId
             Regex("""operationId:\s*['"]?(\w+)['"]?""").findAll(text).forEach {
                 result.add(it.groupValues[1])

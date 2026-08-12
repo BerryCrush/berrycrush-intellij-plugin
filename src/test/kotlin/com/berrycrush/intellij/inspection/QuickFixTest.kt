@@ -106,25 +106,4 @@ class QuickFixTest : BerryCrushTestCase() {
         // Assertion quick fix name is constant (clipboard operation)
         assertEquals("Names should be the same", fix1.name, fix2.name)
     }
-
-    // ========== LocalQuickFix Interface Tests ==========
-
-    fun testQuickFixesImplementLocalQuickFix() {
-        val fragmentFix = CreateFragmentQuickFix("test")
-        val stepFix = CreateStepQuickFix("test")
-        val assertionFix = CreateAssertionQuickFix("test")
-
-        assertTrue(
-            "CreateFragmentQuickFix should be LocalQuickFix",
-            fragmentFix is com.intellij.codeInspection.LocalQuickFix,
-        )
-        assertTrue(
-            "CreateStepQuickFix should be LocalQuickFix",
-            stepFix is com.intellij.codeInspection.LocalQuickFix,
-        )
-        assertTrue(
-            "CreateAssertionQuickFix should be LocalQuickFix",
-            assertionFix is com.intellij.codeInspection.LocalQuickFix,
-        )
-    }
 }

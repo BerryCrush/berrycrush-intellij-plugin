@@ -16,6 +16,9 @@ import com.berrycrush.intellij.psi.BerryCrushParametersElement
 import com.berrycrush.intellij.psi.BerryCrushPsiElement
 import com.berrycrush.intellij.psi.BerryCrushScenarioElement
 import com.berrycrush.intellij.psi.BerryCrushStepElement
+import com.berrycrush.intellij.psi.BerryCrushStringIndentSegment
+import com.berrycrush.intellij.psi.BerryCrushStringLiteralElement
+import com.berrycrush.intellij.psi.BerryCrushStringVariableSegment
 import com.intellij.psi.PsiComment
 import com.intellij.psi.util.PsiTreeUtil
 
@@ -204,7 +207,7 @@ class BerryCrushParserTest : BerryCrushTestCase() {
                 "hierarchy",
                 """
                 feature: feature description
-                    background: background description
+                    background:
                         given background given description
                             call ^operationId
                                 id: {{petId}}
@@ -229,7 +232,6 @@ class BerryCrushParserTest : BerryCrushTestCase() {
 
         val background = feature?.backgrounds?.singleOrNull()
         assertNotNull("Feature should contain one background child", background)
-        assertEquals("background description", background?.description)
 
         val nestedScenario = feature?.scenarios?.singleOrNull()
         assertNotNull("Feature should contain one nested scenario child", nestedScenario)
@@ -561,5 +563,56 @@ class BerryCrushParserTest : BerryCrushTestCase() {
 
         val elements = psiFile?.children?.filterIsInstance<BerryCrushPsiElement>()
         assertEquals("Should find 3 element", 3, elements?.size)
+    }
+
+    fun testStringLiteralPsiContainsTextAndVariableSegments() {
+        val file =
+            createScenarioFile(
+                "inlineStringInterpolation",
+                """
+                scenario: string interpolation
+                  parameters:
+                    message: "hello {{name}}"
+                """.trimIndent(),
+            )
+
+        val psiFile = psiManager.findFile(file)
+        assertNotNull("PSI file should be created", psiFile)
+
+        val stringLiteral = PsiTreeUtil.findChildOfType(psiFile, BerryCrushStringLiteralElement::class.java)
+        assertNotNull("String literal PSI should exist", stringLiteral)
+
+        val segments = stringLiteral?.segments.orEmpty()
+        assertTrue("String literal should contain variable segment", segments.any { it is BerryCrushStringVariableSegment })
+        assertTrue("String literal should contain text segment", segments.any { it !is BerryCrushStringVariableSegment })
+    }
+
+    fun testMultilineStringInterpolationContainsIndentSegments() {
+        val file =
+            createScenarioFile(
+                "multilineStringInterpolation",
+                """
+                scenario: multiline interpolation
+                  parameters:
+                    message: ${'"'}""
+                      hello {{name}}
+                        and {{param.level}}
+                    ${'"'}""
+                """.trimIndent(),
+            )
+
+        val psiFile = psiManager.findFile(file)
+        assertNotNull("PSI file should be created", psiFile)
+
+        val stringLiteral = PsiTreeUtil.findChildOfType(psiFile, BerryCrushStringLiteralElement::class.java)
+        assertNotNull("String literal PSI should exist", stringLiteral)
+
+        val segments = stringLiteral?.segments.orEmpty()
+        assertTrue("Multiline string should contain at least one indent segment", segments.any { it is BerryCrushStringIndentSegment })
+        assertEquals(
+            "Multiline string should keep two variable references",
+            2,
+            segments.count { it is BerryCrushStringVariableSegment },
+        )
     }
 }

@@ -39,10 +39,10 @@ internal fun PsiBuilder.skipToEndOfLine(
     val marker = mark()
     var count = 0
     while (!eof() && tokenType != BerryCrushTokenTypes.NEWLINE) {
-        if (checkVariable && tokenType == BerryCrushTokenTypes.VARIABLE) {
-            parseVariableRef()
-        } else {
-            advanceLexer()
+        when {
+            checkVariable && tokenType == BerryCrushTokenTypes.VARIABLE -> parseVariableRef()
+            tokenType == BerryCrushTokenTypes.STRING -> parseStringLiteral()
+            else -> advanceLexer()
         }
         count++
     }
@@ -61,6 +61,8 @@ internal fun PsiBuilder.markAs(type: BerryCrushPsiElementType) {
 }
 
 internal fun PsiBuilder.parseVariableRef() = markAs(BerryCrushElementTypes.VARIABLE_REF)
+
+internal fun PsiBuilder.parseStringLiteral() = markAs(BerryCrushElementTypes.STRING_LITERAL)
 
 internal fun PsiBuilder.skipNewlines() {
     tailrec fun check(index: Int): Boolean = when (lookAhead(index)) {

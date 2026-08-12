@@ -6,6 +6,7 @@ import com.berrycrush.intellij.lexer.BerryCrushTokenTypes
 import com.berrycrush.intellij.psi.BerryCrushAssertElement
 import com.berrycrush.intellij.psi.BerryCrushAssertOperationElement
 import com.berrycrush.intellij.psi.BerryCrushBackgroundElement
+import com.berrycrush.intellij.psi.BerryCrushBlockNameElement
 import com.berrycrush.intellij.psi.BerryCrushCallElement
 import com.berrycrush.intellij.psi.BerryCrushConditionElement
 import com.berrycrush.intellij.psi.BerryCrushElementTypes
@@ -34,6 +35,7 @@ import com.berrycrush.intellij.psi.BerryCrushParameterValueElement
 import com.berrycrush.intellij.psi.BerryCrushParametersElement
 import com.berrycrush.intellij.psi.BerryCrushScenarioElement
 import com.berrycrush.intellij.psi.BerryCrushStepElement
+import com.berrycrush.intellij.psi.BerryCrushStringLiteralElement
 import com.berrycrush.intellij.psi.BerryCrushTagElement
 import com.berrycrush.intellij.psi.BerryCrushTextElement
 import com.berrycrush.intellij.psi.BerryCrushVariableRefElement
@@ -91,6 +93,7 @@ class BerryCrushParserDefinition : ParserDefinition {
         BerryCrushElementTypes.OPERATION_REF -> BerryCrushOperationRefElement(node)
         BerryCrushElementTypes.FRAGMENT_REF -> BerryCrushFragmentRefElement(node)
         BerryCrushElementTypes.VARIABLE_REF -> BerryCrushVariableRefElement(node)
+        BerryCrushElementTypes.STRING_LITERAL -> BerryCrushStringLiteralElement(node)
         BerryCrushElementTypes.INCLUDED_PARAMETER -> BerryCrushIncludeParameterElement(node)
         BerryCrushElementTypes.PARAMETERS -> BerryCrushParametersElement(node)
         BerryCrushElementTypes.PARAMETER_ENTRY -> BerryCrushParameterEntryElement(node)
@@ -100,6 +103,7 @@ class BerryCrushParserDefinition : ParserDefinition {
         BerryCrushElementTypes.ASSERTION_OPERATION -> BerryCrushAssertOperationElement(node)
         BerryCrushElementTypes.NOT -> BerryCrushNotElement(node)
         BerryCrushElementTypes.OPERATOR -> BerryCrushOperatorElement(node)
+        BerryCrushElementTypes.BLOCK_NAME -> BerryCrushBlockNameElement(node)
         BerryCrushElementTypes.TEXT -> BerryCrushTextElement(node)
         BerryCrushElementTypes.TAG -> BerryCrushTagElement(node)
         else -> BerryCrushGenericElement(node)

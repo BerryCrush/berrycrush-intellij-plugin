@@ -26,6 +26,9 @@ object BerryCrushElementTypes {
     val FRAGMENT = BerryCrushPsiElementType("FRAGMENT")
 
     @JvmField
+    val BLOCK_NAME = BerryCrushPsiElementType("BLOCK_NAME")
+
+    @JvmField
     val BACKGROUND = BerryCrushPsiElementType("BACKGROUND")
 
     @JvmField
@@ -81,6 +84,9 @@ object BerryCrushElementTypes {
 
     @JvmField
     val VARIABLE_REF = BerryCrushPsiElementType("VARIABLE_REF")
+
+    @JvmField
+    val STRING_LITERAL = BerryCrushPsiElementType("STRING_LITERAL")
 
     // assert elements
     @JvmField

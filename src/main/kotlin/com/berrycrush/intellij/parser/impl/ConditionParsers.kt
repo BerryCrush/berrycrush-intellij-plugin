@@ -19,6 +19,7 @@ private fun PsiBuilder.parseAssertCondition() {
             BerryCrushTokenTypes.VARIABLE -> markAs(BerryCrushElementTypes.VARIABLE_REF)
             in BerryCrushTokenTypes.TEXTS -> markAs(BerryCrushElementTypes.TEXT)
             in BerryCrushTokenTypes.OPERATORS -> markAs(BerryCrushElementTypes.OPERATOR)
+            BerryCrushTokenTypes.STRING -> markAs(BerryCrushElementTypes.STRING_LITERAL)
             else -> markAs(BerryCrushElementTypes.TEXT)
         }
     }

@@ -1,160 +1,174 @@
 package com.berrycrush.intellij.refactoring.variable
 
 import com.berrycrush.intellij.BerryCrushTestCase
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /**
- * Tests for BerryCrush Variable Rename Processor.
- * Verifies variable renaming within scenario scope.
+ * Behavior-focused rename tests for variable and parameter PSI rename support.
  */
 class VariableRenameProcessorTest : BerryCrushTestCase() {
-    private val processor = VariableRenameProcessor()
+    fun testRenameExtractVariableFromDefinitionUpdatesAllReferences() {
+        myFixture.configureByText(
+            "extract-definition.scenario",
+            """
+            scenario: extraction
+              given capture id
+                extract $.id => pet<caret>Id
+              when using {{petId}}
+              and using {{petId}}
+            """.trimIndent(),
+        )
 
-    // ========== canProcessElement Tests ==========
+        myFixture.renameElementAtCaret("userId")
 
-    fun testCanProcessVariableUsage() {
-        val file =
-            createScenarioFile(
-                "varUsage",
-                """
-                scenario: Test
-                given a value
-                  extract $.id => petId
-                when using {{petId}}
-                """.trimIndent(),
-            )
-
-        val psiFile = psiManager.findFile(file)
-        assertNotNull(psiFile)
-
-        // Find the {{petId}} element
-        val text = psiFile!!.text
-        val usageIndex = text.indexOf("{{petId}}")
-        if (usageIndex >= 0) {
-            val element = psiFile.findElementAt(usageIndex + 2) // Inside {{
-            if (element != null) {
-                // Test if processor recognizes this as a variable
-                val canProcess = processor.canProcessElement(element)
-                // May or may not recognize depending on exact element type
-                // This tests that the method doesn't throw
-            }
-        }
+        val text = myFixture.file.text
+        assertTrue(text.contains("extract $.id => userId"), text)
+        assertEquals(2, text.split("{{userId}}").size - 1)
+        assertTrue(!text.contains("{{petId}}"))
     }
 
-    fun testCanProcessVariableDefinition() {
-        val file =
-            createScenarioFile(
-                "varDef",
-                """
-                scenario: Test
-                given a value
-                  extract $.id => petId
-                """.trimIndent(),
-            )
+    fun testRenameExtractVariableFromReferenceUpdatesDefinitionAndReferences() {
+        myFixture.configureByText(
+            "extract-reference.scenario",
+            """
+            scenario: extraction
+              given capture id
+                extract $.id => petId
+              when using {{pet<caret>Id}}
+              and using {{petId}}
+            """.trimIndent(),
+        )
 
-        val psiFile = psiManager.findFile(file)
-        assertNotNull(psiFile)
+        myFixture.renameElementAtCaret("userId")
 
-        // Find the "=> petId" element
-        val text = psiFile!!.text
-        val defIndex = text.indexOf("=> petId")
-        if (defIndex >= 0) {
-            val element = psiFile.findElementAt(defIndex + 3) // At "petId"
-            if (element != null) {
-                // Test method doesn't throw
-                processor.canProcessElement(element)
-            }
-        }
+        val text = myFixture.file.text
+        assertTrue(text.contains("extract $.id => userId"), text)
+        assertEquals(2, text.split("{{userId}}").size - 1)
+        assertTrue(!text.contains("{{petId}}"))
     }
 
-    fun testCannotProcessNonBerryCrushFile() {
-        val ktFile = myFixture.addFileToProject("test.kt", "class Test { val x = 1 }")
-        val psiFile = psiManager.findFile(ktFile.virtualFile)
-        assertNotNull(psiFile)
+    fun testRenameParameterFromDefinitionUpdatesReferences() {
+        myFixture.configureByText(
+            "parameter-definition.scenario",
+            """
+            scenario: parameter usage
+              parameters:
+                pet<caret>Id: 123
+              when using {{param.petId}}
+              and using {{param.petId}}
+            """.trimIndent(),
+        )
 
-        val element = psiFile?.firstChild
-        if (element != null) {
-            val canProcess = processor.canProcessElement(element)
-            assertFalse("Should not process Kotlin file elements", canProcess)
-        }
+        myFixture.renameElementAtCaret("userId")
+
+        val text = myFixture.file.text
+        assertTrue(text.contains("userId: 123"), text)
+        assertEquals(2, text.split("{{param.userId}}").size - 1, text)
+        assertTrue(!text.contains("{{param.petId}}"))
     }
 
-    fun testCannotProcessRegularText() {
-        val file =
-            createScenarioFile(
-                "regular",
-                """
-                scenario: Test
-                given some regular text
-                """.trimIndent(),
-            )
+    fun testRenameParameterFromReferenceUpdatesDefinitionAndReferences() {
+        myFixture.configureByText(
+            "parameter-reference.scenario",
+            """
+            scenario: parameter usage
+              parameters:
+                petId: 123
+              when using {{param.pet<caret>Id}}
+              and using {{param.petId}}
+            """.trimIndent(),
+        )
 
-        val psiFile = psiManager.findFile(file)
-        assertNotNull(psiFile)
+        myFixture.renameElementAtCaret("userId")
 
-        val text = psiFile!!.text
-        val givenIndex = text.indexOf("Given")
-        if (givenIndex >= 0) {
-            val element = psiFile.findElementAt(givenIndex)
-            if (element != null) {
-                val canProcess = processor.canProcessElement(element)
-                assertFalse("Should not process regular step text", canProcess)
-            }
-        }
+        val text = myFixture.file.text
+        assertTrue(text.contains("userId: 123"), text)
+        assertEquals(2, text.split("{{param.userId}}").size - 1, text)
+        assertTrue(!text.contains("{{param.petId}}"))
     }
 
-    // ========== Integration Tests ==========
+    fun testRenameExampleHeaderFromDefinitionUpdatesVariableReferences() {
+        myFixture.configureByText(
+            "outline-header-definition.scenario",
+            """
+            outline: rename header
+              when use {{petId}}
+              and use {{petId}}
+              examples:
+                | pet<caret>Id |
+                | 123 |
+            """.trimIndent(),
+        )
 
-    fun testProcessorIsRegistered() {
-        // Verify processor instance can be created
-        val processor = VariableRenameProcessor()
-        assertNotNull(processor)
+        myFixture.renameElementAtCaret("userId")
+
+        val text = myFixture.file.text
+        assertTrue(text.contains("| userId |"), text)
+        assertEquals(2, text.split("{{userId}}").size - 1)
+        assertTrue(!text.contains("{{petId}}"))
     }
 
-    fun testVariablePatternInScenario() {
-        val file =
-            createScenarioFile(
-                "pattern",
-                """
-                scenario: Test Variables
-                given I extract a value
-                  extract $.response.id => myVariable
-                when I use the value
-                  call ^someOperation
-                    body:
-                      id: {{myVariable}}
-                """.trimIndent(),
-            )
+    fun testRenameExampleHeaderFromReferenceUpdatesHeaderAndReferences() {
+        myFixture.configureByText(
+            "outline-header-reference.scenario",
+            """
+            outline: rename header
+              when use {{pet<caret>Id}}
+              and use {{petId}}
+              examples:
+                | petId |
+                | 123 |
+            """.trimIndent(),
+        )
 
-        val psiFile = psiManager.findFile(file)
-        assertNotNull(psiFile)
+        myFixture.renameElementAtCaret("userId")
 
-        // Verify file contains expected patterns
-        val text = psiFile!!.text
-        assertTrue("Should contain variable definition", text.contains("=> myVariable"))
-        assertTrue("Should contain variable usage", text.contains("{{myVariable}}"))
+        val text = myFixture.file.text
+        assertTrue(text.contains("| userId |"), text)
+        assertEquals(2, text.split("{{userId}}").size - 1)
+        assertTrue(!text.contains("{{petId}}"))
     }
 
-    fun testMultipleVariablesInScenario() {
-        val file =
-            createScenarioFile(
-                "multiVar",
-                """
-                scenario: Multiple Variables
-                given I extract values
-                  extract $.id => firstVar
-                  extract $.name => secondVar
-                when I use them
-                  body:
-                    id: {{firstVar}}
-                    name: {{secondVar}}
-                """.trimIndent(),
-            )
+    fun testRenameExtractVariableFromInterpolatedQuotedStringReference() {
+        myFixture.configureByText(
+            "extract-string-reference.scenario",
+            """
+            scenario: extraction
+              given capture id
+                extract $.id => petId
+              when using
+                call ^operationId
+                  message: "value {{pet<caret>Id}} and {{petId}}"
+            """.trimIndent(),
+        )
 
-        val psiFile = psiManager.findFile(file)
-        assertNotNull(psiFile)
+        myFixture.renameElementAtCaret("userId")
 
-        val text = psiFile!!.text
-        assertTrue("Should contain first variable", text.contains("firstVar"))
-        assertTrue("Should contain second variable", text.contains("secondVar"))
+        val text = myFixture.file.text
+        assertTrue(text.contains("extract $.id => userId"), text)
+        assertTrue(text.contains("\"value {{userId}} and {{userId}}\""), text)
+        assertTrue(!text.contains("{{petId}}"), text)
+    }
+
+    fun testRenameParameterFromInterpolatedQuotedStringReference() {
+        myFixture.configureByText(
+            "param-string-reference.scenario",
+            """
+            scenario: parameter usage
+              parameters:
+                petId: 123
+              when using
+                call ^operationId
+                  message: "value {{param.pet<caret>Id}} and {{param.petId}}"
+            """.trimIndent(),
+        )
+
+        myFixture.renameElementAtCaret("userId")
+
+        val text = myFixture.file.text
+        assertTrue(text.contains("userId: 123"), text)
+        assertTrue(text.contains("\"value {{param.userId}} and {{param.userId}}\""), text)
+        assertTrue(!text.contains("{{param.petId}}"), text)
     }
 }

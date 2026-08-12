@@ -303,6 +303,28 @@ class BerryCrushLexerTest {
         assertContains(tokens, BerryCrushTokenTypes.JSON_PATH)
     }
 
+    @Test
+    fun `test lexer tokenizes multiline string with interpolation as single string token`() {
+        val input =
+            """
+            scenario: multiline
+              parameters:
+                message: ${'"'}""
+                  hello {{name}}
+                  world
+                ${'"'}""
+            """.trimIndent()
+
+        val tokens = tokenize(input)
+        assertContains(tokens, BerryCrushTokenTypes.STRING)
+    }
+
+    @Test
+    fun `test lexer keeps unterminated interpolation inside string as string token`() {
+        val tokens = tokenize("""body: \"hello {{name\"""")
+        assertContains(tokens, BerryCrushTokenTypes.STRING)
+    }
+
     // --- Helper functions ---
 
     private fun tokenize(text: String): List<Pair<IElementType?, String>> {

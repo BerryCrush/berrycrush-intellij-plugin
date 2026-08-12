@@ -8,7 +8,7 @@ import com.intellij.lang.PsiBuilder
 internal fun PsiBuilder.parseScenario(scenarioIndent: Int) {
     val marker = mark()
     advanceLexer()
-    skipToEndOfLine()
+    skipToEndOfLine(BerryCrushElementTypes.BLOCK_NAME)
 
     // Parse optional parameters block after scenario name
     tryParseParametersBlock(scenarioIndent)
@@ -20,7 +20,7 @@ internal fun PsiBuilder.parseScenario(scenarioIndent: Int) {
 internal fun PsiBuilder.parseOutline(outlineIndent: Int) {
     val marker = mark()
     advanceLexer()
-    skipToEndOfLine()
+    skipToEndOfLine(BerryCrushElementTypes.BLOCK_NAME)
 
     // Parse optional parameters block after outline name
     tryParseParametersBlock(outlineIndent)

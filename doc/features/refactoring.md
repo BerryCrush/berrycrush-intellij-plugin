@@ -2,6 +2,21 @@
 
 The BerryCrush plugin provides refactoring support to safely rename and delete elements while keeping references in sync.
 
+## Rename Architecture
+
+Rename is PSI-based and uses IntelliJ rename processors and references.
+
+- No custom rename handler is used.
+- Renames are resolved from PSI declarations/references, not raw text replacement.
+- Renaming from either a definition or a reference updates linked occurrences.
+
+Supported rename categories:
+
+- Fragment definition and `include` references
+- Extract variables (`extract ... => name`) and `{{name}}` references
+- Parameters (`parameters:` entries) and `{{param.name}}` references
+- Outline example headers and linked variable references
+
 ## Rename Fragment
 
 Rename a fragment and automatically update all `include` references.
@@ -95,7 +110,8 @@ scenario: Test
 
 ### Scope
 
-Variable rename is limited to the current file. Variables with the same name in other files are not affected.
+Variable and parameter rename follow the PSI reference scope for each declaration target.
+In practice this usually means scenario-local or block-local updates for variable-like symbols.
 
 ## Safe Delete
 
