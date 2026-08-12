@@ -30,6 +30,9 @@
     <change-notes><![CDATA[
     <h3>2.0.0</h3>
     <ul>
+      <li>Using IntelliJ renaming capability</li>
+      <li>Scenario file syntax inspection</li>
+      <li>Better PSI element structure</li>
       <li>Better builtin assertion detection</li>
     </ul>
     <h3>1.0.1</h3>
