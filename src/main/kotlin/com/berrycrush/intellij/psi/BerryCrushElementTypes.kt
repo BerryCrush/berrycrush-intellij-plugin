@@ -85,6 +85,9 @@ object BerryCrushElementTypes {
     @JvmField
     val VARIABLE_REF = BerryCrushPsiElementType("VARIABLE_REF")
 
+    @JvmField
+    val STRING_LITERAL = BerryCrushPsiElementType("STRING_LITERAL")
+
     // assert elements
     @JvmField
     val JSON_PATH = BerryCrushPsiElementType("JSON_PATH")

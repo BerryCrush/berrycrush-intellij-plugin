@@ -70,6 +70,20 @@ object BerryCrushElementFactory {
             ?: throw InternalError("BerryCrushExampleHeaderElement not found")
     }
 
+    fun createStringLiteralElement(project: Project, literalText: String): BerryCrushStringLiteralElement {
+        val file = PsiFileFactory.getInstance(project)
+            .createFileFromText(
+                BerryCrushLanguage,
+                """
+                    scenario: foo
+                      parameters:
+                        message: $literalText
+                """.trimIndent(),
+            )
+        return PsiTreeUtil.findChildOfType(file, BerryCrushStringLiteralElement::class.java)
+            ?: throw InternalError("BerryCrushStringLiteralElement not found")
+    }
+
     fun createFragmentRefElement(project: Project, name: String): PsiElement {
         val file = PsiFileFactory.getInstance(project)
             .createFileFromText(

@@ -129,4 +129,46 @@ class VariableRenameProcessorTest : BerryCrushTestCase() {
         assertEquals(2, text.split("{{userId}}").size - 1)
         assertTrue(!text.contains("{{petId}}"))
     }
+
+    fun testRenameExtractVariableFromInterpolatedQuotedStringReference() {
+        myFixture.configureByText(
+            "extract-string-reference.scenario",
+            """
+            scenario: extraction
+              given capture id
+                extract $.id => petId
+              when using
+                call ^operationId
+                  message: "value {{pet<caret>Id}} and {{petId}}"
+            """.trimIndent(),
+        )
+
+        myFixture.renameElementAtCaret("userId")
+
+        val text = myFixture.file.text
+        assertTrue(text.contains("extract $.id => userId"), text)
+        assertTrue(text.contains("\"value {{userId}} and {{userId}}\""), text)
+        assertTrue(!text.contains("{{petId}}"), text)
+    }
+
+    fun testRenameParameterFromInterpolatedQuotedStringReference() {
+        myFixture.configureByText(
+            "param-string-reference.scenario",
+            """
+            scenario: parameter usage
+              parameters:
+                petId: 123
+              when using
+                call ^operationId
+                  message: "value {{param.pet<caret>Id}} and {{param.petId}}"
+            """.trimIndent(),
+        )
+
+        myFixture.renameElementAtCaret("userId")
+
+        val text = myFixture.file.text
+        assertTrue(text.contains("userId: 123"), text)
+        assertTrue(text.contains("\"value {{param.userId}} and {{param.userId}}\""), text)
+        assertTrue(!text.contains("{{param.petId}}"), text)
+    }
 }

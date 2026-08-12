@@ -150,6 +150,7 @@ private fun PsiBuilder.parseParameterValue(indent: Int, allowBody: Boolean) {
         while (!eof() && tokenType != BerryCrushTokenTypes.NEWLINE) {
             when (tokenType) {
                 BerryCrushTokenTypes.VARIABLE -> parseVariableRef()
+                BerryCrushTokenTypes.STRING -> parseStringLiteral()
                 else -> advanceLexer()
             }
         }
@@ -159,7 +160,11 @@ private fun PsiBuilder.parseParameterValue(indent: Int, allowBody: Boolean) {
         parseIndentedEntries(indent) { childParentIndent ->
             if (currentLineIndent() > childParentIndent && lookAhead(1) in BerryCrushTokenTypes.LITERALS) {
                 advanceLexer() // advance indent
-                advanceLexer() // advance literal
+                if (tokenType == BerryCrushTokenTypes.STRING) {
+                    parseStringLiteral()
+                } else {
+                    advanceLexer() // advance literal
+                }
                 false
             } else {
                 tryParseParameterLike(

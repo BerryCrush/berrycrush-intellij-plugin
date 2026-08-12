@@ -471,4 +471,51 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
         val reference = fragRef?.reference
         assertNotNull("Fragment ref should have reference", reference)
     }
+
+    fun testStringLiteralSegmentOrderForMixedTextAndInterpolation() {
+        val file =
+            createScenarioFile(
+                "stringSegments",
+                """
+                scenario: interpolation
+                  parameters:
+                    message: "hello {{name}} world"
+                """.trimIndent(),
+            )
+
+        val psiFile = psiManager.findFile(file)
+        val stringLiteral = PsiTreeUtil.findChildOfType(psiFile, BerryCrushStringLiteralElement::class.java)
+        assertNotNull("String literal should exist", stringLiteral)
+
+        val segments = stringLiteral?.segments.orEmpty()
+        assertEquals(3, segments.size)
+        assertTrue(segments[0] is BerryCrushStringTextSegment)
+        assertTrue(segments[1] is BerryCrushStringVariableSegment)
+        assertTrue(segments[2] is BerryCrushStringTextSegment)
+    }
+
+    fun testMultilineStringSegmentsPreserveIndentation() {
+        val file =
+            createScenarioFile(
+                "multilineSegments",
+                """
+                scenario: interpolation
+                  parameters:
+                    message: ${'"'}""
+                      hello
+                        {{name}}
+                    ${'"'}""
+                """.trimIndent(),
+            )
+
+        val psiFile = psiManager.findFile(file)
+        val stringLiteral = PsiTreeUtil.findChildOfType(psiFile, BerryCrushStringLiteralElement::class.java)
+        assertNotNull("String literal should exist", stringLiteral)
+
+        val segments = stringLiteral?.segments.orEmpty()
+        assertTrue(
+            "Expected explicit indentation segment in multiline string",
+            segments.any { it is BerryCrushStringIndentSegment && it.text.contains("  ") },
+        )
+    }
 }
