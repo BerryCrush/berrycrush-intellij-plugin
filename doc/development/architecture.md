@@ -29,7 +29,7 @@ The plugin follows IntelliJ Platform architecture patterns:
 ## Package Structure
 
 ```
-com.berrycrush.intellij/
+org.berrycrush.intellij/
 ├── language/           # Language definition
 │   ├── BerryCrushLanguage.kt
 │   ├── BerryCrushFileType.kt
@@ -222,7 +222,7 @@ Core structural rules:
 - `examples:` is outline-scoped and table rows are one level under `examples:`.
 
 Regression coverage for these rules is in:
-- `src/test/kotlin/com/berrycrush/intellij/formatting/BerryCrushFormattingTest.kt`
+- `../../src/test/kotlin/org/berrycrush/intellij/formatting/BerryCrushFormattingTest.kt`
 
 ### Completion Flow
 
@@ -358,5 +358,5 @@ class MyTest : BasePlatformTestCase() {
 For formatter changes, always run targeted regression tests first:
 
 ```bash
-./gradlew test --tests "com.berrycrush.intellij.formatting.BerryCrushFormattingTest"
+./gradlew test --tests "org.berrycrush.intellij.formatting.BerryCrushFormattingTest"
 ```

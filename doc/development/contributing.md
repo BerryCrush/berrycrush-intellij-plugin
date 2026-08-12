@@ -140,9 +140,9 @@ class MyFeatureTest : BasePlatformTestCase() {
 ### Formatter Changes
 
 When changing formatter behavior, follow this sequence:
-1. Add/adjust regression tests in `src/test/kotlin/com/berrycrush/intellij/formatting/BerryCrushFormattingTest.kt`.
-2. Implement the fix in `src/main/kotlin/com/berrycrush/intellij/formatting/BerryCrushPostFormatProcessor.kt`.
-3. Keep `src/main/kotlin/com/berrycrush/intellij/formatting/BerryCrushBlock.kt` indent hints compatible.
+1. Add/adjust regression tests in `../../src/test/kotlin/org/berrycrush/intellij/formatting/BerryCrushFormattingTest.kt`.
+2. Implement the fix in `../../src/main/kotlin/org/berrycrush/intellij/formatting/BerryCrushPostFormatProcessor.kt`.
+3. Keep `../../src/main/kotlin/org/berrycrush/intellij/formatting/BerryCrushBlock.kt` indent hints compatible.
 
 Structural formatter expectations:
 - Keep standalone `scenario:`/`outline:` root-aligned.
@@ -153,7 +153,7 @@ Structural formatter expectations:
 Verification commands:
 
 ```bash
-./gradlew test --tests "com.berrycrush.intellij.formatting.BerryCrushFormattingTest"
+./gradlew test --tests "org.berrycrush.intellij.formatting.BerryCrushFormattingTest"
 ./gradlew test
 ./gradlew check
 ```
@@ -161,9 +161,9 @@ Verification commands:
 ### Highlighting Changes
 
 When changing syntax highlighting behavior, follow this sequence:
-1. Add/adjust regression tests in `src/test/kotlin/com/berrycrush/intellij/highlighting/BerryCrushAnnotatorTest.kt`.
-2. Keep token mapping behavior stable in `src/main/kotlin/com/berrycrush/intellij/highlighting/BerryCrushTokenHighlighting.kt`.
-3. Implement context-aware behavior in `src/main/kotlin/com/berrycrush/intellij/highlighting/BerryCrushAnnotator.kt`.
+1. Add/adjust regression tests in `../../src/test/kotlin/org/berrycrush/intellij/highlighting/BerryCrushAnnotatorTest.kt`.
+2. Keep token mapping behavior stable in `../../src/main/kotlin/org/berrycrush/intellij/highlighting/BerryCrushTokenHighlighting.kt`.
+3. Implement context-aware behavior in `../../src/main/kotlin/org/berrycrush/intellij/highlighting/BerryCrushAnnotator.kt`.
 
 Narrative highlighting expectation:
 - On `feature:` / `scenario:` / `outline:` and step (`given/when/then/and/but`) lines, highlight only the keyword prefix.
@@ -173,8 +173,8 @@ Narrative highlighting expectation:
 Verification commands:
 
 ```bash
-./gradlew test --tests "com.berrycrush.intellij.highlighting.BerryCrushAnnotatorTest"
-./gradlew test --tests "com.berrycrush.intellij.BerryCrushHighlighterTest"
+./gradlew test --tests "org.berrycrush.intellij.highlighting.BerryCrushAnnotatorTest"
+./gradlew test --tests "org.berrycrush.intellij.BerryCrushHighlighterTest"
 ./gradlew test
 ```
 
@@ -255,7 +255,7 @@ Main plugin descriptor at `src/main/resources/META-INF/plugin.xml`:
 
 ```xml
 <idea-plugin>
-    <id>com.berrycrush.intellij</id>
+    <id>org.berrycrush.intellij</id>
     <name>BerryCrush</name>
     <vendor>BerryCrush</vendor>
     
