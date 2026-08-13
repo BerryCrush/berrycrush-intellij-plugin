@@ -45,8 +45,8 @@ import org.berrycrush.intellij.psi.BerryCrushParameterKeyElement
 import org.berrycrush.intellij.psi.BerryCrushParameterValueElement
 import org.berrycrush.intellij.psi.BerryCrushParametersElement
 import org.berrycrush.intellij.psi.BerryCrushScenarioElement
-import org.berrycrush.intellij.psi.BerryCrushStepNameElement
 import org.berrycrush.intellij.psi.BerryCrushStepElement
+import org.berrycrush.intellij.psi.BerryCrushStepNameElement
 import org.berrycrush.intellij.psi.BerryCrushStringLiteralElement
 import org.berrycrush.intellij.psi.BerryCrushTagElement
 import org.berrycrush.intellij.psi.BerryCrushTextElement
