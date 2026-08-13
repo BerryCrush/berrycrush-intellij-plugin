@@ -70,12 +70,17 @@ class BerryCrushWebhookElement(
     node: ASTNode,
 ) : BerryCrushIncludeLikeElement("webhook", node)
 
+interface BerryCrushConditionHolderElement : PsiElement {
+    val condition: BerryCrushConditionElement?
+}
+
 /**
  * Assert directive element.
  */
 class BerryCrushAssertElement(
     node: ASTNode,
-) : BerryCrushDirectiveElement("assert", node) {
+) : BerryCrushDirectiveElement("assert", node),
+    BerryCrushConditionHolderElement {
     val assertionText: String?
         get() {
             val text = node.text.trim()
@@ -83,9 +88,17 @@ class BerryCrushAssertElement(
             val match = Regex("""^$directiveName\s+(.+)$""").find(text)
             return match?.groupValues?.get(1)?.trim()
         }
-    val condition: BerryCrushConditionElement?
+    override val condition: BerryCrushConditionElement?
         get() = directChildrenOfType<BerryCrushConditionElement>().firstOrNull()
 }
+
+/**
+ * Fail directive
+ * ```berrycrush
+ * fail "foo"
+ * ```
+ */
+class BerryCrushFailElement(node: ASTNode) : BerryCrushDirectiveElement("fail", node)
 
 /**
  * ```berrycrush
@@ -113,16 +126,40 @@ class BerryCrushExtractElement(
         ?: directChildrenOfType<BerryCrushTextElement>().lastOrNull()
 }
 
+abstract class BerryCrushConditionalElement(name: String, node: ASTNode) : BerryCrushDirectiveElement(name, node)
+
 /**
  * If directive element
  */
 class BerryCrushIfElement(
     node: ASTNode,
-) : BerryCrushDirectiveElement("if", node)
+) : BerryCrushConditionalElement("if", node),
+    BerryCrushConditionHolderElement {
+    override val condition: BerryCrushConditionElement?
+        get() = directChildrenOfType<BerryCrushConditionElement>().firstOrNull()
+}
 
 /**
  * Else directive element
  */
 class BerryCrushElseElement(
     node: ASTNode,
-) : BerryCrushDirectiveElement("else", node)
+) : BerryCrushConditionalElement("else", node)
+
+// leaf elements
+class BerryCrushJsonPathElement(
+    node: ASTNode,
+) : BerryCrushPsiElement(node) {
+    val jsonPathText
+        get() = node.text.trim()
+}
+
+abstract class BerryCrushOperatorLikeElement(node: ASTNode) : BerryCrushPsiElement(node) {
+    val operatorName: String
+        get() = node.text.trim()
+    val operatorType
+        get() = node.firstChildNode.elementType
+}
+
+class BerryCrushOperatorElement(node: ASTNode) : BerryCrushOperatorLikeElement(node)
+class BerryCrushAssertOperationElement(node: ASTNode) : BerryCrushOperatorLikeElement(node)

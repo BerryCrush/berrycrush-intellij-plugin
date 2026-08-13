@@ -47,6 +47,9 @@ object BerryCrushElementTypes {
     @JvmField
     val STEP = BerryCrushPsiElementType("STEP")
 
+    @JvmField
+    val STEP_DESCRIPTION = BerryCrushPsiElementType("STEP_DESCRIPTION")
+
     // Directive elements
     @JvmField
     val CALL_DIRECTIVE = BerryCrushPsiElementType("CALL_DIRECTIVE")
@@ -64,6 +67,9 @@ object BerryCrushElementTypes {
     val INCLUDE_DIRECTIVE = BerryCrushPsiElementType("INCLUDE_DIRECTIVE")
 
     @JvmField
+    val FAIL_DIRECTIVE = BerryCrushPsiElementType("FAIL_DIRECTIVE")
+
+    @JvmField
     val IF_DIRECTIVE = BerryCrushPsiElementType("IF_DIRECTIVE")
 
     @JvmField
@@ -71,9 +77,6 @@ object BerryCrushElementTypes {
 
     @JvmField
     val ELSE_DIRECTIVE = BerryCrushPsiElementType("ELSE_DIRECTIVE")
-
-    @JvmField
-    val BODY_DIRECTIVE = BerryCrushPsiElementType("BODY_DIRECTIVE")
 
     // Reference elements
     @JvmField

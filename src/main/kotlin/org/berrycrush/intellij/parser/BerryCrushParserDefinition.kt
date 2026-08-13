@@ -26,6 +26,7 @@ import org.berrycrush.intellij.psi.BerryCrushExampleRowElement
 import org.berrycrush.intellij.psi.BerryCrushExampleValueElement
 import org.berrycrush.intellij.psi.BerryCrushExamplesElement
 import org.berrycrush.intellij.psi.BerryCrushExtractElement
+import org.berrycrush.intellij.psi.BerryCrushFailElement
 import org.berrycrush.intellij.psi.BerryCrushFeatureElement
 import org.berrycrush.intellij.psi.BerryCrushFile
 import org.berrycrush.intellij.psi.BerryCrushFragmentElement
@@ -44,6 +45,7 @@ import org.berrycrush.intellij.psi.BerryCrushParameterKeyElement
 import org.berrycrush.intellij.psi.BerryCrushParameterValueElement
 import org.berrycrush.intellij.psi.BerryCrushParametersElement
 import org.berrycrush.intellij.psi.BerryCrushScenarioElement
+import org.berrycrush.intellij.psi.BerryCrushStepNameElement
 import org.berrycrush.intellij.psi.BerryCrushStepElement
 import org.berrycrush.intellij.psi.BerryCrushStringLiteralElement
 import org.berrycrush.intellij.psi.BerryCrushTagElement
@@ -82,11 +84,13 @@ class BerryCrushParserDefinition : ParserDefinition {
         BerryCrushElementTypes.BACKGROUND -> BerryCrushBackgroundElement(node)
         BerryCrushElementTypes.FRAGMENT -> BerryCrushFragmentElement(node)
         BerryCrushElementTypes.STEP -> BerryCrushStepElement(node)
+        BerryCrushElementTypes.STEP_DESCRIPTION -> BerryCrushStepNameElement(node)
         BerryCrushElementTypes.CALL_DIRECTIVE -> BerryCrushCallElement(node)
         BerryCrushElementTypes.INCLUDE_DIRECTIVE -> BerryCrushIncludeElement(node)
         BerryCrushElementTypes.IF_DIRECTIVE -> BerryCrushIfElement(node)
         BerryCrushElementTypes.ELSE_DIRECTIVE -> BerryCrushElseElement(node)
         BerryCrushElementTypes.ASSERT_DIRECTIVE -> BerryCrushAssertElement(node)
+        BerryCrushElementTypes.FAIL_DIRECTIVE -> BerryCrushFailElement(node)
         BerryCrushElementTypes.CONDITION -> BerryCrushConditionElement(node)
         BerryCrushElementTypes.EXTRACT_DIRECTIVE -> BerryCrushExtractElement(node)
         BerryCrushElementTypes.WEBHOOK_DIRECTIVE -> BerryCrushWebhookElement(node)

@@ -22,7 +22,7 @@ class BerryCrushStepElement(
         }
 
     val stepText: String?
-        get() = directChildrenOfType<BerryCrushTextElement>().firstOrNull()?.text
+        get() = directChildrenOfType<BerryCrushStepNameElement>().firstOrNull()?.text
 
     val callDirectives: List<BerryCrushCallElement>
         get() = directChildrenOfType()
@@ -34,19 +34,4 @@ class BerryCrushStepElement(
         get() = directChildrenOfType()
 }
 
-abstract class BerryCrushOperatorLikeElement(node: ASTNode) : BerryCrushPsiElement(node) {
-    val operatorName: String
-        get() = node.text.trim()
-    val operatorType
-        get() = node.firstChildNode.elementType
-}
-
-class BerryCrushOperatorElement(node: ASTNode) : BerryCrushOperatorLikeElement(node)
-class BerryCrushAssertOperationElement(node: ASTNode) : BerryCrushOperatorLikeElement(node)
-
-class BerryCrushJsonPathElement(
-    node: ASTNode,
-) : BerryCrushPsiElement(node) {
-    val jsonPathText
-        get() = node.text.trim()
-}
+class BerryCrushStepNameElement(node: ASTNode) : BerryCrushPsiElement(node)

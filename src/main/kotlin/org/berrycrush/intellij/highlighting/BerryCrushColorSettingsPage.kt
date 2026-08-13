@@ -40,7 +40,7 @@ feature: Pet Store API
   scenario: create pet with parameters
     parameters:
       shareVariablesAcrossScenarios: true
-      userId: {{context.currentUser}}
+      userId: {{currentUser}}
     when I create a custom pet
       include create_pet
         name: "Fluffy"

@@ -24,6 +24,7 @@ import org.berrycrush.intellij.psi.BerryCrushParameterEntryElement
 import org.berrycrush.intellij.psi.BerryCrushParametersElement
 import org.berrycrush.intellij.psi.BerryCrushPsiElement
 import org.berrycrush.intellij.psi.BerryCrushScenarioElement
+import org.berrycrush.intellij.psi.BerryCrushStepNameElement
 import org.berrycrush.intellij.psi.BerryCrushStepElement
 import org.berrycrush.intellij.psi.BerryCrushTagElement
 import org.berrycrush.intellij.psi.BerryCrushTextElement
@@ -175,7 +176,7 @@ class SyntaxCheckInspection : BerryCrushInspection() {
         step: BerryCrushStepElement,
         holder: ProblemsHolder,
     ) {
-        blockChildren<BerryCrushTextElement>(step, holder).forEach { child ->
+        blockChildren<BerryCrushStepNameElement>(step, holder).forEach { child ->
             when (child) {
                 is BerryCrushCallElement,
                 is BerryCrushWebhookElement,

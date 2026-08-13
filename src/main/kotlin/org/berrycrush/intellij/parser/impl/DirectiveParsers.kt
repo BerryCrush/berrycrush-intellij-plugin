@@ -3,7 +3,6 @@ package org.berrycrush.intellij.parser.impl
 import com.intellij.lang.PsiBuilder
 import org.berrycrush.intellij.lexer.BerryCrushTokenTypes
 import org.berrycrush.intellij.psi.BerryCrushElementTypes
-import org.berrycrush.intellij.psi.BerryCrushPsiElementType
 
 internal fun PsiBuilder.parseIncludeDirective(parentIndent: Int) {
     val marker = mark()
@@ -69,27 +68,39 @@ internal fun PsiBuilder.parseExtractDirective() {
     marker.done(BerryCrushElementTypes.EXTRACT_DIRECTIVE)
 }
 
-internal fun PsiBuilder.parseConditionalDirective(
-    parentIndent: Int,
-    elementType: BerryCrushPsiElementType,
-) {
+internal fun PsiBuilder.parseFailDirective() {
     val marker = mark()
-    val type = tokenType
-    advanceLexer() // consume if/else
+    advanceLexer() // consume "faile"
+    skipToEndOfLine()
+    marker.done(BerryCrushElementTypes.FAIL_DIRECTIVE)
+}
+
+internal fun PsiBuilder.parseIfDirective(parentIndent: Int) {
+    val marker = mark()
+    advanceLexer()
     skipWhiteSpaces()
-    if (type == BerryCrushTokenTypes.IF) {
-        parseCondition()
-        // Parse nested branch content at deeper indentation.
-        parseStepNestedContent(parentIndent)
-    } else {
-        if (type == BerryCrushTokenTypes.IF) {
-            parseConditionalDirective(parentIndent, BerryCrushElementTypes.IF_DIRECTIVE)
+    parseCondition()
+    // Parse nested branch content at deeper indentation.
+    parseStepNestedContent(parentIndent)
+    marker.done(BerryCrushElementTypes.IF_DIRECTIVE)
+    skipNewlines()
+    parseElseDirective(parentIndent)
+}
+
+private fun PsiBuilder.parseElseDirective(parentIndent: Int) {
+    consumeLineIndent()
+    if (tokenType == BerryCrushTokenTypes.ELSE) {
+        val marker = mark()
+        advanceLexer() // skip else
+        skipWhiteSpaces()
+        if (tokenType == BerryCrushTokenTypes.IF) {
+            parseIfDirective(parentIndent)
         } else {
             skipToEndOfLine()
             parseStepNestedContent(parentIndent)
         }
+        marker.done(BerryCrushElementTypes.ELSE_DIRECTIVE)
     }
-    marker.done(elementType)
 }
 
 internal fun PsiBuilder.parseAssertDirective() {

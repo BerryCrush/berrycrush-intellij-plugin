@@ -117,7 +117,7 @@ class BerryCrushAnnotatorTest : BerryCrushTestCase() {
         assertHasTokenHighlight(
             infos = infos,
             content = content,
-            token = "token",
+            token = "token:",
             key = BerryCrushHighlightingColors.PARAMETER_KEY,
         )
     }

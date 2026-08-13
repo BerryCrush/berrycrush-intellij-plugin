@@ -6,6 +6,7 @@ import org.berrycrush.intellij.BerryCrushTestCase
 import org.berrycrush.intellij.psi.BerryCrushAssertElement
 import org.berrycrush.intellij.psi.BerryCrushBackgroundElement
 import org.berrycrush.intellij.psi.BerryCrushCallElement
+import org.berrycrush.intellij.psi.BerryCrushConditionalElement
 import org.berrycrush.intellij.psi.BerryCrushElseElement
 import org.berrycrush.intellij.psi.BerryCrushExamplesElement
 import org.berrycrush.intellij.psi.BerryCrushFeatureElement
@@ -614,5 +615,33 @@ class BerryCrushParserTest : BerryCrushTestCase() {
             2,
             segments.count { it is BerryCrushStringVariableSegment },
         )
+    }
+
+    fun testConditionalDirective() {
+        val file =
+            createScenarioFile(
+                "multi-if-else",
+                """
+                scenario: multiline interpolation
+                  when do it
+                    if status 200
+                    else if status 201
+                    else
+                      fail
+                """.trimIndent(),
+            )
+        val psiFile = psiManager.findFile(file)
+        assertNotNull("PSI file should be created", psiFile)
+        val step = PsiTreeUtil.findChildOfType(psiFile, BerryCrushStepElement::class.java)
+        requireNotNull(step)
+        val conditionals = step.children.filterIsInstance<BerryCrushConditionalElement>()
+        // multiple if-else will be nested if-else like this
+        // if
+        // else
+        //   if
+        //   else
+        // so on
+        assertEquals(2, conditionals.size)
+        assertEquals(2, conditionals[1].children.filterIsInstance<BerryCrushConditionalElement>().size)
     }
 }
