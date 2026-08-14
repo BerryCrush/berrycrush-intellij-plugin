@@ -3,6 +3,7 @@ package org.berrycrush.intellij.formatting
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.psi.codeStyle.CodeStyleManager
 import org.berrycrush.intellij.BerryCrushTestCase
+import org.junit.jupiter.api.Test
 
 /**
  * Tests for BerryCrush code formatting.
@@ -69,6 +70,7 @@ class BerryCrushFormattingTest : BerryCrushTestCase() {
 
     // === Root Level Elements ===
 
+    @Test
     fun testScenarioAtRootLevel() {
         doFormattingTest(
             "scenario: Test Scenario",
@@ -76,6 +78,7 @@ class BerryCrushFormattingTest : BerryCrushTestCase() {
         )
     }
 
+    @Test
     fun testFeatureAtRootLevel() {
         doFormattingTest(
             "feature: Test Feature",
@@ -83,6 +86,7 @@ class BerryCrushFormattingTest : BerryCrushTestCase() {
         )
     }
 
+    @Test
     fun testFragmentAtRootLevel() {
         doFormattingTest(
             "fragment: test-fragment",
@@ -93,6 +97,7 @@ class BerryCrushFormattingTest : BerryCrushTestCase() {
 
     // === Step Indentation ===
 
+    @Test
     fun testStepIndentationInScenario() {
         val input =
             """
@@ -113,6 +118,7 @@ class BerryCrushFormattingTest : BerryCrushTestCase() {
         doFormattingTest(input, expected)
     }
 
+    @Test
     fun testStepIndentationInFragment() {
         val input =
             """
@@ -133,6 +139,7 @@ class BerryCrushFormattingTest : BerryCrushTestCase() {
 
     // === Directive Indentation ===
 
+    @Test
     fun testDirectiveIndentationInScenario() {
         val input =
             """
@@ -153,6 +160,7 @@ class BerryCrushFormattingTest : BerryCrushTestCase() {
         doFormattingTest(input, expected)
     }
 
+    @Test
     fun testParameterIndentation() {
         val input =
             """
@@ -175,6 +183,7 @@ class BerryCrushFormattingTest : BerryCrushTestCase() {
 
     // === Table Alignment ===
 
+    @Test
     fun testTableColumnAlignment() {
         val input =
             """
@@ -193,6 +202,7 @@ class BerryCrushFormattingTest : BerryCrushTestCase() {
         doFormattingTest(input, expected)
     }
 
+    @Test
     fun testTableAlignmentWithUnevenColumns() {
         val input =
             """
@@ -215,6 +225,7 @@ class BerryCrushFormattingTest : BerryCrushTestCase() {
 
     // === Complex Scenarios ===
 
+    @Test
     fun testComplexScenarioFormatting() {
         val input =
             """
@@ -251,6 +262,7 @@ class BerryCrushFormattingTest : BerryCrushTestCase() {
 
     // === Feature with Nested Elements ===
 
+    @Test
     fun testFeatureWithScenario() {
         val input =
             """
@@ -275,6 +287,7 @@ class BerryCrushFormattingTest : BerryCrushTestCase() {
         doFormattingTest(input, expected)
     }
 
+    @Test
     fun testFeatureWithBackground() {
         val input =
             """
@@ -297,6 +310,7 @@ class BerryCrushFormattingTest : BerryCrushTestCase() {
 
     // === Spacing Normalization ===
 
+    @Test
     fun testMultipleSpacesNormalized() {
         val input = "scenario:   Test    with    spaces"
         val expected = "scenario: Test with spaces"
@@ -306,6 +320,7 @@ class BerryCrushFormattingTest : BerryCrushTestCase() {
 
     // === Structural Indentation Regression Tests ===
 
+    @Test
     fun testFeatureAndStandaloneScenarioSeparation() {
         val input =
             listOf(
@@ -350,6 +365,7 @@ class BerryCrushFormattingTest : BerryCrushTestCase() {
         doFormattingTest(input, expected)
     }
 
+    @Test
     fun testNestedParametersIndentation() {
         val input =
             listOf(
@@ -372,6 +388,7 @@ class BerryCrushFormattingTest : BerryCrushTestCase() {
         doFormattingTest(input, expected)
     }
 
+    @Test
     fun testCallPayloadIndentation() {
         val input =
             listOf(
@@ -396,6 +413,7 @@ class BerryCrushFormattingTest : BerryCrushTestCase() {
         doFormattingTest(input, expected)
     }
 
+    @Test
     fun testWebhookPayloadIndentation() {
         val input =
             listOf(
@@ -418,6 +436,7 @@ class BerryCrushFormattingTest : BerryCrushTestCase() {
         doFormattingTest(input, expected)
     }
 
+    @Test
     fun testOutlineExamplesIndentation() {
         val input =
             listOf(
@@ -442,6 +461,7 @@ class BerryCrushFormattingTest : BerryCrushTestCase() {
         doFormattingTest(input, expected)
     }
 
+    @Test
     fun testFormattingIdempotency() {
         val input =
             listOf(
@@ -464,6 +484,7 @@ class BerryCrushFormattingTest : BerryCrushTestCase() {
         doIdempotencyTest(input, expected)
     }
 
+    @Test
     fun testDetachedMultiLineCommentsStayAtRootLevel() {
         val input =
             listOf(
@@ -492,6 +513,7 @@ class BerryCrushFormattingTest : BerryCrushTestCase() {
         doFormattingTest(input, expected)
     }
 
+    @Test
     fun testStepConditionalIfElseIndentation() {
         val input =
             listOf(
@@ -516,6 +538,7 @@ class BerryCrushFormattingTest : BerryCrushTestCase() {
         doFormattingTest(input, expected)
     }
 
+    @Test
     fun testStepConditionalIfElseIndentationIdempotency() {
         val input =
             listOf(

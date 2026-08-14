@@ -1,5 +1,7 @@
 package org.berrycrush.intellij.inspection
 
+import org.junit.jupiter.api.Test
+
 /**
  * Tests for UndefinedOperationInspection.
  *
@@ -8,24 +10,29 @@ package org.berrycrush.intellij.inspection
 class UndefinedOperationInspectionTest : BerryCrushInspectionTestCase(UndefinedOperationInspection()) {
     // ========== Inspection Properties Tests ==========
 
+    @Test
     fun testInspectionDisplayName() {
         assertEquals("Undefined OpenAPI operation", inspection.displayName)
     }
 
+    @Test
     fun testInspectionShortName() {
         assertEquals("BerryCrushUndefinedOperation", inspection.shortName)
     }
 
+    @Test
     fun testInspectionGroupDisplayName() {
         assertEquals("BerryCrush", inspection.groupDisplayName)
     }
 
+    @Test
     fun testInspectionEnabledByDefault() {
         assertTrue("Should be enabled by default", inspection.isEnabledByDefault)
     }
 
     // ========== Operation Detection Tests ==========
 
+    @Test
     fun testNoProblemsWhenNoOpenAPISpec() {
         // Without OpenAPI spec, inspection should skip
         val psiFile =
@@ -45,6 +52,7 @@ class UndefinedOperationInspectionTest : BerryCrushInspectionTestCase(UndefinedO
         )
     }
 
+    @Test
     fun testNoProblemsForDefinedOperation() {
         // Create OpenAPI spec with operation
         myFixture.addFileToProject(
@@ -81,6 +89,7 @@ class UndefinedOperationInspectionTest : BerryCrushInspectionTestCase(UndefinedO
         )
     }
 
+    @Test
     fun testProblemForUndefinedOperation() {
         // Create OpenAPI spec without the referenced operation
         myFixture.addFileToProject(
@@ -160,6 +169,7 @@ class UndefinedOperationInspectionTest : BerryCrushInspectionTestCase(UndefinedO
 
     // ========== Non-BerryCrush Files Tests ==========
 
+    @Test
     fun testIgnoresNonBerryCrushFiles() {
         myFixture.addFileToProject(
             "openapi4.yaml",

@@ -1,9 +1,10 @@
 package org.berrycrush.intellij.reference
 
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
-import com.intellij.psi.util.PsiTreeUtil
 import org.berrycrush.intellij.BerryCrushTestCase
 import org.berrycrush.intellij.psi.BerryCrushAssertElement
+import org.junit.jupiter.api.Test
 
 /**
  * Tests for BerryCrush Assertion Reference.
@@ -12,6 +13,7 @@ import org.berrycrush.intellij.psi.BerryCrushAssertElement
 class BerryCrushAssertionReferenceTest : BerryCrushTestCase() {
     // ========== Reference Creation Tests ==========
 
+    @Test
     fun testReferenceCanBeCreated() {
         val file =
             createScenarioFile(
@@ -22,8 +24,8 @@ class BerryCrushAssertionReferenceTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val assert = PsiTreeUtil.findChildOfType(psiFile, BerryCrushAssertElement::class.java)
+        val psiFile = findFile(file)
+        val assert = findChildOfType(psiFile, BerryCrushAssertElement::class.java)
         assertNotNull(assert)
 
         // Create a reference
@@ -36,6 +38,7 @@ class BerryCrushAssertionReferenceTest : BerryCrushTestCase() {
         assertNotNull(reference)
     }
 
+    @Test
     fun testReferenceResolveReturnsNullWithoutAnnotatedMethods() {
         val file =
             createScenarioFile(
@@ -46,8 +49,8 @@ class BerryCrushAssertionReferenceTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val assert = PsiTreeUtil.findChildOfType(psiFile, BerryCrushAssertElement::class.java)
+        val psiFile = findFile(file)
+        val assert = findChildOfType(psiFile, BerryCrushAssertElement::class.java)
         assertNotNull(assert)
 
         val reference =
@@ -57,11 +60,14 @@ class BerryCrushAssertionReferenceTest : BerryCrushTestCase() {
                 "response.status == 200",
             )
 
-        // No @Assertion methods exist in project, so resolve should return null
-        val resolved = reference.resolve()
-        assertNull("Should return null when no @Assertion methods exist", resolved)
+        consume {
+            // No @Assertion methods exist in project, so resolve should return null
+            val resolved = reference.resolve()
+            assertNull("Should return null when no @Assertion methods exist", resolved)
+        }
     }
 
+    @Test
     fun testMultiResolveReturnsEmptyWithoutAnnotatedMethods() {
         val file =
             createScenarioFile(
@@ -72,8 +78,8 @@ class BerryCrushAssertionReferenceTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val assert = PsiTreeUtil.findChildOfType(psiFile, BerryCrushAssertElement::class.java)
+        val psiFile = findFile(file)
+        val assert = findChildOfType(psiFile, BerryCrushAssertElement::class.java)
         assertNotNull(assert)
 
         val reference =
@@ -83,28 +89,33 @@ class BerryCrushAssertionReferenceTest : BerryCrushTestCase() {
                 "response.status == 200",
             )
 
-        val results = reference.multiResolve(false)
-        assertTrue("Should return empty array when no @Assertion methods exist", results.isEmpty())
+        consume {
+            val results = reference.multiResolve(false)
+            assertTrue("Should return empty array when no @Assertion methods exist", results.isEmpty())
+        }
     }
 
     // ========== Companion Object Method Tests ==========
 
+    @Test
     fun testFindMatchingAssertionMethodsWithoutAnnotations() {
         val methods =
-            BerryCrushAssertionReference.findMatchingAssertionMethods(
+            findMatchingAssertionMethods(
                 project,
                 "response.status == 200",
             )
         assertTrue("Should return empty list when no @Assertion methods", methods.isEmpty())
     }
 
+    @Test
     fun testGetAllAssertionMethodsWithoutAnnotations() {
-        val methods = BerryCrushAssertionReference.getAllAssertionMethods(project)
+        val methods = getAllAssertionMethods(project)
         assertTrue("Should return empty list when no @Assertion methods", methods.isEmpty())
     }
 
     // ========== Variants Tests ==========
 
+    @Test
     fun testGetVariantsReturnsEmptyWithoutAnnotatedMethods() {
         val file =
             createScenarioFile(
@@ -115,8 +126,8 @@ class BerryCrushAssertionReferenceTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val assert = PsiTreeUtil.findChildOfType(psiFile, BerryCrushAssertElement::class.java)
+        val psiFile = findFile(file)
+        val assert = findChildOfType(psiFile, BerryCrushAssertElement::class.java)
         assertNotNull(assert)
 
         val reference =
@@ -125,13 +136,15 @@ class BerryCrushAssertionReferenceTest : BerryCrushTestCase() {
                 TextRange(0, assert.textLength),
                 "response.status",
             )
-
-        val variants = reference.variants
-        assertTrue("Should return empty variants when no @Assertion methods", variants.isEmpty())
+        consume {
+            val variants = reference.variants
+            assertTrue("Should return empty variants when no @Assertion methods", variants.isEmpty())
+        }
     }
 
     // ========== Reference Range Tests ==========
 
+    @Test
     fun testReferenceRangeIsCorrect() {
         val file =
             createScenarioFile(
@@ -142,8 +155,8 @@ class BerryCrushAssertionReferenceTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val assert = PsiTreeUtil.findChildOfType(psiFile, BerryCrushAssertElement::class.java)
+        val psiFile = findFile(file)
+        val assert = findChildOfType(psiFile, BerryCrushAssertElement::class.java)
         assertNotNull(assert)
 
         val range = TextRange(7, 30) // "response.status == 200"
@@ -155,5 +168,13 @@ class BerryCrushAssertionReferenceTest : BerryCrushTestCase() {
             )
 
         assertEquals(range, reference.rangeInElement)
+    }
+
+    private fun getAllAssertionMethods(project: Project) = consume {
+        BerryCrushAssertionReference.getAllAssertionMethods(project)
+    }
+
+    private fun findMatchingAssertionMethods(project: Project, assertionText: String) = consume {
+        BerryCrushAssertionReference.findMatchingAssertionMethods(project, assertionText)
     }
 }

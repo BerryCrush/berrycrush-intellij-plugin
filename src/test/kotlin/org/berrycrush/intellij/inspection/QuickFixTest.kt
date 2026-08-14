@@ -1,6 +1,7 @@
 package org.berrycrush.intellij.inspection
 
 import org.berrycrush.intellij.BerryCrushTestCase
+import org.junit.jupiter.api.Test
 
 /**
  * Tests for BerryCrush Quick Fixes.
@@ -9,6 +10,7 @@ import org.berrycrush.intellij.BerryCrushTestCase
 class QuickFixTest : BerryCrushTestCase() {
     // ========== CreateFragmentQuickFix Tests ==========
 
+    @Test
     fun testCreateFragmentQuickFixName() {
         val quickFix = CreateFragmentQuickFix("my-fragment")
         assertEquals(
@@ -17,11 +19,13 @@ class QuickFixTest : BerryCrushTestCase() {
         )
     }
 
+    @Test
     fun testCreateFragmentQuickFixFamilyName() {
         val quickFix = CreateFragmentQuickFix("test")
         assertEquals("BerryCrush", quickFix.familyName)
     }
 
+    @Test
     fun testCreateFragmentQuickFixNotInWriteAction() {
         val quickFix = CreateFragmentQuickFix("test")
         // Fragment quick fix shows a dialog, so should NOT start in write action
@@ -33,6 +37,7 @@ class QuickFixTest : BerryCrushTestCase() {
 
     // ========== CreateStepQuickFix Tests ==========
 
+    @Test
     fun testCreateStepQuickFixName() {
         val quickFix = CreateStepQuickFix("user logs in")
         // Actual implementation copies to clipboard
@@ -42,11 +47,13 @@ class QuickFixTest : BerryCrushTestCase() {
         )
     }
 
+    @Test
     fun testCreateStepQuickFixFamilyName() {
         val quickFix = CreateStepQuickFix("test step")
         assertEquals("BerryCrush", quickFix.familyName)
     }
 
+    @Test
     fun testCreateStepQuickFixStartsInWriteAction() {
         val quickFix = CreateStepQuickFix("test")
         // Step quick fix copies to clipboard, uses default behavior
@@ -59,6 +66,7 @@ class QuickFixTest : BerryCrushTestCase() {
 
     // ========== CreateAssertionQuickFix Tests ==========
 
+    @Test
     fun testCreateAssertionQuickFixName() {
         val quickFix = CreateAssertionQuickFix("response.status == 200")
         assertEquals(
@@ -67,11 +75,13 @@ class QuickFixTest : BerryCrushTestCase() {
         )
     }
 
+    @Test
     fun testCreateAssertionQuickFixFamilyName() {
         val quickFix = CreateAssertionQuickFix("test")
         assertEquals("BerryCrush", quickFix.familyName)
     }
 
+    @Test
     fun testCreateAssertionQuickFixStartsInWriteAction() {
         val quickFix = CreateAssertionQuickFix("test")
         // Assertion quick fix copies to clipboard, uses default behavior
@@ -83,6 +93,7 @@ class QuickFixTest : BerryCrushTestCase() {
 
     // ========== Quick Fix Uniqueness Tests ==========
 
+    @Test
     fun testDifferentFragmentNamesCreateDifferentQuickFixes() {
         val fix1 = CreateFragmentQuickFix("fragment-one")
         val fix2 = CreateFragmentQuickFix("fragment-two")
@@ -91,6 +102,7 @@ class QuickFixTest : BerryCrushTestCase() {
         assertFalse("Names should differ", fix1.name == fix2.name)
     }
 
+    @Test
     fun testStepQuickFixNameIsConstant() {
         val fix1 = CreateStepQuickFix("step one")
         val fix2 = CreateStepQuickFix("step two")
@@ -99,6 +111,7 @@ class QuickFixTest : BerryCrushTestCase() {
         assertEquals("Names should be the same", fix1.name, fix2.name)
     }
 
+    @Test
     fun testAssertionQuickFixNameIsConstant() {
         val fix1 = CreateAssertionQuickFix("condition one")
         val fix2 = CreateAssertionQuickFix("condition two")

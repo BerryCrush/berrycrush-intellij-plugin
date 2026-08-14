@@ -1,7 +1,7 @@
 package org.berrycrush.intellij.psi
 
-import com.intellij.psi.util.PsiTreeUtil
 import org.berrycrush.intellij.BerryCrushTestCase
+import org.junit.jupiter.api.Test
 
 /**
  * Tests for BerryCrush PSI element classes.
@@ -9,7 +9,7 @@ import org.berrycrush.intellij.BerryCrushTestCase
  */
 class BerryCrushElementsTest : BerryCrushTestCase() {
     // ========== BerryCrushScenarioElement Tests ==========
-
+    @Test
     fun testScenarioNameExtraction() {
         val file =
             createScenarioFile(
@@ -20,15 +20,18 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
+        val psiFile = findFile(file)
         assertNotNull(psiFile)
 
-        val scenario = PsiTreeUtil.findChildOfType(psiFile, BerryCrushScenarioElement::class.java)
-        assertNotNull("Scenario element should exist", scenario)
-        assertEquals("My Test Scenario", scenario?.description)
-        assertEquals("My Test Scenario", scenario?.name)
+        val scenario = findChildOfType(psiFile, BerryCrushScenarioElement::class.java)
+        consume {
+            assertNotNull("Scenario element should exist", scenario)
+            assertEquals("My Test Scenario", scenario?.description)
+            assertEquals("My Test Scenario", scenario?.name)
+        }
     }
 
+    @Test
     fun testScenarioNameWithLeadingWhitespace() {
         val file =
             createScenarioFile(
@@ -39,11 +42,14 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val scenario = PsiTreeUtil.findChildOfType(psiFile, BerryCrushScenarioElement::class.java)
-        assertEquals("Spaced Name", scenario?.description)
+        val psiFile = findFile(file)
+        val scenario = findChildOfType(psiFile, BerryCrushScenarioElement::class.java)
+        consume {
+            assertEquals("Spaced Name", scenario?.description)
+        }
     }
 
+    @Test
     fun testScenarioNameLowercase() {
         val file =
             createScenarioFile(
@@ -54,14 +60,17 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val scenario = PsiTreeUtil.findChildOfType(psiFile, BerryCrushScenarioElement::class.java)
-        assertNotNull("Scenario with lowercase 'scenario' should be found", scenario)
-        assertEquals("lowercase scenario name", scenario?.description)
+        val psiFile = findFile(file)
+        val scenario = findChildOfType(psiFile, BerryCrushScenarioElement::class.java)
+        consume {
+            assertNotNull("Scenario with lowercase 'scenario' should be found", scenario)
+            assertEquals("lowercase scenario name", scenario?.description)
+        }
     }
 
     // ========== BerryCrushFragmentElement Tests ==========
 
+    @Test
     fun testFragmentNameExtraction() {
         val file =
             createFragmentFile(
@@ -72,13 +81,16 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val fragment = PsiTreeUtil.findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
-        assertNotNull("Fragment element should exist", fragment)
-        assertEquals("my-fragment-name", fragment?.description)
-        assertEquals("my-fragment-name", fragment?.name)
+        val psiFile = findFile(file)
+        val fragment = findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
+        consume {
+            assertNotNull("Fragment element should exist", fragment)
+            assertEquals("my-fragment-name", fragment?.description)
+            assertEquals("my-fragment-name", fragment?.name)
+        }
     }
 
+    @Test
     fun testFragmentNameLowercase() {
         val file =
             createFragmentFile(
@@ -89,12 +101,15 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val fragment = PsiTreeUtil.findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
-        assertNotNull("Fragment with lowercase 'fragment' should be found", fragment)
-        assertEquals("lowercase-fragment", fragment?.description)
+        val psiFile = findFile(file)
+        val fragment = findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
+        consume {
+            assertNotNull("Fragment with lowercase 'fragment' should be found", fragment)
+            assertEquals("lowercase-fragment", fragment?.description)
+        }
     }
 
+    @Test
     fun testFragmentNameWithDots() {
         val file =
             createFragmentFile(
@@ -105,13 +120,14 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val fragment = PsiTreeUtil.findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
+        val psiFile = findFile(file)
+        val fragment = findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
         assertEquals("com.example.my-fragment", fragment?.description)
     }
 
     // ========== BerryCrushFeatureElement Tests ==========
 
+    @Test
     fun testFeatureNameExtraction() {
         val file =
             createScenarioFile(
@@ -123,13 +139,16 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val feature = PsiTreeUtil.findChildOfType(psiFile, BerryCrushFeatureElement::class.java)
-        assertNotNull("Feature element should exist", feature)
-        assertEquals("User Authentication", feature?.description)
-        assertEquals("User Authentication", feature?.name)
+        val psiFile = findFile(file)
+        val feature = findChildOfType(psiFile, BerryCrushFeatureElement::class.java)
+        consume {
+            assertNotNull("Feature element should exist", feature)
+            assertEquals("User Authentication", feature?.description)
+            assertEquals("User Authentication", feature?.name)
+        }
     }
 
+    @Test
     fun testFeatureNameLowercase() {
         val file =
             createScenarioFile(
@@ -141,14 +160,17 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val feature = PsiTreeUtil.findChildOfType(psiFile, BerryCrushFeatureElement::class.java)
-        assertNotNull("Feature with lowercase 'feature' should be found", feature)
-        assertEquals("lowercase feature", feature?.description)
+        val psiFile = findFile(file)
+        val feature = findChildOfType(psiFile, BerryCrushFeatureElement::class.java)
+        consume {
+            assertNotNull("Feature with lowercase 'feature' should be found", feature)
+            assertEquals("lowercase feature", feature?.description)
+        }
     }
 
     // ========== BerryCrushStepElement Tests ==========
 
+    @Test
     fun testStepKeywordGiven() {
         val file =
             createFragmentFile(
@@ -159,13 +181,16 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val step = PsiTreeUtil.findChildOfType(psiFile, BerryCrushStepElement::class.java)
-        assertNotNull("Step element should exist", step)
-        assertEquals("given", step?.keyword)
-        assertEquals("a precondition is met", step?.stepText)
+        val psiFile = findFile(file)
+        val step = findChildOfType(psiFile, BerryCrushStepElement::class.java)
+        consume {
+            assertNotNull("Step element should exist", step)
+            assertEquals("given", step?.keyword)
+            assertEquals("a precondition is met", step?.stepText)
+        }
     }
 
+    @Test
     fun testStepKeywordWhen() {
         val file =
             createFragmentFile(
@@ -176,12 +201,15 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val step = PsiTreeUtil.findChildOfType(psiFile, BerryCrushStepElement::class.java)
-        assertEquals("when", step?.keyword)
-        assertEquals("user performs action", step?.stepText)
+        val psiFile = findFile(file)
+        val step = findChildOfType(psiFile, BerryCrushStepElement::class.java)
+        consume {
+            assertEquals("when", step?.keyword)
+            assertEquals("user performs action", step?.stepText)
+        }
     }
 
+    @Test
     fun testStepKeywordThen() {
         val file =
             createFragmentFile(
@@ -192,12 +220,15 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val step = PsiTreeUtil.findChildOfType(psiFile, BerryCrushStepElement::class.java)
-        assertEquals("then", step?.keyword)
-        assertEquals("result is verified", step?.stepText)
+        val psiFile = findFile(file)
+        val step = findChildOfType(psiFile, BerryCrushStepElement::class.java)
+        consume {
+            assertEquals("then", step?.keyword)
+            assertEquals("result is verified", step?.stepText)
+        }
     }
 
+    @Test
     fun testStepKeywordAnd() {
         val file =
             createFragmentFile(
@@ -208,12 +239,15 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val step = PsiTreeUtil.findChildOfType(psiFile, BerryCrushStepElement::class.java)
-        assertEquals("and", step?.keyword)
-        assertEquals("another condition", step?.stepText)
+        val psiFile = findFile(file)
+        val step = findChildOfType(psiFile, BerryCrushStepElement::class.java)
+        consume {
+            assertEquals("and", step?.keyword)
+            assertEquals("another condition", step?.stepText)
+        }
     }
 
+    @Test
     fun testStepKeywordBut() {
         val file =
             createFragmentFile(
@@ -224,12 +258,15 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val step = PsiTreeUtil.findChildOfType(psiFile, BerryCrushStepElement::class.java)
-        assertEquals("but", step?.keyword)
-        assertEquals("not this condition", step?.stepText)
+        val psiFile = findFile(file)
+        val step = findChildOfType(psiFile, BerryCrushStepElement::class.java)
+        consume {
+            assertEquals("but", step?.keyword)
+            assertEquals("not this condition", step?.stepText)
+        }
     }
 
+    @Test
     fun testStepKeywordsCaseInsensitive() {
         // Uppercase keywords should NOT be recognized (strict lowercase per BerryCrush DSL spec)
         val file =
@@ -241,14 +278,15 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val step = PsiTreeUtil.findChildOfType(psiFile, BerryCrushStepElement::class.java)
+        val psiFile = findFile(file)
+        val step = findChildOfType(psiFile, BerryCrushStepElement::class.java)
         // Step should not be found because GIVEN is not a valid keyword
         assertNull("Uppercase GIVEN should not be recognized as a step", step)
     }
 
     // ========== BerryCrushIncludeElement Tests ==========
 
+    @Test
     fun testIncludeFragmentName() {
         val file =
             createScenarioFile(
@@ -259,13 +297,14 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val include = PsiTreeUtil.findChildOfType(psiFile, BerryCrushIncludeElement::class.java)
+        val psiFile = findFile(file)
+        val include = findChildOfType(psiFile, BerryCrushIncludeElement::class.java)
         assertNotNull("Include element should exist", include)
         assertEquals("my-fragment", include?.fragmentName)
         assertEquals("include", include?.directiveName)
     }
 
+    @Test
     fun testIncludeFragmentNameWithCaret() {
         val file =
             createScenarioFile(
@@ -276,11 +315,12 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val include = PsiTreeUtil.findChildOfType(psiFile, BerryCrushIncludeElement::class.java)
+        val psiFile = findFile(file)
+        val include = findChildOfType(psiFile, BerryCrushIncludeElement::class.java)
         assertEquals("my-fragment", include?.fragmentName)
     }
 
+    @Test
     fun testIncludeFragmentNameWithDots() {
         val file =
             createScenarioFile(
@@ -291,13 +331,14 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val include = PsiTreeUtil.findChildOfType(psiFile, BerryCrushIncludeElement::class.java)
+        val psiFile = findFile(file)
+        val include = findChildOfType(psiFile, BerryCrushIncludeElement::class.java)
         assertEquals("com.example.fragment", include?.fragmentName)
     }
 
     // ========== BerryCrushCallElement Tests ==========
 
+    @Test
     fun testCallOperationId() {
         val file =
             createScenarioFile(
@@ -308,12 +349,13 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val call = PsiTreeUtil.findChildOfType(psiFile, BerryCrushCallElement::class.java)
+        val psiFile = findFile(file)
+        val call = findChildOfType(psiFile, BerryCrushCallElement::class.java)
         assertNotNull("Call element should exist", call)
         assertEquals("getPet", call?.operationId)
     }
 
+    @Test
     fun testCallOperationRefElement() {
         val file =
             createScenarioFile(
@@ -324,8 +366,8 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val call = PsiTreeUtil.findChildOfType(psiFile, BerryCrushCallElement::class.java)
+        val psiFile = findFile(file)
+        val call = findChildOfType(psiFile, BerryCrushCallElement::class.java)
         val opRef = call?.operationRef
         assertNotNull("Operation ref should exist", opRef)
         assertEquals("createOrder", opRef?.operationId)
@@ -334,6 +376,7 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
 
     // ========== BerryCrushOperationRefElement Tests ==========
 
+    @Test
     fun testOperationRefRemovesCaret() {
         val file =
             createScenarioFile(
@@ -344,13 +387,14 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val opRef = PsiTreeUtil.findChildOfType(psiFile, BerryCrushOperationRefElement::class.java)
+        val psiFile = findFile(file)
+        val opRef = findChildOfType(psiFile, BerryCrushOperationRefElement::class.java)
         assertNotNull("Operation ref element should exist", opRef)
         assertEquals("myOperation", opRef?.operationId)
         assertEquals("myOperation", opRef?.name)
     }
 
+    @Test
     fun testOperationRefHasReference() {
         val file =
             createScenarioFile(
@@ -361,14 +405,15 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val opRef = PsiTreeUtil.findChildOfType(psiFile, BerryCrushOperationRefElement::class.java)
+        val psiFile = findFile(file)
+        val opRef = findChildOfType(psiFile, BerryCrushOperationRefElement::class.java)
         val reference = opRef?.reference
         assertNotNull("Operation ref should have reference", reference)
     }
 
     // ========== BerryCrushAssertElement Tests ==========
 
+    @Test
     fun testAssertText() {
         val file =
             createScenarioFile(
@@ -379,12 +424,15 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val assert = PsiTreeUtil.findChildOfType(psiFile, BerryCrushAssertElement::class.java)
-        assertNotNull("Assert element should exist", assert)
-        assertEquals("response.status == 200", assert?.assertionText)
+        val psiFile = findFile(file)
+        consume {
+            val assertElement = findChildOfType(psiFile, BerryCrushAssertElement::class.java)
+            assertNotNull("Assert element should exist", assertElement)
+            assertEquals("response.status == 200", assertElement?.assertionText)
+        }
     }
 
+    @Test
     fun testAssertTextWithMultipleSpaces() {
         val file =
             createScenarioFile(
@@ -395,11 +443,14 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val assert = PsiTreeUtil.findChildOfType(psiFile, BerryCrushAssertElement::class.java)
-        assertEquals("response.body.name == \"test\"", assert?.assertionText)
+        val psiFile = findFile(file)
+        val assert = findChildOfType(psiFile, BerryCrushAssertElement::class.java)
+        consume {
+            assertEquals("response.body.name == \"test\"", assert?.assertionText)
+        }
     }
 
+    @Test
     fun testCallPayloadHierarchyExtraction() {
         val file =
             createScenarioFile(
@@ -417,29 +468,32 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val call = PsiTreeUtil.findChildOfType(psiFile, BerryCrushCallElement::class.java)
-        assertNotNull("Call element should exist", call)
-        assertEquals("operationId", call?.operationId)
+        val psiFile = findFile(file)
+        val call = findChildOfType(psiFile, BerryCrushCallElement::class.java)
+        consume {
+            assertNotNull("Call element should exist", call)
+            assertEquals("operationId", call?.operationId)
 
-        val idParam = call?.findParameter("id")
-        assertNotNull("Call should expose id parameter", idParam)
-        assertEquals("{{petId}}", idParam?.parameterValue)
+            val idParam = call?.findParameter("id")
+            assertNotNull("Call should expose id parameter", idParam)
+            assertEquals("{{petId}}", idParam?.parameterValue)
 
-        val bodyParam = call?.findParameter("body")
-        assertNotNull("Call should expose body parameter", bodyParam)
+            val bodyParam = call?.findParameter("body")
+            assertNotNull("Call should expose body parameter", bodyParam)
 
-        val bodyName = bodyParam?.findNestedParameter("name")
-        assertNotNull("Body should expose nested name field", bodyName)
-        assertEquals("foo", bodyName?.parameterValue)
+            val bodyName = bodyParam?.findNestedParameter("name")
+            assertNotNull("Body should expose nested name field", bodyName)
+            assertEquals("foo", bodyName?.parameterValue)
 
-        val assertDirective = PsiTreeUtil.findChildOfType(psiFile, BerryCrushAssertElement::class.java)
-        assertNotNull("Assert directive should exist", assertDirective)
-        assertEquals("status 2xx", assertDirective?.assertionText)
+            val assertDirective = findChildOfType(psiFile, BerryCrushAssertElement::class.java)
+            assertNotNull("Assert directive should exist", assertDirective)
+            assertEquals("status 2xx", assertDirective?.assertionText)
+        }
     }
 
     // ========== BerryCrushFragmentRefElement Tests ==========
 
+    @Test
     fun testFragmentRefRemovesCaret() {
         val file =
             createScenarioFile(
@@ -450,12 +504,13 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val fragRef = PsiTreeUtil.findChildOfType(psiFile, BerryCrushFragmentRefElement::class.java)
+        val psiFile = findFile(file)
+        val fragRef = findChildOfType(psiFile, BerryCrushFragmentRefElement::class.java)
         assertNotNull("Fragment ref element should exist", fragRef)
         assertEquals("my-fragment", fragRef?.name)
     }
 
+    @Test
     fun testFragmentRefHasReference() {
         val file =
             createScenarioFile(
@@ -466,12 +521,13 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val fragRef = PsiTreeUtil.findChildOfType(psiFile, BerryCrushFragmentRefElement::class.java)
+        val psiFile = findFile(file)
+        val fragRef = findChildOfType(psiFile, BerryCrushFragmentRefElement::class.java)
         val reference = fragRef?.reference
         assertNotNull("Fragment ref should have reference", reference)
     }
 
+    @Test
     fun testStringLiteralSegmentOrderForMixedTextAndInterpolation() {
         val file =
             createScenarioFile(
@@ -483,8 +539,8 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val stringLiteral = PsiTreeUtil.findChildOfType(psiFile, BerryCrushStringLiteralElement::class.java)
+        val psiFile = findFile(file)
+        val stringLiteral = findChildOfType(psiFile, BerryCrushStringLiteralElement::class.java)
         assertNotNull("String literal should exist", stringLiteral)
 
         val segments = stringLiteral?.segments.orEmpty()
@@ -494,6 +550,7 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
         assertTrue(segments[2] is BerryCrushStringTextSegment)
     }
 
+    @Test
     fun testMultilineStringSegmentsPreserveIndentation() {
         val file =
             createScenarioFile(
@@ -508,8 +565,8 @@ class BerryCrushElementsTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val stringLiteral = PsiTreeUtil.findChildOfType(psiFile, BerryCrushStringLiteralElement::class.java)
+        val psiFile = findFile(file)
+        val stringLiteral = findChildOfType(psiFile, BerryCrushStringLiteralElement::class.java)
         assertNotNull("String literal should exist", stringLiteral)
 
         val segments = stringLiteral?.segments.orEmpty()

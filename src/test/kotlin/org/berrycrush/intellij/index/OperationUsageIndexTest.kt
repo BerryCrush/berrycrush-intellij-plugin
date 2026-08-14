@@ -1,6 +1,10 @@
 package org.berrycrush.intellij.index
 
+import com.intellij.openapi.application.ReadAction
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFile
 import org.berrycrush.intellij.BerryCrushTestCase
+import org.junit.jupiter.api.Test
 
 /**
  * Unit tests for OperationUsageIndex.
@@ -10,6 +14,7 @@ import org.berrycrush.intellij.BerryCrushTestCase
 class OperationUsageIndexTest : BerryCrushTestCase() {
     // ========== Index Detection Tests ==========
 
+    @Test
     fun testIndexesBasicOperationReference() {
         createScenarioFile(
             "test",
@@ -20,13 +25,14 @@ class OperationUsageIndexTest : BerryCrushTestCase() {
             """.trimIndent(),
         )
 
-        val operations = OperationUsageIndex.getAllOperationIds(project)
+        val operations = getAllOperationIds(project)
         assertTrue(
             "Should index 'createUser'",
             operations.contains("createUser"),
         )
     }
 
+    @Test
     fun testIndexesMultipleOperationReferences() {
         createScenarioFile(
             "test2",
@@ -41,12 +47,13 @@ class OperationUsageIndexTest : BerryCrushTestCase() {
             """.trimIndent(),
         )
 
-        val operations = OperationUsageIndex.getAllOperationIds(project)
+        val operations = getAllOperationIds(project)
         assertTrue("Should index 'createUser'", operations.contains("createUser"))
         assertTrue("Should index 'updateUser'", operations.contains("updateUser"))
         assertTrue("Should index 'deleteUser'", operations.contains("deleteUser"))
     }
 
+    @Test
     fun testIndexesOperationWithUnderscores() {
         createScenarioFile(
             "test3",
@@ -57,13 +64,14 @@ class OperationUsageIndexTest : BerryCrushTestCase() {
             """.trimIndent(),
         )
 
-        val operations = OperationUsageIndex.getAllOperationIds(project)
+        val operations = getAllOperationIds(project)
         assertTrue(
             "Should index 'get_user_by_id'",
             operations.contains("get_user_by_id"),
         )
     }
 
+    @Test
     fun testIndexesOperationStartingWithUnderscore() {
         createScenarioFile(
             "test4",
@@ -74,13 +82,14 @@ class OperationUsageIndexTest : BerryCrushTestCase() {
             """.trimIndent(),
         )
 
-        val operations = OperationUsageIndex.getAllOperationIds(project)
+        val operations = getAllOperationIds(project)
         assertTrue(
             "Should index '_privateOp'",
             operations.contains("_privateOp"),
         )
     }
 
+    @Test
     fun testIndexesOperationWithNumbers() {
         createScenarioFile(
             "test5",
@@ -91,13 +100,14 @@ class OperationUsageIndexTest : BerryCrushTestCase() {
             """.trimIndent(),
         )
 
-        val operations = OperationUsageIndex.getAllOperationIds(project)
+        val operations = getAllOperationIds(project)
         assertTrue(
             "Should index 'User123'",
             operations.contains("User123"),
         )
     }
 
+    @Test
     fun testDoesNotIndexCaretWithoutValidId() {
         createScenarioFile(
             "test6",
@@ -107,7 +117,7 @@ class OperationUsageIndexTest : BerryCrushTestCase() {
             """.trimIndent(),
         )
 
-        val operations = OperationUsageIndex.getAllOperationIds(project)
+        val operations = getAllOperationIds(project)
         // Should not index 'in' which comes after the caret
         // The pattern requires the caret to be followed by a valid identifier start
         assertFalse(
@@ -116,6 +126,7 @@ class OperationUsageIndexTest : BerryCrushTestCase() {
         )
     }
 
+    @Test
     fun testIndexesOperationAtEndOfLine() {
         createScenarioFile(
             "test8",
@@ -126,13 +137,14 @@ class OperationUsageIndexTest : BerryCrushTestCase() {
             """.trimIndent(),
         )
 
-        val operations = OperationUsageIndex.getAllOperationIds(project)
+        val operations = getAllOperationIds(project)
         assertTrue(
             "Should index 'getUser'",
             operations.contains("getUser"),
         )
     }
 
+    @Test
     fun testIndexesOperationInStepText() {
         createScenarioFile(
             "test9",
@@ -142,7 +154,7 @@ class OperationUsageIndexTest : BerryCrushTestCase() {
             """.trimIndent(),
         )
 
-        val operations = OperationUsageIndex.getAllOperationIds(project)
+        val operations = getAllOperationIds(project)
         assertTrue(
             "Should index 'createUser' in step text",
             operations.contains("createUser"),
@@ -151,6 +163,7 @@ class OperationUsageIndexTest : BerryCrushTestCase() {
 
     // ========== File Lookup Tests ==========
 
+    @Test
     fun testGetFilesReferencingOperation() {
         createScenarioFile(
             "referencer",
@@ -170,7 +183,7 @@ class OperationUsageIndexTest : BerryCrushTestCase() {
             """.trimIndent(),
         )
 
-        val files = OperationUsageIndex.getFilesReferencingOperation(project, "targetOp")
+        val files = getFilesReferencingOperation(project, "targetOp")
         assertEquals(
             "Should find one file referencing 'targetOp'",
             1,
@@ -184,20 +197,29 @@ class OperationUsageIndexTest : BerryCrushTestCase() {
 
     // ========== Include Directive Tests ==========
 
+    @Test
     fun testIndexesOperationInIncludeDirective() {
         createScenarioFile(
             "test10",
             """
             scenario: test
               given: setup
-                include ^fragmentOp
+                call ^callOp
             """.trimIndent(),
         )
 
-        val operations = OperationUsageIndex.getAllOperationIds(project)
+        val operations = getAllOperationIds(project)
         assertTrue(
-            "Should index 'fragmentOp' from include directive",
-            operations.contains("fragmentOp"),
+            "Should index 'callOp' from include directive",
+            operations.contains("callOp"),
         )
+    }
+
+    private fun getAllOperationIds(project: Project) = ReadAction.compute<Collection<String>, Throwable> {
+        OperationUsageIndex.getAllOperationIds(project)
+    }
+
+    private fun getFilesReferencingOperation(project: Project, operationId: String) = ReadAction.compute<Collection<VirtualFile>, Throwable> {
+        OperationUsageIndex.getFilesReferencingOperation(project, operationId)
     }
 }

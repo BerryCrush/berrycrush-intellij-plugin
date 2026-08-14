@@ -1,6 +1,7 @@
 package org.berrycrush.intellij.refactoring.variable
 
 import org.berrycrush.intellij.BerryCrushTestCase
+import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -8,6 +9,7 @@ import kotlin.test.assertTrue
  * Behavior-focused rename tests for variable and parameter PSI rename support.
  */
 class VariableRenameProcessorTest : BerryCrushTestCase() {
+    @Test
     fun testRenameExtractVariableFromDefinitionUpdatesAllReferences() {
         myFixture.configureByText(
             "extract-definition.scenario",
@@ -20,14 +22,16 @@ class VariableRenameProcessorTest : BerryCrushTestCase() {
             """.trimIndent(),
         )
 
-        myFixture.renameElementAtCaret("userId")
-
-        val text = myFixture.file.text
-        assertTrue(text.contains("extract $.id => userId"), text)
-        assertEquals(2, text.split("{{userId}}").size - 1)
-        assertTrue(!text.contains("{{petId}}"))
+        renameElementAtCaret("userId")
+        consume {
+            val text = myFixture.file.text
+            assertTrue(text.contains("extract $.id => userId"), text)
+            assertEquals(2, text.split("{{userId}}").size - 1)
+            assertTrue(!text.contains("{{petId}}"))
+        }
     }
 
+    @Test
     fun testRenameExtractVariableFromReferenceUpdatesDefinitionAndReferences() {
         myFixture.configureByText(
             "extract-reference.scenario",
@@ -40,14 +44,16 @@ class VariableRenameProcessorTest : BerryCrushTestCase() {
             """.trimIndent(),
         )
 
-        myFixture.renameElementAtCaret("userId")
-
-        val text = myFixture.file.text
-        assertTrue(text.contains("extract $.id => userId"), text)
-        assertEquals(2, text.split("{{userId}}").size - 1)
-        assertTrue(!text.contains("{{petId}}"))
+        renameElementAtCaret("userId")
+        consume {
+            val text = myFixture.file.text
+            assertTrue(text.contains("extract $.id => userId"), text)
+            assertEquals(2, text.split("{{userId}}").size - 1)
+            assertTrue(!text.contains("{{petId}}"))
+        }
     }
 
+    @Test
     fun testRenameParameterFromDefinitionUpdatesReferences() {
         myFixture.configureByText(
             "parameter-definition.scenario",
@@ -60,14 +66,16 @@ class VariableRenameProcessorTest : BerryCrushTestCase() {
             """.trimIndent(),
         )
 
-        myFixture.renameElementAtCaret("userId")
-
-        val text = myFixture.file.text
-        assertTrue(text.contains("userId: 123"), text)
-        assertEquals(2, text.split("{{param.userId}}").size - 1, text)
-        assertTrue(!text.contains("{{param.petId}}"))
+        renameElementAtCaret("userId")
+        consume {
+            val text = myFixture.file.text
+            assertTrue(text.contains("userId: 123"), text)
+            assertEquals(2, text.split("{{param.userId}}").size - 1, text)
+            assertTrue(!text.contains("{{param.petId}}"))
+        }
     }
 
+    @Test
     fun testRenameParameterFromReferenceUpdatesDefinitionAndReferences() {
         myFixture.configureByText(
             "parameter-reference.scenario",
@@ -80,14 +88,16 @@ class VariableRenameProcessorTest : BerryCrushTestCase() {
             """.trimIndent(),
         )
 
-        myFixture.renameElementAtCaret("userId")
-
-        val text = myFixture.file.text
-        assertTrue(text.contains("userId: 123"), text)
-        assertEquals(2, text.split("{{param.userId}}").size - 1, text)
-        assertTrue(!text.contains("{{param.petId}}"))
+        renameElementAtCaret("userId")
+        consume {
+            val text = myFixture.file.text
+            assertTrue(text.contains("userId: 123"), text)
+            assertEquals(2, text.split("{{param.userId}}").size - 1, text)
+            assertTrue(!text.contains("{{param.petId}}"))
+        }
     }
 
+    @Test
     fun testRenameExampleHeaderFromDefinitionUpdatesVariableReferences() {
         myFixture.configureByText(
             "outline-header-definition.scenario",
@@ -101,14 +111,16 @@ class VariableRenameProcessorTest : BerryCrushTestCase() {
             """.trimIndent(),
         )
 
-        myFixture.renameElementAtCaret("userId")
-
-        val text = myFixture.file.text
-        assertTrue(text.contains("| userId |"), text)
-        assertEquals(2, text.split("{{userId}}").size - 1)
-        assertTrue(!text.contains("{{petId}}"))
+        renameElementAtCaret("userId")
+        consume {
+            val text = myFixture.file.text
+            assertTrue(text.contains("| userId |"), text)
+            assertEquals(2, text.split("{{userId}}").size - 1)
+            assertTrue(!text.contains("{{petId}}"))
+        }
     }
 
+    @Test
     fun testRenameExampleHeaderFromReferenceUpdatesHeaderAndReferences() {
         myFixture.configureByText(
             "outline-header-reference.scenario",
@@ -122,14 +134,16 @@ class VariableRenameProcessorTest : BerryCrushTestCase() {
             """.trimIndent(),
         )
 
-        myFixture.renameElementAtCaret("userId")
-
-        val text = myFixture.file.text
-        assertTrue(text.contains("| userId |"), text)
-        assertEquals(2, text.split("{{userId}}").size - 1)
-        assertTrue(!text.contains("{{petId}}"))
+        renameElementAtCaret("userId")
+        consume {
+            val text = myFixture.file.text
+            assertTrue(text.contains("| userId |"), text)
+            assertEquals(2, text.split("{{userId}}").size - 1)
+            assertTrue(!text.contains("{{petId}}"))
+        }
     }
 
+    @Test
     fun testRenameExtractVariableFromInterpolatedQuotedStringReference() {
         myFixture.configureByText(
             "extract-string-reference.scenario",
@@ -143,14 +157,16 @@ class VariableRenameProcessorTest : BerryCrushTestCase() {
             """.trimIndent(),
         )
 
-        myFixture.renameElementAtCaret("userId")
-
-        val text = myFixture.file.text
-        assertTrue(text.contains("extract $.id => userId"), text)
-        assertTrue(text.contains("\"value {{userId}} and {{userId}}\""), text)
-        assertTrue(!text.contains("{{petId}}"), text)
+        renameElementAtCaret("userId")
+        consume {
+            val text = myFixture.file.text
+            assertTrue(text.contains("extract $.id => userId"), text)
+            assertTrue(text.contains("\"value {{userId}} and {{userId}}\""), text)
+            assertTrue(!text.contains("{{petId}}"), text)
+        }
     }
 
+    @Test
     fun testRenameParameterFromInterpolatedQuotedStringReference() {
         myFixture.configureByText(
             "param-string-reference.scenario",
@@ -164,11 +180,12 @@ class VariableRenameProcessorTest : BerryCrushTestCase() {
             """.trimIndent(),
         )
 
-        myFixture.renameElementAtCaret("userId")
-
-        val text = myFixture.file.text
-        assertTrue(text.contains("userId: 123"), text)
-        assertTrue(text.contains("\"value {{param.userId}} and {{param.userId}}\""), text)
-        assertTrue(!text.contains("{{param.petId}}"), text)
+        renameElementAtCaret("userId")
+        consume {
+            val text = myFixture.file.text
+            assertTrue(text.contains("userId: 123"), text)
+            assertTrue(text.contains("\"value {{param.userId}} and {{param.userId}}\""), text)
+            assertTrue(!text.contains("{{param.petId}}"), text)
+        }
     }
 }

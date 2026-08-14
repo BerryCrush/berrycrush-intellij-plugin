@@ -1,6 +1,7 @@
 package org.berrycrush.intellij.completion
 
 import org.berrycrush.intellij.BerryCrushTestCase
+import org.junit.jupiter.api.Test
 
 /**
  * Tests for BerryCrush code completion.
@@ -9,6 +10,7 @@ import org.berrycrush.intellij.BerryCrushTestCase
 class BerryCrushCompletionContributorTest : BerryCrushTestCase() {
     // ========== Block Keyword Completion Tests ==========
 
+    @Test
     fun testCompletionAtTopLevel() {
         // Create file with caret at top level
         myFixture.configureByText("test.scenario", "<caret>")
@@ -27,6 +29,7 @@ class BerryCrushCompletionContributorTest : BerryCrushTestCase() {
         )
     }
 
+    @Test
     fun testCompletionSuggestsFragmentKeyword() {
         myFixture.configureByText("test.fragment", "<caret>")
 
@@ -43,6 +46,7 @@ class BerryCrushCompletionContributorTest : BerryCrushTestCase() {
 
     // ========== Step Keyword Completion Tests ==========
 
+    @Test
     fun testCompletionSuggestsStepKeywords() {
         myFixture.configureByText(
             "test.scenario",
@@ -68,6 +72,7 @@ class BerryCrushCompletionContributorTest : BerryCrushTestCase() {
 
     // ========== Directive Completion Tests ==========
 
+    @Test
     fun testCompletionSuggestsDirectives() {
         myFixture.configureByText(
             "test.scenario",
@@ -97,6 +102,7 @@ class BerryCrushCompletionContributorTest : BerryCrushTestCase() {
 
     // ========== Assert Condition Completion Tests ==========
 
+    @Test
     fun testCompletionAfterAssert() {
         myFixture.configureByText(
             "test.scenario",
@@ -126,6 +132,7 @@ class BerryCrushCompletionContributorTest : BerryCrushTestCase() {
 
     // ========== Fragment File Completion Tests ==========
 
+    @Test
     fun testCompletionInFragmentFile() {
         myFixture.configureByText(
             "test.fragment",
@@ -151,6 +158,7 @@ class BerryCrushCompletionContributorTest : BerryCrushTestCase() {
 
     // ========== Empty File Completion Tests ==========
 
+    @Test
     fun testCompletionInEmptyScenarioFile() {
         myFixture.configureByText("empty.scenario", "<caret>")
 
@@ -166,6 +174,7 @@ class BerryCrushCompletionContributorTest : BerryCrushTestCase() {
         }
     }
 
+    @Test
     fun testCompletionInEmptyFragmentFile() {
         myFixture.configureByText("empty.fragment", "<caret>")
 
@@ -183,6 +192,7 @@ class BerryCrushCompletionContributorTest : BerryCrushTestCase() {
 
     // ========== Completion Contributor Registration Tests ==========
 
+    @Test
     fun testCompletionContributorIsRegistered() {
         // Create a file and verify completion works (contributor is registered)
         myFixture.configureByText("contributor.scenario", "sc<caret>")
@@ -196,6 +206,7 @@ class BerryCrushCompletionContributorTest : BerryCrushTestCase() {
 
     // ========== Scenario Parameters Completion Tests ==========
 
+    @Test
     fun testCompletionSuggestsParametersKeyword() {
         myFixture.configureByText(
             "params.scenario",
@@ -216,6 +227,7 @@ class BerryCrushCompletionContributorTest : BerryCrushTestCase() {
         )
     }
 
+    @Test
     fun testCompletionSuggestsKnownParameters() {
         // Note: Completion in parameters block depends on PSI structure detection.
         // This test verifies that completions are provided when the context is appropriate.
@@ -242,6 +254,7 @@ class BerryCrushCompletionContributorTest : BerryCrushTestCase() {
         // If completions is null, single completion was auto-inserted (valid behavior)
     }
 
+    @Test
     fun testCompletionSuggestsVariableInterpolationPrefixes() {
         // Note: Variable interpolation completion is triggered by ${ context
         myFixture.configureByText(

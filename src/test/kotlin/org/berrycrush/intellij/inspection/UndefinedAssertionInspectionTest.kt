@@ -1,5 +1,7 @@
 package org.berrycrush.intellij.inspection
 
+import org.junit.jupiter.api.Test
+
 /**
  * Tests for UndefinedAssertionInspection.
  *
@@ -8,24 +10,29 @@ package org.berrycrush.intellij.inspection
 class UndefinedAssertionInspectionTest : BerryCrushInspectionTestCase(UndefinedAssertionInspection()) {
     // ========== Inspection Properties Tests ==========
 
+    @Test
     fun testInspectionDisplayName() {
         assertEquals("Undefined assertion", inspection.displayName)
     }
 
+    @Test
     fun testInspectionShortName() {
         assertEquals("BerryCrushUndefinedAssertion", inspection.shortName)
     }
 
+    @Test
     fun testInspectionGroupDisplayName() {
         assertEquals("BerryCrush", inspection.groupDisplayName)
     }
 
+    @Test
     fun testInspectionEnabledByDefault() {
         assertTrue("Should be enabled by default", inspection.isEnabledByDefault)
     }
 
     // ========== Assertion Detection Tests ==========
 
+    @Test
     fun testProblemForUndefinedAssertion() {
         // Assert without matching @Assertion should be flagged
         val psiFile =
@@ -49,6 +56,7 @@ class UndefinedAssertionInspectionTest : BerryCrushInspectionTestCase(UndefinedA
         )
     }
 
+    @Test
     fun testEmptyAssertionTextNotFlagged() {
         // Empty assertion text should not be flagged
         val psiFile =
@@ -68,6 +76,7 @@ class UndefinedAssertionInspectionTest : BerryCrushInspectionTestCase(UndefinedA
         )
     }
 
+    @Test
     fun testCaseInsensitiveAssertKeyword() {
         // Assert keyword should be case insensitive
         val psiFile =
@@ -91,6 +100,7 @@ class UndefinedAssertionInspectionTest : BerryCrushInspectionTestCase(UndefinedA
         )
     }
 
+    @Test
     fun testAssertInProseNotFlagged() {
         // "assert" in prose (not at line start) should not be flagged
         val psiFile =
@@ -110,6 +120,7 @@ class UndefinedAssertionInspectionTest : BerryCrushInspectionTestCase(UndefinedA
         )
     }
 
+    @Test
     fun testMultipleAssertionsEachFlagged() {
         // Each undefined assertion should be flagged
         val psiFile =
@@ -132,6 +143,7 @@ class UndefinedAssertionInspectionTest : BerryCrushInspectionTestCase(UndefinedA
         )
     }
 
+    @Test
     fun testAssertionWithQuickFix() {
         // Undefined assertion should have a quick fix
         val psiFile =
@@ -155,6 +167,7 @@ class UndefinedAssertionInspectionTest : BerryCrushInspectionTestCase(UndefinedA
 
     // ========== Built-in Assertion Tests ==========
 
+    @Test
     fun testBuiltInStatusAssertionNotFlagged() {
         val psiFile =
             myFixture.addFileToProject(
@@ -174,6 +187,7 @@ class UndefinedAssertionInspectionTest : BerryCrushInspectionTestCase(UndefinedA
         )
     }
 
+    @Test
     fun testBuiltInStatusCodeAssertionNotFlagged() {
         val psiFile =
             myFixture.addFileToProject(
@@ -192,6 +206,7 @@ class UndefinedAssertionInspectionTest : BerryCrushInspectionTestCase(UndefinedA
         )
     }
 
+    @Test
     fun testBuiltInContainsAssertionNotFlagged() {
         val psiFile =
             myFixture.addFileToProject(
@@ -210,6 +225,7 @@ class UndefinedAssertionInspectionTest : BerryCrushInspectionTestCase(UndefinedA
         )
     }
 
+    @Test
     fun testBuiltInNotContainsAssertionNotFlagged() {
         val psiFile =
             myFixture.addFileToProject(
@@ -228,6 +244,7 @@ class UndefinedAssertionInspectionTest : BerryCrushInspectionTestCase(UndefinedA
         )
     }
 
+    @Test
     fun testBuiltInJsonPathAssertionNotFlagged() {
         val psiFile =
             myFixture.addFileToProject(
@@ -246,6 +263,7 @@ class UndefinedAssertionInspectionTest : BerryCrushInspectionTestCase(UndefinedA
         )
     }
 
+    @Test
     fun testBuiltInJsonPathShorthandAssertionNotFlagged() {
         val psiFile =
             myFixture.addFileToProject(
@@ -264,6 +282,7 @@ class UndefinedAssertionInspectionTest : BerryCrushInspectionTestCase(UndefinedA
         )
     }
 
+    @Test
     fun testBuiltInHeaderAssertionNotFlagged() {
         val psiFile =
             myFixture.addFileToProject(
@@ -282,6 +301,7 @@ class UndefinedAssertionInspectionTest : BerryCrushInspectionTestCase(UndefinedA
         )
     }
 
+    @Test
     fun testBuiltInHeaderValueAssertionNotFlagged() {
         val psiFile =
             myFixture.addFileToProject(
@@ -301,6 +321,7 @@ class UndefinedAssertionInspectionTest : BerryCrushInspectionTestCase(UndefinedA
         )
     }
 
+    @Test
     fun testBuiltInResponseTimeAssertionNotFlagged() {
         val psiFile =
             myFixture.addFileToProject(
@@ -319,6 +340,7 @@ class UndefinedAssertionInspectionTest : BerryCrushInspectionTestCase(UndefinedA
         )
     }
 
+    @Test
     fun testBuiltInSchemaAssertionNotFlagged() {
         val psiFile =
             myFixture.addFileToProject(
@@ -337,6 +359,7 @@ class UndefinedAssertionInspectionTest : BerryCrushInspectionTestCase(UndefinedA
         )
     }
 
+    @Test
     fun testBuiltInJsonPathNotExistsAssertionNotFlagged() {
         val psiFile =
             myFixture.addFileToProject(
@@ -355,6 +378,7 @@ class UndefinedAssertionInspectionTest : BerryCrushInspectionTestCase(UndefinedA
         )
     }
 
+    @Test
     fun testBuiltInInvalidJsonPathFlagged() {
         val psiFile =
             myFixture.addFileToProject(
@@ -374,6 +398,7 @@ class UndefinedAssertionInspectionTest : BerryCrushInspectionTestCase(UndefinedA
         assertEquals(1, problems.size)
     }
 
+    @Test
     fun testVariableComparisonShouldNotFlagged() {
         val psiFile =
             myFixture.addFileToProject(
@@ -392,6 +417,7 @@ class UndefinedAssertionInspectionTest : BerryCrushInspectionTestCase(UndefinedA
         )
     }
 
+    @Test
     fun testCustomAssertionStillFlagged() {
         // Custom assertions that don't match built-in patterns should still be flagged
         val psiFile =
@@ -417,6 +443,7 @@ class UndefinedAssertionInspectionTest : BerryCrushInspectionTestCase(UndefinedA
 
     // ========== Non-BerryCrush Files Tests ==========
 
+    @Test
     fun testIgnoresNonBerryCrushFiles() {
         val psiFile =
             myFixture.addFileToProject(

@@ -1,5 +1,7 @@
 package org.berrycrush.intellij.inspection
 
+import org.junit.jupiter.api.Test
+
 /**
  * Tests for UndefinedParameterReferenceInspection.
  *
@@ -8,24 +10,29 @@ package org.berrycrush.intellij.inspection
 class UndefinedParameterReferenceInspectionTest : BerryCrushInspectionTestCase(UndefinedParameterReferenceInspection()) {
     // ========== Inspection Properties Tests ==========
 
+    @Test
     fun testInspectionDisplayName() {
         assertEquals("Undefined parameter reference", inspection.displayName)
     }
 
+    @Test
     fun testInspectionShortName() {
         assertEquals("BerryCrushUndefinedParameterReference", inspection.shortName)
     }
 
+    @Test
     fun testInspectionGroupDisplayName() {
         assertEquals("BerryCrush", inspection.groupDisplayName)
     }
 
+    @Test
     fun testInspectionEnabledByDefault() {
         assertTrue("Should be enabled by default", inspection.isEnabledByDefault)
     }
 
     // ========== Parameter Reference Detection Tests ==========
 
+    @Test
     fun testNoProblemsForDefinedParameter() {
         val psiFile =
             myFixture.addFileToProject(
@@ -46,6 +53,7 @@ class UndefinedParameterReferenceInspectionTest : BerryCrushInspectionTestCase(U
         )
     }
 
+    @Test
     fun testReportsUndefinedParameterReference() {
         val psiFile =
             myFixture.addFileToProject(
@@ -64,6 +72,7 @@ class UndefinedParameterReferenceInspectionTest : BerryCrushInspectionTestCase(U
         )
     }
 
+    @Test
     fun testNoProblemsForEnvVariable() {
         val psiFile =
             myFixture.addFileToProject(
@@ -83,6 +92,7 @@ class UndefinedParameterReferenceInspectionTest : BerryCrushInspectionTestCase(U
         )
     }
 
+    @Test
     fun testNoProblemsForDefinedContextVariable() {
         val psiFile =
             myFixture.addFileToProject(

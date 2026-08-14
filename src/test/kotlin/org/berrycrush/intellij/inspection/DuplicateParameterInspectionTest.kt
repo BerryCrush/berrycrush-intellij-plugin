@@ -1,6 +1,9 @@
 package org.berrycrush.intellij.inspection
 
+import org.junit.jupiter.api.Test
+
 class DuplicateParameterInspectionTest : BerryCrushInspectionTestCase(DuplicateParameterInspection()) {
+    @Test
     fun testDuplicateParameterInspectionForInclude() {
         // Step followed by directive should not be flagged
         val psiFile =
@@ -19,6 +22,7 @@ class DuplicateParameterInspectionTest : BerryCrushInspectionTestCase(DuplicateP
         assertTrue("Duplicate parameter", problems.isNotEmpty())
     }
 
+    @Test
     fun testDuplicateParameterInspectionForCall() {
         // Step followed by directive should not be flagged
         val psiFile =

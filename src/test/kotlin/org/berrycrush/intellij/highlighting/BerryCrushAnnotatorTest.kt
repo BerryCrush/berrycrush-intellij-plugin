@@ -3,10 +3,11 @@ package org.berrycrush.intellij.highlighting
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.openapi.editor.colors.TextAttributesKey
 import org.berrycrush.intellij.BerryCrushTestCase
-import kotlin.test.assertEquals
+import org.junit.jupiter.api.Test
 import kotlin.test.assertTrue
 
 class BerryCrushAnnotatorTest : BerryCrushTestCase() {
+    @Test
     fun testAnnotatorHighlightsOnlyFeatureKeywordInFeatureTitleLine() {
         val content = "feature: this should not be coloured"
 
@@ -25,6 +26,7 @@ class BerryCrushAnnotatorTest : BerryCrushTestCase() {
         )
     }
 
+    @Test
     fun testAnnotatorHighlightsOnlyScenarioKeywordInScenarioTitleLine() {
         val content = "scenario: this should not be coloured"
 
@@ -43,6 +45,7 @@ class BerryCrushAnnotatorTest : BerryCrushTestCase() {
         )
     }
 
+    @Test
     fun testAnnotatorHighlightsOnlyStepKeywordInGivenStepLine() {
         val content = "given this should not be coloured either"
 
@@ -61,6 +64,7 @@ class BerryCrushAnnotatorTest : BerryCrushTestCase() {
         )
     }
 
+    @Test
     fun testAnnotatorHighlightsOnlyStepKeywordInAndStepLine() {
         val content = "and this should also not be coloured"
 
@@ -79,6 +83,7 @@ class BerryCrushAnnotatorTest : BerryCrushTestCase() {
         )
     }
 
+    @Test
     fun testAnnotatorHighlightsStepKeywordAndDirective() {
         val content =
             """
@@ -103,6 +108,7 @@ class BerryCrushAnnotatorTest : BerryCrushTestCase() {
         )
     }
 
+    @Test
     fun testAnnotatorHighlightsIncludeParameterKeyRange() {
         val content =
             """
@@ -122,6 +128,7 @@ class BerryCrushAnnotatorTest : BerryCrushTestCase() {
         )
     }
 
+    @Test
     fun testAnnotatorHighlightingIsStableAcrossReopenAndEdit() {
         val initial =
             """

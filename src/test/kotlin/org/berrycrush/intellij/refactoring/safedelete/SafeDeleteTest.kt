@@ -8,11 +8,13 @@ import org.berrycrush.intellij.index.IncludeUsageIndex
 import org.berrycrush.intellij.navigation.BerryCrushTargetElementEvaluator
 import org.berrycrush.intellij.psi.BerryCrushFragmentElement
 import org.berrycrush.intellij.refactoring.BerryCrushRefactoringSupportProvider
+import org.junit.jupiter.api.Test
 
 /**
  * Tests for BerryCrush safe delete functionality.
  */
 class SafeDeleteTest : BerryCrushTestCase() {
+    @Test
     fun testSafeDeleteProcessorHandlesFragmentFile() {
         val file =
             createFragmentFile(
@@ -23,13 +25,14 @@ class SafeDeleteTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
+        val psiFile = findFile(file)
         assertNotNull(psiFile)
 
         val processor = BerryCrushSafeDeleteProcessor()
         assertTrue(processor.handlesElement(psiFile!!))
     }
 
+    @Test
     fun testSafeDeleteProcessorDoesNotHandleScenarioFile() {
         val file =
             createScenarioFile(
@@ -40,7 +43,7 @@ class SafeDeleteTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
+        val psiFile = findFile(file)
         assertNotNull(psiFile)
 
         // Safe delete only handles fragment files, not scenario files
@@ -48,6 +51,7 @@ class SafeDeleteTest : BerryCrushTestCase() {
         assertFalse(processor.handlesElement(psiFile!!))
     }
 
+    @Test
     fun testSafeDeleteProcessorHandlesFragmentElement() {
         val file =
             createFragmentFile(
@@ -59,17 +63,18 @@ class SafeDeleteTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
+        val psiFile = findFile(file)
         assertNotNull(psiFile)
 
         // Find the fragment element
-        val fragmentElement = PsiTreeUtil.findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
+        val fragmentElement = findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
         assertNotNull("Should find fragment element in PSI tree", fragmentElement)
 
         val processor = BerryCrushSafeDeleteProcessor()
         assertTrue("Processor should handle fragment element", processor.handlesElement(fragmentElement!!))
     }
 
+    @Test
     fun testSafeDeleteFindsUsagesOfIncludedFragment() {
         // Create fragment
         val fragmentFile =
@@ -91,21 +96,24 @@ class SafeDeleteTest : BerryCrushTestCase() {
             """.trimIndent(),
         )
 
-        // Verify include usage is indexed
-        val usages = IncludeUsageIndex.findIncludeUsages(project, "common-steps")
-        assertEquals(1, usages.size)
+        consume {
+            // Verify include usage is indexed
+            val usages = IncludeUsageIndex.findIncludeUsages(project, "common-steps")
+            assertEquals(1, usages.size)
 
-        // Test safe delete processor finds the usage
-        val psiFile = psiManager.findFile(fragmentFile)
-        assertNotNull(psiFile)
+            // Test safe delete processor finds the usage
+            val psiFile = findFile(fragmentFile)
+            assertNotNull(psiFile)
 
-        val processor = BerryCrushSafeDeleteProcessor()
-        val usageInfos = mutableListOf<UsageInfo>()
-        processor.findUsages(psiFile!!, arrayOf(psiFile), usageInfos)
+            val processor = BerryCrushSafeDeleteProcessor()
+            val usageInfos = mutableListOf<UsageInfo>()
+            processor.findUsages(psiFile!!, arrayOf(psiFile), usageInfos)
 
-        assertEquals(1, usageInfos.size)
+            assertEquals(1, usageInfos.size)
+        }
     }
 
+    @Test
     fun testSafeDeleteFindsUsagesForFragmentElement() {
         // Create fragment file with multiple fragments
         val fragmentFile =
@@ -129,23 +137,26 @@ class SafeDeleteTest : BerryCrushTestCase() {
             """.trimIndent(),
         )
 
-        val psiFile = psiManager.findFile(fragmentFile)
+        val psiFile = findFile(fragmentFile)
         assertNotNull(psiFile)
 
-        // Find the first fragment element
-        val fragments = PsiTreeUtil.findChildrenOfType(psiFile, BerryCrushFragmentElement::class.java)
-        assertEquals("Should find two fragments", 2, fragments.size)
+        consume {
+            // Find the first fragment element
+            val fragments = PsiTreeUtil.findChildrenOfType(psiFile, BerryCrushFragmentElement::class.java)
+            assertEquals("Should find two fragments", 2, fragments.size)
 
-        val firstFragment = fragments.first { it.fragmentName == "first-fragment" }
-        assertNotNull(firstFragment)
+            val firstFragment = fragments.first { it.fragmentName == "first-fragment" }
+            assertNotNull(firstFragment)
 
-        val processor = BerryCrushSafeDeleteProcessor()
-        val usageInfos = mutableListOf<UsageInfo>()
-        processor.findUsages(firstFragment, arrayOf(firstFragment), usageInfos)
+            val processor = BerryCrushSafeDeleteProcessor()
+            val usageInfos = mutableListOf<UsageInfo>()
+            processor.findUsages(firstFragment, arrayOf(firstFragment), usageInfos)
 
-        assertEquals("Should find one usage for first-fragment", 1, usageInfos.size)
+            assertEquals("Should find one usage for first-fragment", 1, usageInfos.size)
+        }
     }
 
+    @Test
     fun testSafeDeleteFindsNoUsagesForUnusedFragment() {
         val file =
             createFragmentFile(
@@ -156,16 +167,19 @@ class SafeDeleteTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
+        val psiFile = findFile(file)
         assertNotNull(psiFile)
 
-        val processor = BerryCrushSafeDeleteProcessor()
-        val usageInfos = mutableListOf<UsageInfo>()
-        processor.findUsages(psiFile!!, arrayOf(psiFile), usageInfos)
+        consume {
+            val processor = BerryCrushSafeDeleteProcessor()
+            val usageInfos = mutableListOf<UsageInfo>()
+            processor.findUsages(psiFile!!, arrayOf(psiFile), usageInfos)
 
-        assertEquals(0, usageInfos.size)
+            assertEquals(0, usageInfos.size)
+        }
     }
 
+    @Test
     fun testSafeDeleteFindsMultipleUsages() {
         // Create fragment
         val fragmentFile =
@@ -194,16 +208,19 @@ class SafeDeleteTest : BerryCrushTestCase() {
             """.trimIndent(),
         )
 
-        val psiFile = psiManager.findFile(fragmentFile)
+        val psiFile = findFile(fragmentFile)
         assertNotNull(psiFile)
 
-        val processor = BerryCrushSafeDeleteProcessor()
-        val usageInfos = mutableListOf<UsageInfo>()
-        processor.findUsages(psiFile!!, arrayOf(psiFile), usageInfos)
+        consume {
+            val processor = BerryCrushSafeDeleteProcessor()
+            val usageInfos = mutableListOf<UsageInfo>()
+            processor.findUsages(psiFile!!, arrayOf(psiFile), usageInfos)
 
-        assertEquals(2, usageInfos.size)
+            assertEquals(2, usageInfos.size)
+        }
     }
 
+    @Test
     fun testRefactoringSupportProviderAllowsSafeDeleteForFragmentElement() {
         val file =
             createFragmentFile(
@@ -214,10 +231,10 @@ class SafeDeleteTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
+        val psiFile = findFile(file)
         assertNotNull(psiFile)
 
-        val fragmentElement = PsiTreeUtil.findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
+        val fragmentElement = findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
         assertNotNull(fragmentElement)
 
         val provider = BerryCrushRefactoringSupportProvider()
@@ -227,6 +244,7 @@ class SafeDeleteTest : BerryCrushTestCase() {
         )
     }
 
+    @Test
     fun testFragmentElementContainsNestedSteps() {
         val file =
             createFragmentFile(
@@ -239,10 +257,10 @@ class SafeDeleteTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
+        val psiFile = findFile(file)
         assertNotNull(psiFile)
 
-        val fragmentElement = PsiTreeUtil.findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
+        val fragmentElement = findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
         assertNotNull("Should find fragment element", fragmentElement)
 
         // Verify fragment contains nested step elements
@@ -250,6 +268,7 @@ class SafeDeleteTest : BerryCrushTestCase() {
         assertEquals("Fragment should contain 3 nested steps", 3, nestedSteps.size)
     }
 
+    @Test
     fun testTargetElementEvaluatorFindsFragmentElement() {
         val file =
             createFragmentFile(
@@ -260,21 +279,24 @@ class SafeDeleteTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
+        val psiFile = findFile(file)
         assertNotNull(psiFile)
 
-        // Find a leaf element inside the fragment (e.g., the first element)
-        val leafElement = psiFile!!.findElementAt(10) // Position within "fragment:"
-        assertNotNull("Should find element at offset", leafElement)
+        consume {
+            // Find a leaf element inside the fragment (e.g., the first element)
+            val leafElement = psiFile!!.findElementAt(10) // Position within "fragment:"
+            assertNotNull("Should find element at offset", leafElement)
 
-        val evaluator = BerryCrushTargetElementEvaluator()
-        val namedElement = evaluator.getNamedElement(leafElement!!)
+            val evaluator = BerryCrushTargetElementEvaluator()
+            val namedElement = evaluator.getNamedElement(leafElement!!)
 
-        assertNotNull("TargetElementEvaluator should find fragment element", namedElement)
-        assertTrue("Named element should be a BerryCrushFragmentElement", namedElement is BerryCrushFragmentElement)
-        assertEquals("test-fragment", (namedElement as BerryCrushFragmentElement).fragmentName)
+            assertNotNull("TargetElementEvaluator should find fragment element", namedElement)
+            assertTrue("Named element should be a BerryCrushFragmentElement", namedElement is BerryCrushFragmentElement)
+            assertEquals("test-fragment", (namedElement as BerryCrushFragmentElement).fragmentName)
+        }
     }
 
+    @Test
     fun testTargetElementEvaluatorAcceptsFragmentAsNamedParent() {
         val file =
             createFragmentFile(
@@ -285,19 +307,22 @@ class SafeDeleteTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
+        val psiFile = findFile(file)
         assertNotNull(psiFile)
 
-        val fragmentElement = PsiTreeUtil.findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
+        val fragmentElement = findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
         assertNotNull(fragmentElement)
 
-        val evaluator = BerryCrushTargetElementEvaluator()
-        assertTrue(
-            "TargetElementEvaluator should accept fragment as named parent",
-            evaluator.isAcceptableNamedParent(fragmentElement!!),
-        )
+        consume {
+            val evaluator = BerryCrushTargetElementEvaluator()
+            assertTrue(
+                "TargetElementEvaluator should accept fragment as named parent",
+                evaluator.isAcceptableNamedParent(fragmentElement!!),
+            )
+        }
     }
 
+    @Test
     fun testFindConflictsReturnsConflictsWhenUsagesExist() {
         // Create fragment
         val fragmentFile =
@@ -318,21 +343,24 @@ class SafeDeleteTest : BerryCrushTestCase() {
             """.trimIndent(),
         )
 
-        val psiFile = psiManager.findFile(fragmentFile)
+        val psiFile = findFile(fragmentFile)
         assertNotNull(psiFile)
 
-        val processor = BerryCrushSafeDeleteProcessor()
-        val conflicts = MultiMap<com.intellij.psi.PsiElement, String>()
-        processor.findConflicts(psiFile!!, arrayOf(psiFile), emptyArray(), conflicts)
+        consume {
+            val processor = BerryCrushSafeDeleteProcessor()
+            val conflicts = MultiMap<com.intellij.psi.PsiElement, String>()
+            processor.findConflicts(psiFile!!, arrayOf(psiFile), emptyArray(), conflicts)
 
-        assertFalse("Should find conflicts when fragment has usages", conflicts.isEmpty)
-        val messages = conflicts.values()
-        assertTrue(
-            "Conflict message should mention fragment name",
-            messages.any { it.contains("conflict-fragment") },
-        )
+            assertFalse("Should find conflicts when fragment has usages", conflicts.isEmpty)
+            val messages = conflicts.values()
+            assertTrue(
+                "Conflict message should mention fragment name",
+                messages.any { it.contains("conflict-fragment") },
+            )
+        }
     }
 
+    @Test
     fun testFindConflictsReturnsNullWhenNoUsages() {
         val file =
             createFragmentFile(
@@ -343,13 +371,15 @@ class SafeDeleteTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
+        val psiFile = findFile(file)
         assertNotNull(psiFile)
 
-        val processor = BerryCrushSafeDeleteProcessor()
-        val conflicts = MultiMap<com.intellij.psi.PsiElement, String>()
-        processor.findConflicts(psiFile!!, arrayOf(psiFile), emptyArray(), conflicts)
+        consume {
+            val processor = BerryCrushSafeDeleteProcessor()
+            val conflicts = MultiMap<com.intellij.psi.PsiElement, String>()
+            processor.findConflicts(psiFile!!, arrayOf(psiFile), emptyArray(), conflicts)
 
-        assertTrue("Should return empty conflicts when no usages exist", conflicts.isEmpty)
+            assertTrue("Should return empty conflicts when no usages exist", conflicts.isEmpty)
+        }
     }
 }

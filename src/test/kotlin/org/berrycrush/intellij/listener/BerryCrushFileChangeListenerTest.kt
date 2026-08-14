@@ -3,6 +3,8 @@ package org.berrycrush.intellij.listener
 import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import org.berrycrush.intellij.BerryCrushTestCase
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import java.lang.reflect.Method
 
 /**
@@ -15,8 +17,8 @@ class BerryCrushFileChangeListenerTest : BerryCrushTestCase() {
     private lateinit var listener: BerryCrushFileChangeListener
     private lateinit var isRelevantFileChangeMethod: Method
 
-    override fun setUp() {
-        super.setUp()
+    @BeforeEach
+    fun setup() {
         listener = BerryCrushFileChangeListener()
 
         // Access private methods via reflection for testing
@@ -28,6 +30,7 @@ class BerryCrushFileChangeListenerTest : BerryCrushTestCase() {
                 ).apply { isAccessible = true }
     }
 
+    @Test
     fun testFragmentFilesAreRelevant() {
         val file = createFragmentFile("test", "fragment: test-fragment")
         val event = createContentChangeEvent(file)
@@ -38,6 +41,7 @@ class BerryCrushFileChangeListenerTest : BerryCrushTestCase() {
         )
     }
 
+    @Test
     fun testScenarioFilesAreRelevant() {
         val file = createScenarioFile("test", "scenario: test")
         val event = createContentChangeEvent(file)
@@ -48,6 +52,7 @@ class BerryCrushFileChangeListenerTest : BerryCrushTestCase() {
         )
     }
 
+    @Test
     fun testJavaFilesAreRelevant() {
         val file = myFixture.addFileToProject("Steps.java", "class Steps {}")
         val event = createContentChangeEvent(file.virtualFile)
@@ -58,6 +63,7 @@ class BerryCrushFileChangeListenerTest : BerryCrushTestCase() {
         )
     }
 
+    @Test
     fun testKotlinFilesAreRelevant() {
         val file = myFixture.addFileToProject("Steps.kt", "class Steps")
         val event = createContentChangeEvent(file.virtualFile)
@@ -68,6 +74,7 @@ class BerryCrushFileChangeListenerTest : BerryCrushTestCase() {
         )
     }
 
+    @Test
     fun testOpenApiYamlFilesAreRelevant() {
         // Create a file with OpenAPI-like filename (triggers filename heuristic)
         val file =
@@ -89,6 +96,7 @@ class BerryCrushFileChangeListenerTest : BerryCrushTestCase() {
         )
     }
 
+    @Test
     fun testSwaggerJsonFilesAreRelevant() {
         // Create a file with Swagger-like filename (triggers filename heuristic)
         val file =
@@ -110,6 +118,7 @@ class BerryCrushFileChangeListenerTest : BerryCrushTestCase() {
         )
     }
 
+    @Test
     fun testRegularYamlFilesAreNotRelevant() {
         val file = myFixture.addFileToProject("config.yaml", "key: value")
         val event = createContentChangeEvent(file.virtualFile)
@@ -120,6 +129,7 @@ class BerryCrushFileChangeListenerTest : BerryCrushTestCase() {
         )
     }
 
+    @Test
     fun testTextFilesAreNotRelevant() {
         val file = myFixture.addFileToProject("readme.txt", "text content")
         val event = createContentChangeEvent(file.virtualFile)
@@ -130,6 +140,7 @@ class BerryCrushFileChangeListenerTest : BerryCrushTestCase() {
         )
     }
 
+    @Test
     fun testPrepareChangeReturnsNullForNoRelevantEvents() {
         val file = myFixture.addFileToProject("readme.txt", "text")
         val event = createContentChangeEvent(file.virtualFile)
@@ -139,6 +150,7 @@ class BerryCrushFileChangeListenerTest : BerryCrushTestCase() {
         assertNull("Should return null for non-relevant events", result)
     }
 
+    @Test
     fun testPrepareChangeReturnsApplierForRelevantEvents() {
         val file = createFragmentFile("test", "fragment: test")
         val event = createContentChangeEvent(file)
@@ -157,7 +169,6 @@ class BerryCrushFileChangeListenerTest : BerryCrushTestCase() {
             file, // file
             0L, // oldModificationStamp
             1L, // newModificationStamp
-            false, // isFromRefresh
         )
     }
 

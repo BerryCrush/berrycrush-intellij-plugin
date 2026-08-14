@@ -1,6 +1,8 @@
 package org.berrycrush.intellij.index
 
+import com.intellij.openapi.project.Project
 import org.berrycrush.intellij.BerryCrushTestCase
+import org.junit.jupiter.api.Test
 
 /**
  * Integration tests for FragmentIndex.
@@ -8,6 +10,7 @@ import org.berrycrush.intellij.BerryCrushTestCase
  * Tests fragment definition indexing and lookup functionality.
  */
 class FragmentIndexTest : BerryCrushTestCase() {
+    @Test
     fun testIndexesFragmentDefinition() {
         createFragmentFile(
             "login",
@@ -20,10 +23,11 @@ class FragmentIndexTest : BerryCrushTestCase() {
             """.trimIndent(),
         )
 
-        val fragmentNames = FragmentIndex.getAllFragmentNames(project)
+        val fragmentNames = getAllFragmentNames(project)
         assertTrue(fragmentNames.contains("login-steps"))
     }
 
+    @Test
     fun testIndexesMultipleFragmentsInSameFile() {
         createFragmentFile(
             "common",
@@ -36,11 +40,12 @@ class FragmentIndexTest : BerryCrushTestCase() {
             """.trimIndent(),
         )
 
-        val fragmentNames = FragmentIndex.getAllFragmentNames(project)
+        val fragmentNames = getAllFragmentNames(project)
         assertTrue(fragmentNames.contains("setup-steps"))
         assertTrue(fragmentNames.contains("cleanup-steps"))
     }
 
+    @Test
     fun testFindsFragmentFilesByName() {
         createFragmentFile(
             "auth",
@@ -50,11 +55,12 @@ class FragmentIndexTest : BerryCrushTestCase() {
             """.trimIndent(),
         )
 
-        val files = FragmentIndex.getFragmentFiles(project, "auth-flow")
+        val files = getFragmentFiles(project, "auth-flow")
         assertEquals(1, files.size)
         assertTrue(files.first().name.contains("auth"))
     }
 
+    @Test
     fun testHandlesCaseInsensitiveFragmentKeyword() {
         createFragmentFile(
             "mixed",
@@ -64,19 +70,21 @@ class FragmentIndexTest : BerryCrushTestCase() {
             """.trimIndent(),
         )
 
-        val fragmentNames = FragmentIndex.getAllFragmentNames(project)
+        val fragmentNames = getAllFragmentNames(project)
         assertTrue(fragmentNames.contains("lowercase-fragment"))
     }
 
+    @Test
     fun testEmptyFileReturnsNoFragments() {
         createFragmentFile("empty", "")
 
         // Should not error, just return empty
-        val fragmentNames = FragmentIndex.getAllFragmentNames(project)
+        val fragmentNames = getAllFragmentNames(project)
         // Empty file has no fragments with names
         assertTrue(fragmentNames.none { it.isEmpty() })
     }
 
+    @Test
     fun testFileWithoutFragmentDirectiveReturnsNoFragments() {
         createFragmentFile(
             "no-directive",
@@ -89,7 +97,15 @@ class FragmentIndexTest : BerryCrushTestCase() {
 
         // Should have no fragments from this file
         // (checking that fragment: pattern is required)
-        val files = FragmentIndex.getFragmentFiles(project, "no-directive")
+        val files = getFragmentFiles(project, "no-directive")
         assertTrue(files.isEmpty())
+    }
+
+    private fun getAllFragmentNames(project: Project) = consume {
+        FragmentIndex.getAllFragmentNames(project)
+    }
+
+    private fun getFragmentFiles(project: Project, fragmentName: String) = consume {
+        FragmentIndex.getFragmentFiles(project, fragmentName)
     }
 }

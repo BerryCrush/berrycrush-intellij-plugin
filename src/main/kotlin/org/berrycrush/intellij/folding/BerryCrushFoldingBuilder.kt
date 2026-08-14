@@ -34,24 +34,24 @@ class BerryCrushFoldingBuilder : FoldingBuilder {
         val elementType = node.elementType
 
         // Check if this is a foldable element
-        when {
-            elementType in FOLDABLE_BLOCKS -> {
+        when (elementType) {
+            in FOLDABLE_BLOCKS -> {
                 val foldRegion = findBlockFoldRegion(node, document)
                 if (foldRegion != null && foldRegion.length > MIN_FOLD_LENGTH) {
                     descriptors.add(FoldingDescriptor(node, foldRegion))
                 }
             }
-            elementType in FOLDABLE_STEPS -> {
+            in FOLDABLE_STEPS -> {
                 val foldRegion = findStepFoldRegion(node, document)
                 if (foldRegion != null && foldRegion.length > MIN_FOLD_LENGTH) {
                     descriptors.add(FoldingDescriptor(node, foldRegion))
                 }
             }
-            elementType == BerryCrushTokenTypes.STRING -> {
+            BerryCrushTokenTypes.STRING -> {
                 // Check for doc strings (multi-line strings)
                 val text = node.text
                 if (text.startsWith("\"\"\"") || text.contains('\n')) {
-                    val foldRegion = findDocStringFoldRegion(node, document)
+                    val foldRegion = findDocStringFoldRegion(node)
                     if (foldRegion != null && foldRegion.length > MIN_FOLD_LENGTH) {
                         descriptors.add(FoldingDescriptor(node, foldRegion))
                     }
@@ -119,8 +119,7 @@ class BerryCrushFoldingBuilder : FoldingBuilder {
     /**
      * Find fold region for doc strings (triple-quoted content).
      */
-    @Suppress("UnusedParameter") // document may be needed for future enhancements
-    private fun findDocStringFoldRegion(node: ASTNode, document: Document): TextRange? {
+    private fun findDocStringFoldRegion(node: ASTNode): TextRange? {
         val text = node.text
         if (!text.contains('\n')) return null
 

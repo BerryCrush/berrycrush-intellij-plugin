@@ -1,5 +1,8 @@
 package org.berrycrush.intellij.inspection
 
+import com.intellij.openapi.vfs.findPsiFile
+import org.junit.jupiter.api.Test
+
 /**
  * Tests for UndefinedStepInspection.
  *
@@ -8,24 +11,29 @@ package org.berrycrush.intellij.inspection
 class UndefinedStepInspectionTest : BerryCrushInspectionTestCase(UndefinedStepInspection()) {
     // ========== Inspection Properties Tests ==========
 
+    @Test
     fun testInspectionDisplayName() {
         assertEquals("Undefined custom step", inspection.displayName)
     }
 
+    @Test
     fun testInspectionShortName() {
         assertEquals("BerryCrushUndefinedStep", inspection.shortName)
     }
 
+    @Test
     fun testInspectionGroupDisplayName() {
         assertEquals("BerryCrush", inspection.groupDisplayName)
     }
 
+    @Test
     fun testInspectionEnabledByDefault() {
         assertTrue("Should be enabled by default", inspection.isEnabledByDefault)
     }
 
     // ========== Step Detection Tests ==========
 
+    @Test
     fun testNoProblemsForStepWithDirective() {
         // Step followed by directive should not be flagged
         val psiFile =
@@ -45,6 +53,7 @@ class UndefinedStepInspectionTest : BerryCrushInspectionTestCase(UndefinedStepIn
         )
     }
 
+    @Test
     fun testNoProblemsForEmptyStepText() {
         // Empty step text should not be flagged
         val psiFile =
@@ -64,6 +73,7 @@ class UndefinedStepInspectionTest : BerryCrushInspectionTestCase(UndefinedStepIn
         )
     }
 
+    @Test
     fun testProblemForUndefinedStepWithoutDirective() {
         // Step without directive and no matching @Step should be flagged
         val psiFile =
@@ -90,6 +100,7 @@ class UndefinedStepInspectionTest : BerryCrushInspectionTestCase(UndefinedStepIn
         )
     }
 
+    @Test
     fun testAllStepKeywordsRecognized() {
         // All step keywords should be recognized
         val psiFile =
@@ -124,6 +135,7 @@ class UndefinedStepInspectionTest : BerryCrushInspectionTestCase(UndefinedStepIn
 
     // ========== Comment Skipping Tests ==========
 
+    @Test
     fun testNoProblemsForStepWithCommentThenDirective() {
         // Step followed by comment then directive should not be flagged
         val psiFile =
@@ -144,6 +156,7 @@ class UndefinedStepInspectionTest : BerryCrushInspectionTestCase(UndefinedStepIn
         )
     }
 
+    @Test
     fun testNoProblemsForStepWithMultipleCommentsThenDirective() {
         // Step followed by multiple comments then directive should not be flagged
         val psiFile =
@@ -165,6 +178,7 @@ class UndefinedStepInspectionTest : BerryCrushInspectionTestCase(UndefinedStepIn
         )
     }
 
+    @Test
     fun testNoProblemsForStepWithBlankLinesThenDirective() {
         // Step followed by blank lines then directive should not be flagged
         val psiFile =
@@ -185,6 +199,7 @@ class UndefinedStepInspectionTest : BerryCrushInspectionTestCase(UndefinedStepIn
         )
     }
 
+    @Test
     fun testProblemForStepWithOnlyComments() {
         // Step followed by only comments (no directive) should be flagged
         val psiFile =
@@ -212,6 +227,7 @@ class UndefinedStepInspectionTest : BerryCrushInspectionTestCase(UndefinedStepIn
     }
 
     // custom step test
+    @Test
     fun testExistingCustomStep() {
         myFixture.addFileToProject(
             "Step.kt",
@@ -236,23 +252,28 @@ class UndefinedStepInspectionTest : BerryCrushInspectionTestCase(UndefinedStepIn
                 }
             """,
         )
-        val psiFile =
-            myFixture.addFileToProject(
-                "test.scenario",
-                """
+        val virtualFile = createScenarioFile(
+            "test",
+            """
                 scenario: test
                   then I should have 1 pets with status pending
-                """.trimIndent(),
-            )
-        val problems = runInspection(psiFile)
-        assertTrue(
-            "The custom step must be found",
-            problems.isEmpty(),
+            """.trimIndent(),
         )
+        consume {
+            val psiFile = virtualFile.findPsiFile(project)
+            requireNotNull(psiFile) { "PsiFile should not be null" }
+
+            val problems = runInspection(psiFile)
+            assertTrue(
+                "The custom step must be found",
+                problems.isEmpty(),
+            )
+        }
     }
 
     // ========== Non-BerryCrush Files Tests ==========
 
+    @Test
     fun testIgnoresNonBerryCrushFiles() {
         // Inspection should skip non-BerryCrush files
         val psiFile =

@@ -1,6 +1,9 @@
 package org.berrycrush.intellij.inspection
 
+import org.junit.jupiter.api.Test
+
 class SyntaxCheckInspectionTest : BerryCrushInspectionTestCase(SyntaxCheckInspection()) {
+    @Test
     fun testInvalidFeatureWithUnknownKeyword() {
         // Step followed by directive should not be flagged
         val psiFile =
@@ -20,6 +23,7 @@ class SyntaxCheckInspectionTest : BerryCrushInspectionTestCase(SyntaxCheckInspec
         )
     }
 
+    @Test
     fun testCommentShouldNotCauseError() {
         // Step followed by directive should not be flagged
         val psiFile =
@@ -44,6 +48,7 @@ class SyntaxCheckInspectionTest : BerryCrushInspectionTestCase(SyntaxCheckInspec
         )
     }
 
+    @Test
     fun testParameterShouldNotCauseError() {
         // Step followed by directive should not be flagged
         val psiFile =
@@ -69,6 +74,7 @@ class SyntaxCheckInspectionTest : BerryCrushInspectionTestCase(SyntaxCheckInspec
         )
     }
 
+    @Test
     fun testExamplesShouldNotCauseError() {
         // Step followed by directive should not be flagged
         val psiFile =
@@ -89,6 +95,7 @@ class SyntaxCheckInspectionTest : BerryCrushInspectionTestCase(SyntaxCheckInspec
         )
     }
 
+    @Test
     fun testBackgroundShouldNotCauseError() {
         // Step followed by directive should not be flagged
         val psiFile =
@@ -115,6 +122,7 @@ class SyntaxCheckInspectionTest : BerryCrushInspectionTestCase(SyntaxCheckInspec
         )
     }
 
+    @Test
     fun testValidFragmentShouldNotCauseError() {
         val psiFile =
             myFixture.addFileToProject(
@@ -137,6 +145,7 @@ class SyntaxCheckInspectionTest : BerryCrushInspectionTestCase(SyntaxCheckInspec
         )
     }
 
+    @Test
     fun testScenarioBlockInFragmentFileShouldCauseError() {
         val psiFile =
             myFixture.addFileToProject(
@@ -154,6 +163,7 @@ class SyntaxCheckInspectionTest : BerryCrushInspectionTestCase(SyntaxCheckInspec
         )
     }
 
+    @Test
     fun testStepConditionalIfElseShouldNotCauseError() {
         val psiFile =
             myFixture.addFileToProject(
@@ -175,6 +185,7 @@ class SyntaxCheckInspectionTest : BerryCrushInspectionTestCase(SyntaxCheckInspec
         )
     }
 
+    @Test
     fun testCommentsInDirectivePayloadAndExamplesShouldNotCauseError() {
         val psiFile =
             myFixture.addFileToProject(
@@ -203,6 +214,7 @@ class SyntaxCheckInspectionTest : BerryCrushInspectionTestCase(SyntaxCheckInspec
         )
     }
 
+    @Test
     fun testCommentBetweenCallAndBodyShouldNotCauseError() {
         val psiFile =
             myFixture.addFileToProject(
@@ -225,6 +237,7 @@ class SyntaxCheckInspectionTest : BerryCrushInspectionTestCase(SyntaxCheckInspec
         )
     }
 
+    @Test
     fun testCommentsInFragmentShouldNotCauseError() {
         val psiFile =
             myFixture.addFileToProject(
@@ -247,6 +260,7 @@ class SyntaxCheckInspectionTest : BerryCrushInspectionTestCase(SyntaxCheckInspec
         )
     }
 
+    @Test
     fun testNonIdentifierFragmentNameShouldCauseError() {
         val psiFile =
             myFixture.addFileToProject(
@@ -266,6 +280,7 @@ class SyntaxCheckInspectionTest : BerryCrushInspectionTestCase(SyntaxCheckInspec
         )
     }
 
+    @Test
     fun testCallDirectiveInStep() {
         // Step followed by directive should not be flagged
         val psiFile =

@@ -9,6 +9,10 @@
     <Match>
         <Source name="~.*Test\.kt"/>
     </Match>
+
+    <Match>
+        <Source name="~.*BerryCrushTestCase\.kt"/>
+    </Match>
     
     <!-- Exclude test directories -->
     <Match>

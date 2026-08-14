@@ -1,6 +1,5 @@
 package org.berrycrush.intellij.index
 
-import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
@@ -60,12 +59,7 @@ class FragmentIndex : ScalarIndexExtension<String>() {
          * Gets all fragment names in the project.
          * Returns empty collection if indexing is in progress (dumb mode).
          */
-        fun getAllFragmentNames(project: Project): Collection<String> {
-            if (DumbService.isDumb(project)) {
-                return emptyList()
-            }
-            return FileBasedIndex.getInstance().getAllKeys(KEY, project)
-        }
+        fun getAllFragmentNames(project: Project): Collection<String> = FileBasedIndex.getInstance().getAllKeys(KEY, project)
 
         /**
          * Gets all files containing a fragment with the given name.
@@ -74,16 +68,11 @@ class FragmentIndex : ScalarIndexExtension<String>() {
         fun getFragmentFiles(
             project: Project,
             fragmentName: String,
-        ): Collection<VirtualFile> {
-            if (DumbService.isDumb(project)) {
-                return emptyList()
-            }
-            return FileBasedIndex.getInstance().getContainingFiles(
-                KEY,
-                fragmentName,
-                GlobalSearchScope.projectScope(project),
-            )
-        }
+        ): Collection<VirtualFile> = FileBasedIndex.getInstance().getContainingFiles(
+            KEY,
+            fragmentName,
+            GlobalSearchScope.projectScope(project),
+        )
 
         /**
          * Finds the PSI element for a fragment definition.

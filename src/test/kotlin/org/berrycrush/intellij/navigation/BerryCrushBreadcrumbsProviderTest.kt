@@ -1,11 +1,11 @@
 package org.berrycrush.intellij.navigation
 
-import com.intellij.psi.util.PsiTreeUtil
 import org.berrycrush.intellij.BerryCrushTestCase
 import org.berrycrush.intellij.language.BerryCrushLanguage
 import org.berrycrush.intellij.psi.BerryCrushFragmentElement
 import org.berrycrush.intellij.psi.BerryCrushScenarioElement
 import org.berrycrush.intellij.psi.BerryCrushStepElement
+import org.junit.jupiter.api.Test
 
 /**
  * Tests for BerryCrush breadcrumbs provider.
@@ -16,6 +16,7 @@ class BerryCrushBreadcrumbsProviderTest : BerryCrushTestCase() {
 
     // ========== Language Tests ==========
 
+    @Test
     fun testSupportsBerryCrushLanguage() {
         val languages = provider.languages
         assertTrue(
@@ -26,6 +27,7 @@ class BerryCrushBreadcrumbsProviderTest : BerryCrushTestCase() {
 
     // ========== acceptElement Tests ==========
 
+    @Test
     fun testAcceptScenarioElement() {
         val file =
             createScenarioFile(
@@ -36,8 +38,8 @@ class BerryCrushBreadcrumbsProviderTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val scenario = PsiTreeUtil.findChildOfType(psiFile, BerryCrushScenarioElement::class.java)
+        val psiFile = findFile(file)
+        val scenario = findChildOfType(psiFile, BerryCrushScenarioElement::class.java)
 
         assertNotNull(scenario)
         assertTrue(
@@ -46,6 +48,7 @@ class BerryCrushBreadcrumbsProviderTest : BerryCrushTestCase() {
         )
     }
 
+    @Test
     fun testAcceptFragmentElement() {
         val file =
             createFragmentFile(
@@ -56,8 +59,8 @@ class BerryCrushBreadcrumbsProviderTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val fragment = PsiTreeUtil.findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
+        val psiFile = findFile(file)
+        val fragment = findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
 
         assertNotNull(fragment)
         assertTrue(
@@ -66,6 +69,7 @@ class BerryCrushBreadcrumbsProviderTest : BerryCrushTestCase() {
         )
     }
 
+    @Test
     fun testAcceptStepElement() {
         val file =
             createFragmentFile(
@@ -76,8 +80,8 @@ class BerryCrushBreadcrumbsProviderTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val step = PsiTreeUtil.findChildOfType(psiFile, BerryCrushStepElement::class.java)
+        val psiFile = findFile(file)
+        val step = findChildOfType(psiFile, BerryCrushStepElement::class.java)
 
         assertNotNull(step)
         assertTrue(
@@ -88,6 +92,7 @@ class BerryCrushBreadcrumbsProviderTest : BerryCrushTestCase() {
 
     // ========== getElementInfo Tests ==========
 
+    @Test
     fun testElementInfoForScenario() {
         val file =
             createScenarioFile(
@@ -98,17 +103,18 @@ class BerryCrushBreadcrumbsProviderTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val scenario = PsiTreeUtil.findChildOfType(psiFile, BerryCrushScenarioElement::class.java)
+        val psiFile = findFile(file)
+        val scenario = findChildOfType(psiFile, BerryCrushScenarioElement::class.java)
 
         assertNotNull(scenario)
-        val info = provider.getElementInfo(scenario!!)
+        val info = consume { provider.getElementInfo(scenario!!) }
         assertTrue(
             "Info should contain 'scenario: My Test Scenario', got: $info",
             info.contains("scenario") && info.contains("My Test Scenario"),
         )
     }
 
+    @Test
     fun testElementInfoForFragment() {
         val file =
             createFragmentFile(
@@ -119,8 +125,8 @@ class BerryCrushBreadcrumbsProviderTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val fragment = PsiTreeUtil.findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
+        val psiFile = findFile(file)
+        val fragment = findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
 
         assertNotNull(fragment)
         val info = provider.getElementInfo(fragment!!)
@@ -130,6 +136,7 @@ class BerryCrushBreadcrumbsProviderTest : BerryCrushTestCase() {
         )
     }
 
+    @Test
     fun testElementInfoForStep() {
         val file =
             createFragmentFile(
@@ -140,11 +147,11 @@ class BerryCrushBreadcrumbsProviderTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val step = PsiTreeUtil.findChildOfType(psiFile, BerryCrushStepElement::class.java)
+        val psiFile = findFile(file)
+        val step = findChildOfType(psiFile, BerryCrushStepElement::class.java)
 
         assertNotNull(step)
-        val info = provider.getElementInfo(step!!)
+        val info = consume { provider.getElementInfo(step!!) }
         assertTrue(
             "Info should contain step info, got: $info",
             info.contains("given") || info.contains("precondition"),
@@ -153,6 +160,7 @@ class BerryCrushBreadcrumbsProviderTest : BerryCrushTestCase() {
 
     // ========== getParent Tests ==========
 
+    @Test
     fun testStepParentIsFragment() {
         val file =
             createFragmentFile(
@@ -163,11 +171,11 @@ class BerryCrushBreadcrumbsProviderTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val step = PsiTreeUtil.findChildOfType(psiFile, BerryCrushStepElement::class.java)
+        val psiFile = findFile(file)
+        val step = findChildOfType(psiFile, BerryCrushStepElement::class.java)
 
         assertNotNull(step)
-        val parent = provider.getParent(step!!)
+        val parent = consume { provider.getParent(step!!) }
 
         // Parent should be the fragment
         assertTrue(
@@ -176,6 +184,7 @@ class BerryCrushBreadcrumbsProviderTest : BerryCrushTestCase() {
         )
     }
 
+    @Test
     fun testFragmentParentIsNull() {
         val file =
             createFragmentFile(
@@ -186,11 +195,11 @@ class BerryCrushBreadcrumbsProviderTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val fragment = PsiTreeUtil.findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
+        val psiFile = findFile(file)
+        val fragment = findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
 
         assertNotNull(fragment)
-        val parent = provider.getParent(fragment!!)
+        val parent = consume { provider.getParent(fragment!!) }
 
         // Fragment is top-level, so parent should be null
         assertNull("Fragment should have no parent in breadcrumbs", parent)
@@ -198,6 +207,7 @@ class BerryCrushBreadcrumbsProviderTest : BerryCrushTestCase() {
 
     // ========== getElementTooltip Tests ==========
 
+    @Test
     fun testTooltipReturnsElementText() {
         val file =
             createFragmentFile(
@@ -208,11 +218,11 @@ class BerryCrushBreadcrumbsProviderTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val fragment = PsiTreeUtil.findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
+        val psiFile = findFile(file)
+        val fragment = findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
 
         assertNotNull(fragment)
-        val tooltip = provider.getElementTooltip(fragment!!)
+        val tooltip = consume { provider.getElementTooltip(fragment!!) }
 
         assertNotNull("Tooltip should not be null", tooltip)
         assertTrue(
@@ -221,6 +231,7 @@ class BerryCrushBreadcrumbsProviderTest : BerryCrushTestCase() {
         )
     }
 
+    @Test
     fun testLongTooltipIsTruncated() {
         val longName = "a".repeat(100)
         val file =
@@ -232,11 +243,11 @@ class BerryCrushBreadcrumbsProviderTest : BerryCrushTestCase() {
                 """.trimIndent(),
             )
 
-        val psiFile = psiManager.findFile(file)
-        val fragment = PsiTreeUtil.findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
+        val psiFile = findFile(file)
+        val fragment = findChildOfType(psiFile, BerryCrushFragmentElement::class.java)
 
         assertNotNull(fragment)
-        val tooltip = provider.getElementTooltip(fragment!!)
+        val tooltip = consume { provider.getElementTooltip(fragment!!) }
 
         assertNotNull("Tooltip should not be null", tooltip)
         // Long tooltips should be truncated with "..."

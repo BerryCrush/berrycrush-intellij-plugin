@@ -1,10 +1,12 @@
 package org.berrycrush.intellij.refactoring
 
 import org.berrycrush.intellij.BerryCrushTestCase
+import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class FragmentRenameProcessorTest : BerryCrushTestCase() {
+    @Test
     fun testRenameFragmentFromDefinitionUpdatesAllReferences() {
         val definitionFile = createFragmentFile(
             "login",
@@ -32,20 +34,21 @@ class FragmentRenameProcessorTest : BerryCrushTestCase() {
         )
 
         myFixture.configureFromExistingVirtualFile(definitionFile)
-        myFixture.renameElementAtCaret("auth-steps")
+        renameElementAtCaret("auth-steps")
 
-        val definitionText = psiManager.findFile(definitionFile)?.text
+        val definitionText = findFile(definitionFile)?.text
         assertTrue(definitionText?.contains("fragment: auth-steps") == true)
         assertTrue(definitionText?.contains("fragment: login-steps") == false)
 
-        val scenarioText = psiManager.findFile(scenarioFile)?.text
-        val fragmentText = psiManager.findFile(fragmentFile)?.text
+        val scenarioText = findFile(scenarioFile)?.text
+        val fragmentText = findFile(fragmentFile)?.text
 
         assertEquals(2, scenarioText?.split("include auth-steps")?.size?.minus(1))
         assertTrue(fragmentText?.contains("include auth-steps") == true)
         assertTrue(fragmentText?.contains("include login-steps") == false)
     }
 
+    @Test
     fun testRenameFragmentFromReferenceUpdatesDefinitionAndReferences() {
         val definitionFile = createFragmentFile(
             "shared",
@@ -72,15 +75,16 @@ class FragmentRenameProcessorTest : BerryCrushTestCase() {
             """.trimIndent(),
         )
 
-        myFixture.renameElementAtCaret("auth-steps")
+        renameElementAtCaret("auth-steps")
+        consume {
+            val definitionText = findFile(definitionFile)?.text
+            val secondaryText = findFile(secondaryFile)?.text
 
-        val definitionText = psiManager.findFile(definitionFile)?.text
-        val secondaryText = psiManager.findFile(secondaryFile)?.text
-
-        assertTrue(myFixture.file.text.contains("include auth-steps"))
-        assertTrue(!myFixture.file.text.contains("include login-steps"))
-        assertTrue(secondaryText?.contains("include auth-steps") == true)
-        assertTrue(definitionText?.contains("fragment: auth-steps") == true)
-        assertTrue(definitionText?.contains("fragment: login-steps") == false)
+            assertTrue(myFixture.file.text.contains("include auth-steps"))
+            assertTrue(!myFixture.file.text.contains("include login-steps"))
+            assertTrue(secondaryText?.contains("include auth-steps") == true)
+            assertTrue(definitionText?.contains("fragment: auth-steps") == true)
+            assertTrue(definitionText?.contains("fragment: login-steps") == false)
+        }
     }
 }
