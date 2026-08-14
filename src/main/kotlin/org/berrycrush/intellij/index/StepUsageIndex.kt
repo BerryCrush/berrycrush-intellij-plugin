@@ -4,7 +4,6 @@
  */
 package org.berrycrush.intellij.index
 
-import com.intellij.jvm.dfa.analysis.ui.inspection.presentation.PsiElementLineLocator.getStartLine
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiManager
@@ -23,6 +22,7 @@ import org.berrycrush.intellij.language.FragmentFileType
 import org.berrycrush.intellij.language.ScenarioFileType
 import org.berrycrush.intellij.psi.BerryCrushAssertElement
 import org.berrycrush.intellij.psi.BerryCrushStepElement
+import org.berrycrush.intellij.util.lineNumber
 import java.io.DataInput
 import java.io.DataOutput
 
@@ -189,7 +189,7 @@ class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
                 result[stepText] =
                     StepUsageData(
                         offset = step.startOffset,
-                        lineNumber = step.getStartLine() + 1,
+                        lineNumber = step.lineNumber,
                         stepType = step.keyword ?: "step",
                     )
             }
@@ -201,7 +201,7 @@ class StepUsageIndex : FileBasedIndexExtension<String, StepUsageData>() {
                 result["ASSERT:$assertionText"] =
                     StepUsageData(
                         offset = assertElement.startOffset,
-                        lineNumber = assertElement.getStartLine() + 1,
+                        lineNumber = assertElement.lineNumber,
                         stepType = "assert",
                     )
             }

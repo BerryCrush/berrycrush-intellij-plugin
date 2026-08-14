@@ -2,11 +2,11 @@ package org.berrycrush.intellij.inspection
 
 import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
-import com.intellij.jvm.dfa.analysis.ui.inspection.presentation.PsiElementLineLocator.getStartLine
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.PsiTreeUtil
 import org.berrycrush.intellij.psi.BerryCrushIncludeLikeElement
 import org.berrycrush.intellij.psi.BerryCrushParameterEntryElement
+import org.berrycrush.intellij.util.lineNumber
 
 /**
  * Inspection that detects duplicate parameters in parameterized fragment includes.
@@ -39,7 +39,7 @@ class DuplicateParameterInspection : BerryCrushInspection() {
                         if (prev != entry) {
                             holder.registerProblem(
                                 entry,
-                                "Duplicate parameter '$name' (first defined on line ${prev?.getStartLine() ?: "n/a"})",
+                                "Duplicate parameter '$name' (first defined on line ${prev?.lineNumber ?: "n/a"})",
                                 ProblemHighlightType.WARNING,
                             )
                         }
