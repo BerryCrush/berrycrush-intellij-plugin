@@ -24,6 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removing unnecessary renaming processors
 - General code cleanup
 
+## [1.0.1]
+
+### Fixed
+- Removing until restriction
+
 ## [1.0.0]
 
 ### Added
