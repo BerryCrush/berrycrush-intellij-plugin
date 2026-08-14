@@ -201,7 +201,7 @@ Plugin descriptor declaring all extensions:
 
 ```xml
 <idea-plugin>
-    <id>com.berrycrush.intellij</id>
+    <id>org.berrycrush.intellij</id>
     <name>BerryCrush</name>
     
     <extensions defaultExtensionNs="com.intellij">

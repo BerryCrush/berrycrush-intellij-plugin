@@ -85,8 +85,7 @@ style:
     active: true
     excludeImports: []
   MaxLineLength:
-    active: true
-    maxLineLength: 140  # Longer lines for complex PSI expressions
+    active: false # disabled for conflicting format issue
 
 exceptions:
   active: true

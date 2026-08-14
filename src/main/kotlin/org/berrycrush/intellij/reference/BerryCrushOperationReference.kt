@@ -1,0 +1,176 @@
+package org.berrycrush.intellij.reference
+
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.TextRange
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiManager
+import com.intellij.psi.PsiReferenceBase
+import com.intellij.psi.search.FilenameIndex
+import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.psi.util.PsiTreeUtil
+import org.berrycrush.intellij.psi.BerryCrushOperationRefElement
+
+/**
+ * Reference from `call ^operationId` to the OpenAPI specification.
+ */
+class BerryCrushOperationReference(
+    element: PsiElement,
+    textRange: TextRange,
+    private val operationId: String,
+) : PsiReferenceBase<PsiElement>(element, textRange, false) {
+    override fun resolve(): PsiElement? {
+        val project = element.project
+        return findOperationInOpenAPI(project, operationId)
+    }
+
+    override fun getVariants(): Array<Any> {
+        val project = element.project
+        return findAllOperationIds(project).toTypedArray()
+    }
+
+    companion object {
+        /**
+         * Find an operation in OpenAPI spec files.
+         * Returns null if operation is not found (no fallback).
+         */
+        fun findOperationInOpenAPI(
+            project: Project,
+            operationId: String,
+        ): PsiElement? {
+            val psiManager = PsiManager.getInstance(project)
+
+            // Find all OpenAPI spec files
+            val specFiles = findOpenAPIFiles(project)
+
+            for (file in specFiles) {
+                val psiFile = psiManager.findFile(file) ?: continue
+                val operation = findOperationInFile(psiFile, operationId)
+                if (operation != null) {
+                    return operation
+                }
+            }
+
+            // Return null if operation not found - do NOT return fallback
+            return null
+        }
+
+        /**
+         * Find all OpenAPI spec files in the project.
+         * Scans all YAML, YML, and JSON files and checks if they're OpenAPI specs.
+         */
+        fun findOpenAPIFiles(project: Project): List<VirtualFile> {
+            val scope = GlobalSearchScope.allScope(project)
+            val files = mutableListOf<VirtualFile>()
+            val psiManager = PsiManager.getInstance(project)
+
+            // Search for all YAML files
+            FilenameIndex.getAllFilesByExt(project, "yaml", scope).forEach { file ->
+                if (isOpenAPISpec(psiManager.findFile(file))) {
+                    files.add(file)
+                }
+            }
+
+            FilenameIndex.getAllFilesByExt(project, "yml", scope).forEach { file ->
+                if (isOpenAPISpec(psiManager.findFile(file))) {
+                    files.add(file)
+                }
+            }
+
+            // Search for all JSON files
+            FilenameIndex.getAllFilesByExt(project, "json", scope).forEach { file ->
+                if (isOpenAPISpec(psiManager.findFile(file))) {
+                    files.add(file)
+                }
+            }
+
+            return files.distinctBy { it.path }
+        }
+
+        /**
+         * Check if a file is an OpenAPI specification.
+         * Uses both filename heuristics and content analysis.
+         */
+        fun isOpenAPISpec(psiFile: PsiFile?): Boolean {
+            if (psiFile == null) return false
+
+            val fileName = psiFile.name.lowercase()
+            val text = psiFile.text
+
+            // Filename heuristic: if filename contains "openapi" or "swagger", relax length check
+            val hasOpenAPIFilename = fileName.contains("openapi") || fileName.contains("swagger")
+
+            return isOpenAPISpec(text, relaxedLengthCheck = hasOpenAPIFilename)
+        }
+
+        fun isOpenAPISpec(
+            text: String,
+            relaxedLengthCheck: Boolean = false,
+        ): Boolean {
+            // Apply length check unless relaxed (e.g., for files with openapi/swagger in name)
+            val minLength = if (relaxedLengthCheck) 20 else 100
+            if (text.length < minLength) return false
+
+            // Check for OpenAPI 3.x marker
+            if (text.contains(Regex("""openapi:\s*['"]?3\."""))) {
+                return true
+            }
+
+            // Check for Swagger/OpenAPI 2.x marker
+            if (text.contains(Regex("""swagger:\s*['"]?2\."""))) {
+                return true
+            }
+
+            // JSON format check
+            if (text.contains(Regex(""""openapi"\s*:\s*"3\."""))) {
+                return true
+            }
+            if (text.contains(Regex(""""swagger"\s*:\s*"2\."""))) {
+                return true
+            }
+
+            return false
+        }
+
+        /**
+         * Find operation ID in a single OpenAPI file.
+         */
+        private fun findOperationInFile(
+            psiFile: PsiFile,
+            operationId: String,
+        ): PsiElement? = PsiTreeUtil.findChildrenOfType(psiFile, BerryCrushOperationRefElement::class.java)
+            .firstOrNull { it.operationId == operationId }
+
+        /**
+         * Extract all operation IDs from the project's OpenAPI specs.
+         */
+        fun findAllOperationIds(project: Project): List<String> {
+            val operationIds = mutableListOf<String>()
+            val specFiles = findOpenAPIFiles(project)
+            val psiManager = PsiManager.getInstance(project)
+
+            for (file in specFiles) {
+                val psiFile = psiManager.findFile(file) ?: continue
+                extractOperationIdsFromFile(psiFile.text, operationIds)
+            }
+
+            return operationIds.distinct()
+        }
+
+        /**
+         * Extract operation IDs from OpenAPI file content.
+         */
+        private fun extractOperationIdsFromFile(text: String, result: MutableList<String>) {
+            // YAML format: operationId: someId
+            Regex("""operationId:\s*['"]?(\w+)['"]?""").findAll(text).forEach {
+                result.add(it.groupValues[1])
+            }
+
+            // JSON format: "operationId": "someId"
+            Regex(""""operationId"\s*:\s*"(\w+)"""").findAll(text).forEach {
+                result.add(it.groupValues[1])
+            }
+        }
+    }
+}

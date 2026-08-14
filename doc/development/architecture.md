@@ -29,7 +29,7 @@ The plugin follows IntelliJ Platform architecture patterns:
 ## Package Structure
 
 ```
-com.berrycrush.intellij/
+org.berrycrush.intellij/
 ├── language/           # Language definition
 │   ├── BerryCrushLanguage.kt
 │   ├── BerryCrushFileType.kt
@@ -167,7 +167,6 @@ class StepRegistry(private val project: Project) {
 | Extension Point | Implementation |
 |-----------------|----------------|
 | `lang.parserDefinition` | `BerryCrushParserDefinition` |
-| `lang.syntaxHighlighterFactory` | `BerryCrushHighlighterFactory` |
 | `lang.foldingBuilder` | `BerryCrushFoldingBuilder` |
 | `completion.contributor` | `BerryCrushCompletionContributor` |
 | `gotoDeclarationHandler` | `BerryCrushGotoHandler` |
@@ -175,6 +174,20 @@ class StepRegistry(private val project: Project) {
 | `refactoring.safeDeleteProcessor` | `BerryCrushSafeDeleteProcessor` |
 | `annotator` | `BerryCrushAnnotator` |
 | `localInspection` | Various inspections |
+
+### Runtime Highlighting Model
+
+Runtime editor highlighting for BerryCrush files is annotator-driven.
+
+- `BerryCrushAnnotator` applies token-level text attributes at runtime.
+- Context-aware highlights (for example include-parameter keys before `:`) are also produced by annotator logic.
+- `BerryCrushSyntaxHighlighter` remains available for color settings preview and token-to-color mapping reuse.
+
+Current rule for narrative lines:
+- On `feature:` / `scenario:` / `outline:` lines, only the keyword prefix is highlighted.
+- On `given` / `when` / `then` / `and` / `but` lines, only the step keyword prefix is highlighted.
+- Text after these prefixes is treated as narrative description and must remain uncolored by BerryCrush syntax keys.
+- Include parameter key highlighting remains active for include parameter entries.
 
 ### Provided Extension Points
 
@@ -186,6 +199,30 @@ The plugin provides extension points for customization:
 ```
 
 ## Data Flow
+
+### Formatting Flow
+
+Formatting is a two-stage pipeline:
+
+```
+Reformat Code
+    -> BerryCrushFormattingModelBuilder / BerryCrushBlock (token spacing + indent hints)
+    -> BerryCrushPostFormatProcessor (structural indentation + table alignment)
+```
+
+`BerryCrushPostFormatProcessor` is the source of truth for final structural indentation because
+BerryCrush PSI is largely flat for many constructs.
+
+Core structural rules:
+- Top-level blocks (`feature`, `fragment`, standalone `scenario`, standalone `outline`) are root-aligned.
+- Steps (`given/when/then/and/but`) are indented one level under `scenario`/`outline`/`background`.
+- Directives (`call`, `assert`, `extract`, `include`, `webhook`) are one level under steps.
+- Directive payload keys (`id`, `body`, `port`, `hook`, etc.) are one level under directives.
+- Nested map payloads increase indentation by one level per map depth.
+- `examples:` is outline-scoped and table rows are one level under `examples:`.
+
+Regression coverage for these rules is in:
+- `../../src/test/kotlin/org/berrycrush/intellij/formatting/BerryCrushFormattingTest.kt`
 
 ### Completion Flow
 
@@ -316,4 +353,10 @@ class MyTest : BasePlatformTestCase() {
         // Test logic
     }
 }
+```
+
+For formatter changes, always run targeted regression tests first:
+
+```bash
+./gradlew test --tests "org.berrycrush.intellij.formatting.BerryCrushFormattingTest"
 ```

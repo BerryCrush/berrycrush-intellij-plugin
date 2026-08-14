@@ -2,6 +2,8 @@
 
 The BerryCrush plugin provides rich syntax highlighting for `.scenario` and `.fragment` files.
 
+Runtime editor highlighting is powered by annotator rules, while preserving the same color categories documented below.
+
 ## File Types
 
 ### Scenario Files (`.scenario`)
@@ -82,6 +84,19 @@ assert $.name equals "John"
 extract $.id => userId               # Extract value
 include login-fragment               # Include fragment
 body: {"key": "value"}               # Inline body
+if status 2xx                        # Conditional branch
+else                                 # Fallback branch
+```
+
+Conditional assertions are supported under steps:
+
+```berrycrush
+scenario: conditional validation
+  then verify status
+    if status 2xx
+      assert $.id exists
+    else
+      assert status 5xx
 ```
 
 ## References

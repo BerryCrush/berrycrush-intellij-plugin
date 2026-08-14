@@ -1,5 +1,8 @@
 @api @smoke
 feature: User API Tests
+    parameters:
+        baseUrl: {{env.API_BASE_URL}}
+        timeout: 5000
 
 background:
     given API server is running
@@ -7,6 +10,8 @@ background:
         assert status 200
 
 scenario: Get all users
+    parameters:
+        logRequests: true
     when client requests user list
         call GET /api/users
     then response contains users
@@ -14,26 +19,31 @@ scenario: Get all users
         assert header Content-Type contains application/json
 
 scenario: Get user by ID
+    parameters:
+        timeout: {{param.timeout}}
+        followRedirects: false
     given user ID is known
-        extract userId from "1"
+        extract "1" => userId
     when client requests specific user
-        call GET /api/users/${userId}
+        call ^getUserById
     then response contains user data
         assert status 200
         extract userName from $.name
         assert $.email exists
 
 outline: Create user with different roles
+    parameters:
+        strictSchemaValidation: true
     when client creates new user
         call POST /api/users
             body:
                 {
-                    "name": "${name}",
-                    "role": "${role}"
+                    "name": "{{name}}",
+                    "role": "{{role}}"
                 }
     then user is created
         assert status 201
-    
+
     examples:
         | name    | role    |
         | Alice   | admin   |
@@ -42,6 +52,8 @@ outline: Create user with different roles
 
 # This scenario tests error handling
 scenario: Handle not found
+    parameters:
+        environment: {{context.testEnv}}
     when client requests non-existent user
         call GET /api/users/99999
     then response indicates not found

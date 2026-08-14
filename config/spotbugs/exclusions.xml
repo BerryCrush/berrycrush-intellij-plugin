@@ -9,6 +9,10 @@
     <Match>
         <Source name="~.*Test\.kt"/>
     </Match>
+
+    <Match>
+        <Source name="~.*BerryCrushTestCase\.kt"/>
+    </Match>
     
     <!-- Exclude test directories -->
     <Match>
@@ -53,7 +57,7 @@
     
     <!-- IntelliJ CustomCodeStyleSettings extends class with equals() but manages its own state -->
     <Match>
-        <Class name="com.berrycrush.intellij.codestyle.BerryCrushCodeStyleSettings"/>
+        <Class name="org.berrycrush.intellij.codestyle.BerryCrushCodeStyleSettings"/>
         <Bug pattern="HE_INHERITS_EQUALS_USE_HASHCODE"/>
     </Match>
     
@@ -80,6 +84,6 @@
     <!-- File.delete()/mkdirs() return values - best-effort cleanup operations -->
     <Match>
         <Bug pattern="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE"/>
-        <Class name="com.berrycrush.intellij.run.TemporaryTestGenerator"/>
+        <Class name="org.berrycrush.intellij.run.TemporaryTestGenerator"/>
     </Match>
 </FindBugsFilter>

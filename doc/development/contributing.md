@@ -137,6 +137,47 @@ class MyFeatureTest : BasePlatformTestCase() {
 }
 ```
 
+### Formatter Changes
+
+When changing formatter behavior, follow this sequence:
+1. Add/adjust regression tests in `../../src/test/kotlin/org/berrycrush/intellij/formatting/BerryCrushFormattingTest.kt`.
+2. Implement the fix in `../../src/main/kotlin/org/berrycrush/intellij/formatting/BerryCrushPostFormatProcessor.kt`.
+3. Keep `../../src/main/kotlin/org/berrycrush/intellij/formatting/BerryCrushBlock.kt` indent hints compatible.
+
+Structural formatter expectations:
+- Keep standalone `scenario:`/`outline:` root-aligned.
+- Keep directive payload fields nested under directives.
+- Keep nested map indentation stable and idempotent.
+- Keep `examples:` under `outline:` with table rows nested under `examples:`.
+
+Verification commands:
+
+```bash
+./gradlew test --tests "org.berrycrush.intellij.formatting.BerryCrushFormattingTest"
+./gradlew test
+./gradlew check
+```
+
+### Highlighting Changes
+
+When changing syntax highlighting behavior, follow this sequence:
+1. Add/adjust regression tests in `../../src/test/kotlin/org/berrycrush/intellij/highlighting/BerryCrushAnnotatorTest.kt`.
+2. Keep token mapping behavior stable in `../../src/main/kotlin/org/berrycrush/intellij/highlighting/BerryCrushTokenHighlighting.kt`.
+3. Implement context-aware behavior in `../../src/main/kotlin/org/berrycrush/intellij/highlighting/BerryCrushAnnotator.kt`.
+
+Narrative highlighting expectation:
+- On `feature:` / `scenario:` / `outline:` and step (`given/when/then/and/but`) lines, highlight only the keyword prefix.
+- Leave trailing description text uncolored by BerryCrush syntax keys.
+- Preserve include-parameter key highlighting.
+
+Verification commands:
+
+```bash
+./gradlew test --tests "org.berrycrush.intellij.highlighting.BerryCrushAnnotatorTest"
+./gradlew test --tests "org.berrycrush.intellij.BerryCrushHighlighterTest"
+./gradlew test
+```
+
 ### Test Data Files
 
 Place test data in `src/test/testData/`:
@@ -214,7 +255,7 @@ Main plugin descriptor at `src/main/resources/META-INF/plugin.xml`:
 
 ```xml
 <idea-plugin>
-    <id>com.berrycrush.intellij</id>
+    <id>org.berrycrush.intellij</id>
     <name>BerryCrush</name>
     <vendor>BerryCrush</vendor>
     

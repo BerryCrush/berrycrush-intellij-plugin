@@ -10,24 +10,71 @@ PSI is the IntelliJ Platform's way of representing code structure. It provides:
 - Modification support
 - Integration with IDE features
 
-## Element Hierarchy
+## Current Hierarchy Invariants
 
+The current parser composes hierarchical PSI for `.scenario` files using indentation as structure.
+
+- `feature` is a top-level parent for nested `background` and nested `scenario` blocks.
+- `scenario` outside `feature` remains a top-level sibling of `feature`.
+- `background` contains direct step children (`given/when/then/and/but`).
+- A step can contain nested directives such as `call`, `include`, `webhook`, and `assert`.
+- `call` can contain nested payload entries as parameters (`id`, `body`, etc.).
+- `body:` is represented as a parameter that can contain nested parameter entries.
+
+### Comment-Handling Invariants
+
+- Comment lines are valid at top-level and inside all structural blocks (`feature`, `background`, `scenario`, `outline`, `fragment`, `step`, directive payloads, and `examples`).
+- Interleaved comments must not change block boundaries or parent-child containment.
+- Consecutive comments inside indented blocks must not terminate parsing of subsequent siblings.
+- Comment tokens should be emitted as comment PSI nodes where comment PSI is supported, rather than degrading into generic text nodes.
+- Parser regressions should include tree-validation assertions (parent/child checks), not only token presence assertions.
+
+Example hierarchy used for regression tests:
+
+```text
+FILE
+├─ FEATURE("feature description")
+│  ├─ BACKGROUND("background description")
+│  │  ├─ STEP_GIVEN("background given description")
+│  │  │  └─ CALL("operationId")
+│  │  │     ├─ PARAM("id", "{{petId}}")
+│  │  │     └─ PARAM("body")
+│  │  │        └─ PARAM("name", "foo")
+│  │  └─ STEP_THEN("check the value")
+│  │     └─ ASSERT("status 2xx")
+│  └─ SCENARIO("nested scenario")
+└─ SCENARIO("standalone scenario")
 ```
-BerryCrushFile (PsiFile)
-├── BerryCrushFeatureElement
-│   └── name: String
-├── BerryCrushScenarioElement
-│   ├── name: String
-│   └── steps: List<BerryCrushStepElement>
-├── BerryCrushScenarioOutlineElement
-│   ├── name: String
-│   ├── steps: List<BerryCrushStepElement>
-│   └── examples: BerryCrushExamplesElement
-├── BerryCrushFragmentElement
-│   ├── name: String
-│   └── steps: List<BerryCrushStepElement>
-└── BerryCrushBackgroundElement
-    └── steps: List<BerryCrushStepElement>
+
+Implementation note:
+- Prefer typed PSI accessors in `BerryCrushElements.kt` (for example feature blocks, scenario steps, call parameters) over ad-hoc token scans in consumers.
+
+### String Interpolation Invariants
+
+- Quoted string literals are wrapped as `STRING_LITERAL` PSI nodes.
+- Interpolation inside strings uses `{{...}}` syntax and is segmented in source order.
+- Segment model for string content:
+    - `BerryCrushStringTextSegment` for normal text content
+    - `BerryCrushStringIndentSegment` for indentation-only runs in multiline content
+    - `BerryCrushStringVariableSegment` for interpolation placeholders
+- Multiline string segmentation must preserve line breaks and indentation boundaries.
+- Interpolation references in strings resolve with the same declaration rules as existing variable references:
+    - `{{name}}` resolves as context/extract/example variable
+    - `{{param.name}}` resolves as parameter reference
+
+Example segment shape:
+
+```text
+STRING_LITERAL("\"hello {{name}}\"")
+├─ TEXT("hello ")
+└─ VARIABLE("{{name}}")
+
+STRING_LITERAL("\"\"\"\n  hello\n    {{param.level}}\n\"\"\"")
+├─ TEXT("\n")
+├─ INDENT("  ")
+├─ TEXT("hello\n")
+├─ INDENT("    ")
+└─ VARIABLE("{{param.level}}")
 ```
 
 ## Core Elements
@@ -194,6 +241,20 @@ object BerryCrushElementTypes {
 ```
 
 ## References
+
+### Rename Contract
+
+Rename is declaration/reference driven.
+The plugin does not use a custom rename handler for BerryCrush files.
+
+Current renameable declaration/reference pairs:
+
+- Fragment declaration (`fragment: ...`) <-> `include` fragment references
+- Extract declaration (`extract ... => name`) <-> `{{name}}` references
+- Parameter declaration (`parameters: key: ...`) <-> `{{param.key}}` references
+- Example header declaration (`examples` header cell) <-> linked variable references
+
+Rename entry points work from either side (definition or reference) through PSI resolution.
 
 ### Fragment Reference
 
