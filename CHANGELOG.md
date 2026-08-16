@@ -8,13 +8,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Initial release features
+
+### Changed
+
+## [2.0.0]
+
+### Added
 - Scenario file context-menu Run/Debug support with standard IntelliJ execution actions
+- Syntax inspection for invalid scenario files, with highlighting and quick fixes
+- `webhook` directive highlighting
 
 ### Changed
 - Unified scenario execution support between context-menu and gutter run paths
 - PSI Element base inspection, highlighting
+- Removing unnecessary renaming processors
 - General code cleanup
+
+## [1.0.1]
+
+### Fixed
+- Removing until restriction
 
 ## [1.0.0]
 
