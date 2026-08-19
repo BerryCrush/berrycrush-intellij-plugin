@@ -50,6 +50,18 @@ class BerryCrushCallElement(
         get() = operationRef?.operationId
 }
 
+class BerryCrushUsingElement(
+    node: ASTNode,
+) : BerryCrushPsiElement(node) {
+    override fun getName(): String = text
+}
+
+class BerryCrushBindingNameElement(
+    node: ASTNode,
+) : BerryCrushPsiElement(node) {
+    override fun getName(): String = text
+}
+
 /**
  * Include directive element: `include fragmentName` with optional parameters.
  */

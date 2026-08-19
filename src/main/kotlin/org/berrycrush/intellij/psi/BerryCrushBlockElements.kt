@@ -151,9 +151,15 @@ class BerryCrushOutlineElement(node: ASTNode) : BerryCrushUnrenamableScenarioLik
     override val keyword = "outline"
 }
 
-class BerryCrushExamplesElement(node: ASTNode) : BerryCrushPsiElement(node)
+class BerryCrushExamplesElement(node: ASTNode) : BerryCrushPsiElement(node) {
+    val rows: List<BerryCrushExampleRowElement>
+        get() = directChildrenOfType()
+}
 
-class BerryCrushExampleRowElement(node: ASTNode) : BerryCrushPsiElement(node)
+class BerryCrushExampleRowElement(node: ASTNode) : BerryCrushPsiElement(node) {
+    val isHeader: Boolean
+        get() = directChildrenOfType<BerryCrushExampleHeaderElement>().isNotEmpty()
+}
 class BerryCrushExampleHeaderElement(node: ASTNode) : BerryCrushNamedElement(node) {
     override fun getName(): String = node.text
     override fun getNameIdentifier(): PsiElement = this

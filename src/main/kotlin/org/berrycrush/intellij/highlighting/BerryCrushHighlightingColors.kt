@@ -65,6 +65,13 @@ object BerryCrushHighlightingColors {
             DefaultLanguageHighlighterColors.FUNCTION_CALL,
         )
 
+    @JvmField
+    val BINDING_REF: TextAttributesKey =
+        createTextAttributesKey(
+            "BERRYCRUSH_BINDING_REF",
+            DefaultLanguageHighlighterColors.PARAMETER,
+        )
+
     // Variables ({{variable}})
     @JvmField
     val VARIABLE: TextAttributesKey =
