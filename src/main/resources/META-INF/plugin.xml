@@ -28,6 +28,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+    <h3>2.0.1</h3>
+    <ul>
+      <li>Fixing missing syntax highlighting of examples and tags</li>
+    </ul>
     <h3>2.0.0</h3>
     <ul>
       <li>Using IntelliJ renaming capability</li>
