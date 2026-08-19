@@ -10,7 +10,9 @@ import com.intellij.psi.PsiComment
 import com.intellij.psi.PsiElement
 import org.berrycrush.intellij.lexer.BerryCrushTokenTypes
 import org.berrycrush.intellij.psi.BerryCrushAssertOperationElement
+import org.berrycrush.intellij.psi.BerryCrushBindingNameElement
 import org.berrycrush.intellij.psi.BerryCrushBlockElement
+import org.berrycrush.intellij.psi.BerryCrushCallElement
 import org.berrycrush.intellij.psi.BerryCrushConditionElement
 import org.berrycrush.intellij.psi.BerryCrushConditionHolderElement
 import org.berrycrush.intellij.psi.BerryCrushDirectiveElement
@@ -18,6 +20,7 @@ import org.berrycrush.intellij.psi.BerryCrushExampleHeaderElement
 import org.berrycrush.intellij.psi.BerryCrushExamplesElement
 import org.berrycrush.intellij.psi.BerryCrushExtractElement
 import org.berrycrush.intellij.psi.BerryCrushJsonPathElement
+import org.berrycrush.intellij.psi.BerryCrushOperationRefElement
 import org.berrycrush.intellij.psi.BerryCrushOperatorElement
 import org.berrycrush.intellij.psi.BerryCrushParameterKeyElement
 import org.berrycrush.intellij.psi.BerryCrushParametersElement
@@ -25,6 +28,7 @@ import org.berrycrush.intellij.psi.BerryCrushStepElement
 import org.berrycrush.intellij.psi.BerryCrushStringLiteralElement
 import org.berrycrush.intellij.psi.BerryCrushTagElement
 import org.berrycrush.intellij.psi.BerryCrushTextElement
+import org.berrycrush.intellij.psi.BerryCrushUsingElement
 import org.berrycrush.intellij.psi.BerryCrushVariableRefElement
 
 class BerryCrushAnnotator : Annotator {
@@ -65,6 +69,7 @@ class BerryCrushAnnotator : Annotator {
         when (element) {
             is BerryCrushConditionHolderElement -> element.condition?.let { annotateCondition(it, holder) }
             is BerryCrushExtractElement -> element.children.forEach { annotateExtractPart(it, holder) }
+            is BerryCrushCallElement -> element.children.forEach { annotateCallPart(it, holder) }
         }
     }
 
@@ -82,6 +87,20 @@ class BerryCrushAnnotator : Annotator {
         when (element) {
             is BerryCrushJsonPathElement -> holder.annotate(element, BerryCrushHighlightingColors.JSON_PATH)
             is BerryCrushTextElement -> holder.annotate(element, DefaultLanguageHighlighterColors.IDENTIFIER)
+        }
+    }
+
+    private fun annotateCallPart(element: PsiElement, holder: AnnotationHolder) {
+        when (element) {
+            is BerryCrushUsingElement -> {
+                element.annotateKeyword(holder, "using", BerryCrushHighlightingColors.DIRECTIVE)
+                element.children.forEach { child ->
+                    when (child) {
+                        is BerryCrushBindingNameElement -> holder.annotate(child, BerryCrushHighlightingColors.BINDING_REF)
+                    }
+                }
+            }
+            is BerryCrushOperationRefElement -> holder.annotate(element, BerryCrushHighlightingColors.OPERATION_REF)
         }
     }
 

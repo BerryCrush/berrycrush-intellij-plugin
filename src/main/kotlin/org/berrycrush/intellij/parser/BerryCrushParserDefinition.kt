@@ -16,6 +16,7 @@ import org.berrycrush.intellij.lexer.BerryCrushTokenTypes
 import org.berrycrush.intellij.psi.BerryCrushAssertElement
 import org.berrycrush.intellij.psi.BerryCrushAssertOperationElement
 import org.berrycrush.intellij.psi.BerryCrushBackgroundElement
+import org.berrycrush.intellij.psi.BerryCrushBindingNameElement
 import org.berrycrush.intellij.psi.BerryCrushBlockNameElement
 import org.berrycrush.intellij.psi.BerryCrushCallElement
 import org.berrycrush.intellij.psi.BerryCrushConditionElement
@@ -50,6 +51,7 @@ import org.berrycrush.intellij.psi.BerryCrushStepNameElement
 import org.berrycrush.intellij.psi.BerryCrushStringLiteralElement
 import org.berrycrush.intellij.psi.BerryCrushTagElement
 import org.berrycrush.intellij.psi.BerryCrushTextElement
+import org.berrycrush.intellij.psi.BerryCrushUsingElement
 import org.berrycrush.intellij.psi.BerryCrushVariableRefElement
 import org.berrycrush.intellij.psi.BerryCrushWebhookElement
 
@@ -73,45 +75,48 @@ class BerryCrushParserDefinition : ParserDefinition {
 
     override fun getStringLiteralElements(): TokenSet = BerryCrushTokenTypes.STRINGS
 
-    override fun createElement(node: ASTNode): PsiElement = when (node.elementType) {
-        BerryCrushElementTypes.FEATURE -> BerryCrushFeatureElement(node)
-        BerryCrushElementTypes.SCENARIO -> BerryCrushScenarioElement(node)
-        BerryCrushElementTypes.OUTLINE -> BerryCrushOutlineElement(node)
-        BerryCrushElementTypes.EXAMPLES -> BerryCrushExamplesElement(node)
-        BerryCrushElementTypes.EXAMPLE_ROW -> BerryCrushExampleRowElement(node)
-        BerryCrushElementTypes.EXAMPLES_HEADER -> BerryCrushExampleHeaderElement(node)
-        BerryCrushElementTypes.EXAMPLES_VALUE -> BerryCrushExampleValueElement(node)
-        BerryCrushElementTypes.BACKGROUND -> BerryCrushBackgroundElement(node)
-        BerryCrushElementTypes.FRAGMENT -> BerryCrushFragmentElement(node)
-        BerryCrushElementTypes.STEP -> BerryCrushStepElement(node)
-        BerryCrushElementTypes.STEP_DESCRIPTION -> BerryCrushStepNameElement(node)
-        BerryCrushElementTypes.CALL_DIRECTIVE -> BerryCrushCallElement(node)
-        BerryCrushElementTypes.INCLUDE_DIRECTIVE -> BerryCrushIncludeElement(node)
-        BerryCrushElementTypes.IF_DIRECTIVE -> BerryCrushIfElement(node)
-        BerryCrushElementTypes.ELSE_DIRECTIVE -> BerryCrushElseElement(node)
-        BerryCrushElementTypes.ASSERT_DIRECTIVE -> BerryCrushAssertElement(node)
-        BerryCrushElementTypes.FAIL_DIRECTIVE -> BerryCrushFailElement(node)
-        BerryCrushElementTypes.CONDITION -> BerryCrushConditionElement(node)
-        BerryCrushElementTypes.EXTRACT_DIRECTIVE -> BerryCrushExtractElement(node)
-        BerryCrushElementTypes.WEBHOOK_DIRECTIVE -> BerryCrushWebhookElement(node)
-        BerryCrushElementTypes.OPERATION_REF -> BerryCrushOperationRefElement(node)
-        BerryCrushElementTypes.FRAGMENT_REF -> BerryCrushFragmentRefElement(node)
-        BerryCrushElementTypes.VARIABLE_REF -> BerryCrushVariableRefElement(node)
-        BerryCrushElementTypes.STRING_LITERAL -> BerryCrushStringLiteralElement(node)
-        BerryCrushElementTypes.INCLUDED_PARAMETER -> BerryCrushIncludeParameterElement(node)
-        BerryCrushElementTypes.PARAMETERS -> BerryCrushParametersElement(node)
-        BerryCrushElementTypes.PARAMETER_ENTRY -> BerryCrushParameterEntryElement(node)
-        BerryCrushElementTypes.PARAMETER_KEY -> BerryCrushParameterKeyElement(node)
-        BerryCrushElementTypes.PARAMETER_VALUE -> BerryCrushParameterValueElement(node)
-        BerryCrushElementTypes.JSON_PATH -> BerryCrushJsonPathElement(node)
-        BerryCrushElementTypes.ASSERTION_OPERATION -> BerryCrushAssertOperationElement(node)
-        BerryCrushElementTypes.NOT -> BerryCrushNotElement(node)
-        BerryCrushElementTypes.OPERATOR -> BerryCrushOperatorElement(node)
-        BerryCrushElementTypes.BLOCK_NAME -> BerryCrushBlockNameElement(node)
-        BerryCrushElementTypes.TEXT -> BerryCrushTextElement(node)
-        BerryCrushElementTypes.TAG -> BerryCrushTagElement(node)
-        else -> BerryCrushGenericElement(node)
-    }
+    override fun createElement(node: ASTNode): PsiElement = elementDefinition[node.elementType]?.invoke(node) ?: BerryCrushGenericElement(node)
 
     override fun createFile(viewProvider: FileViewProvider): PsiFile = BerryCrushFile(viewProvider)
 }
+
+private val elementDefinition = mapOf(
+    BerryCrushElementTypes.FEATURE to ::BerryCrushFeatureElement,
+    BerryCrushElementTypes.SCENARIO to ::BerryCrushScenarioElement,
+    BerryCrushElementTypes.OUTLINE to ::BerryCrushOutlineElement,
+    BerryCrushElementTypes.EXAMPLES to ::BerryCrushExamplesElement,
+    BerryCrushElementTypes.EXAMPLE_ROW to ::BerryCrushExampleRowElement,
+    BerryCrushElementTypes.EXAMPLES_HEADER to ::BerryCrushExampleHeaderElement,
+    BerryCrushElementTypes.EXAMPLES_VALUE to ::BerryCrushExampleValueElement,
+    BerryCrushElementTypes.BACKGROUND to ::BerryCrushBackgroundElement,
+    BerryCrushElementTypes.FRAGMENT to ::BerryCrushFragmentElement,
+    BerryCrushElementTypes.STEP to ::BerryCrushStepElement,
+    BerryCrushElementTypes.STEP_DESCRIPTION to ::BerryCrushStepNameElement,
+    BerryCrushElementTypes.CALL_DIRECTIVE to ::BerryCrushCallElement,
+    BerryCrushElementTypes.USING to ::BerryCrushUsingElement,
+    BerryCrushElementTypes.BINDING_NAME to ::BerryCrushBindingNameElement,
+    BerryCrushElementTypes.INCLUDE_DIRECTIVE to ::BerryCrushIncludeElement,
+    BerryCrushElementTypes.IF_DIRECTIVE to ::BerryCrushIfElement,
+    BerryCrushElementTypes.ELSE_DIRECTIVE to ::BerryCrushElseElement,
+    BerryCrushElementTypes.ASSERT_DIRECTIVE to ::BerryCrushAssertElement,
+    BerryCrushElementTypes.FAIL_DIRECTIVE to ::BerryCrushFailElement,
+    BerryCrushElementTypes.CONDITION to ::BerryCrushConditionElement,
+    BerryCrushElementTypes.EXTRACT_DIRECTIVE to ::BerryCrushExtractElement,
+    BerryCrushElementTypes.WEBHOOK_DIRECTIVE to ::BerryCrushWebhookElement,
+    BerryCrushElementTypes.OPERATION_REF to ::BerryCrushOperationRefElement,
+    BerryCrushElementTypes.FRAGMENT_REF to ::BerryCrushFragmentRefElement,
+    BerryCrushElementTypes.VARIABLE_REF to ::BerryCrushVariableRefElement,
+    BerryCrushElementTypes.STRING_LITERAL to ::BerryCrushStringLiteralElement,
+    BerryCrushElementTypes.INCLUDED_PARAMETER to ::BerryCrushIncludeParameterElement,
+    BerryCrushElementTypes.PARAMETERS to ::BerryCrushParametersElement,
+    BerryCrushElementTypes.PARAMETER_ENTRY to ::BerryCrushParameterEntryElement,
+    BerryCrushElementTypes.PARAMETER_KEY to ::BerryCrushParameterKeyElement,
+    BerryCrushElementTypes.PARAMETER_VALUE to ::BerryCrushParameterValueElement,
+    BerryCrushElementTypes.JSON_PATH to ::BerryCrushJsonPathElement,
+    BerryCrushElementTypes.ASSERTION_OPERATION to ::BerryCrushAssertOperationElement,
+    BerryCrushElementTypes.NOT to ::BerryCrushNotElement,
+    BerryCrushElementTypes.OPERATOR to ::BerryCrushOperatorElement,
+    BerryCrushElementTypes.BLOCK_NAME to ::BerryCrushBlockNameElement,
+    BerryCrushElementTypes.TEXT to ::BerryCrushTextElement,
+    BerryCrushElementTypes.TAG to ::BerryCrushTagElement,
+)

@@ -78,6 +78,12 @@ object BerryCrushElementTypes {
     @JvmField
     val ELSE_DIRECTIVE = BerryCrushPsiElementType("ELSE_DIRECTIVE")
 
+    @JvmField
+    val USING = BerryCrushPsiElementType("USING")
+
+    @JvmField
+    val BINDING_NAME = BerryCrushPsiElementType("BINDING_NAME")
+
     // Reference elements
     @JvmField
     val OPERATION_REF = BerryCrushPsiElementType("OPERATION_REF")

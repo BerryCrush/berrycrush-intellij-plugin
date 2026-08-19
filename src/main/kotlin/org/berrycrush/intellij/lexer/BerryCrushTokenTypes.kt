@@ -111,6 +111,8 @@ object BerryCrushTokenTypes {
     // Identifiers and references
     @JvmField val IDENTIFIER = BerryCrushElementType("IDENTIFIER")
 
+    @JvmField val USING = BerryCrushElementType("USING")
+
     @JvmField val OPERATION_REF = BerryCrushElementType("OPERATION_REF")
 
     @JvmField val TAG = BerryCrushElementType("TAG")

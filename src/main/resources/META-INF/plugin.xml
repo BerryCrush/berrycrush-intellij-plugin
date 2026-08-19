@@ -31,6 +31,7 @@
     <h3>2.0.1</h3>
     <ul>
       <li>Fixing missing syntax highlighting of examples and tags</li>
+      <li>Highlighting `using` keyword on `call` directive</li>
     </ul>
     <h3>2.0.0</h3>
     <ul>
