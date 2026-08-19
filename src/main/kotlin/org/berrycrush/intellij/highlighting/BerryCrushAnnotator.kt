@@ -14,6 +14,8 @@ import org.berrycrush.intellij.psi.BerryCrushBlockElement
 import org.berrycrush.intellij.psi.BerryCrushConditionElement
 import org.berrycrush.intellij.psi.BerryCrushConditionHolderElement
 import org.berrycrush.intellij.psi.BerryCrushDirectiveElement
+import org.berrycrush.intellij.psi.BerryCrushExampleHeaderElement
+import org.berrycrush.intellij.psi.BerryCrushExamplesElement
 import org.berrycrush.intellij.psi.BerryCrushExtractElement
 import org.berrycrush.intellij.psi.BerryCrushJsonPathElement
 import org.berrycrush.intellij.psi.BerryCrushOperatorElement
@@ -21,6 +23,7 @@ import org.berrycrush.intellij.psi.BerryCrushParameterKeyElement
 import org.berrycrush.intellij.psi.BerryCrushParametersElement
 import org.berrycrush.intellij.psi.BerryCrushStepElement
 import org.berrycrush.intellij.psi.BerryCrushStringLiteralElement
+import org.berrycrush.intellij.psi.BerryCrushTagElement
 import org.berrycrush.intellij.psi.BerryCrushTextElement
 import org.berrycrush.intellij.psi.BerryCrushVariableRefElement
 
@@ -35,6 +38,8 @@ class BerryCrushAnnotator : Annotator {
         } ?: Unit
         is BerryCrushVariableRefElement -> holder.annotate(element, BerryCrushHighlightingColors.VARIABLE)
         is BerryCrushDirectiveElement -> annotateDirectiveElement(element, holder)
+        is BerryCrushExamplesElement -> annotateExamplesElement(element, holder)
+        is BerryCrushTagElement -> holder.annotate(element, BerryCrushHighlightingColors.TAG)
         is PsiComment -> holder.annotate(element, DefaultLanguageHighlighterColors.LINE_COMMENT)
         else -> checkLiterals(element, holder)
     }
@@ -44,6 +49,15 @@ class BerryCrushAnnotator : Annotator {
 
     private fun annotateParametersElement(element: BerryCrushParametersElement, holder: AnnotationHolder) {
         element.annotateKeyword(holder, "parameter:", BerryCrushHighlightingColors.BLOCK_KEYWORD)
+    }
+
+    private fun annotateExamplesElement(element: BerryCrushExamplesElement, holder: AnnotationHolder) {
+        element.annotateKeyword(holder, "examples:", BerryCrushHighlightingColors.BLOCK_KEYWORD)
+        element.rows.filter { it.isHeader }
+            .flatMap { it.children.filterIsInstance<BerryCrushExampleHeaderElement>() }
+            .forEach { header ->
+                header.annotateKeyword(holder, header.name, BerryCrushHighlightingColors.VARIABLE)
+            }
     }
 
     private fun annotateDirectiveElement(element: BerryCrushDirectiveElement, holder: AnnotationHolder) {
@@ -77,6 +91,7 @@ class BerryCrushAnnotator : Annotator {
         } else {
             when (element.node.elementType) {
                 BerryCrushTokenTypes.NUMBER -> holder.annotate(element, BerryCrushHighlightingColors.NUMBER)
+                BerryCrushTokenTypes.STRING -> holder.annotate(element, BerryCrushHighlightingColors.STRING)
             }
         }
     }
