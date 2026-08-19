@@ -33,6 +33,7 @@ class BerryCrushLexer : LexerBase() {
                 "and" to BerryCrushTokenTypes.AND,
                 "but" to BerryCrushTokenTypes.BUT,
                 "call" to BerryCrushTokenTypes.CALL,
+                "using" to BerryCrushTokenTypes.USING,
                 "webhook:" to BerryCrushTokenTypes.WEBHOOK,
                 "assert" to BerryCrushTokenTypes.ASSERT,
                 "extract" to BerryCrushTokenTypes.EXTRACT,

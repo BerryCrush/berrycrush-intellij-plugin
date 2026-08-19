@@ -34,6 +34,7 @@ internal fun PsiBuilder.parseCallDirective(parentIndent: Int) {
         when (tokenType) {
             BerryCrushTokenTypes.OPERATION_REF -> parseOperationRef()
             BerryCrushTokenTypes.VARIABLE -> parseVariableRef()
+            BerryCrushTokenTypes.USING -> parseUsing()
             else -> advanceLexer()
         }
     }
@@ -43,6 +44,16 @@ internal fun PsiBuilder.parseCallDirective(parentIndent: Int) {
     parseIncludeParameters(parentIndent)
 
     marker.done(BerryCrushElementTypes.CALL_DIRECTIVE)
+}
+
+private fun PsiBuilder.parseUsing() {
+    val marker = mark()
+    advanceLexer() // consume "using"
+    skipWhiteSpaces()
+    if (tokenType == BerryCrushTokenTypes.TEXT) {
+        markAs(BerryCrushElementTypes.BINDING_NAME)
+    }
+    marker.done(BerryCrushElementTypes.USING)
 }
 
 internal fun PsiBuilder.parseWebhookDirective(parentIndent: Int) {

@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fixing missing syntax highlighting for `examples` and tags
 
+### Changed
+- Highlighting `using` keyword on `call` directive
+
 ## [2.0.0]
 
 ### Added
