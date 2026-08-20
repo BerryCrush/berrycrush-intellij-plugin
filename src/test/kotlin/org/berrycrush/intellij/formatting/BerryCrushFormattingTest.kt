@@ -562,4 +562,56 @@ class BerryCrushFormattingTest : BerryCrushTestCase() {
 
         doIdempotencyTest(input, expected)
     }
+
+    @Test
+    fun `parameters should be aligned meaningfully`() {
+        val input =
+            listOf(
+                "scenario: parameters formatting",
+                "parameters:",
+                "header:",
+                "Request-ID: 12345",
+                "binding:",
+                "default:",
+                "baseUrl: \"https://api.example.com\"",
+                "location: \"classpath:/config/defaults.yaml\"",
+                "api:",
+                "baseUrl: \"https://api.example.com\"",
+                "location: \"classpath:/config/api.yaml\"",
+                "custom: \"value\"",
+            ).joinToString("\n")
+
+        val expected = """
+            scenario: parameters formatting
+              parameters:
+                header:
+                  Request-ID: 12345
+                binding:
+                  default:
+                    baseUrl: "https://api.example.com"
+                    location: "classpath:/config/defaults.yaml"
+                  api:
+                    baseUrl: "https://api.example.com"
+                    location: "classpath:/config/api.yaml"
+                custom: "value"
+        """.trimIndent()
+        doIdempotencyTest(input, expected)
+    }
+
+    @Test
+    fun `parameters with binding and extra entry must be formatted correctly`() {
+        val binding = """
+            outline: format uuid and datetime are generated each time
+              parameters:
+                header:
+                  Request-ID: "cca43b93-a4ff-46cf-8564-d8e4f3899657"
+                binding.api:
+                  baseUrl: "{{param.binding.default.baseUrl}}/oas/api{{prefix}}"
+                  location: "classpath:{{api}}"
+                  alias:
+                    operation: "{{endpoint}}"
+                adminPrefix: "/__admin0"
+        """.trimIndent()
+        doIdempotencyTest(binding, binding)
+    }
 }

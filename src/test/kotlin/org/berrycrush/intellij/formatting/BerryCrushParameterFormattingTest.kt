@@ -1,0 +1,169 @@
+package org.berrycrush.intellij.formatting
+
+import com.intellij.openapi.command.WriteCommandAction
+import com.intellij.psi.codeStyle.CodeStyleManager
+import org.berrycrush.intellij.BerryCrushTestCase
+import org.junit.jupiter.api.Test
+
+class BerryCrushParameterFormattingTest : BerryCrushTestCase() {
+    private fun applyFormatting(
+        input: String,
+        fileExtension: String = "scenario",
+    ): String {
+        myFixture.configureByText("test.$fileExtension", input)
+
+        WriteCommandAction.runWriteCommandAction(project) {
+            CodeStyleManager
+                .getInstance(project)
+                .reformatText(myFixture.file, 0, myFixture.editor.document.textLength)
+        }
+
+        return myFixture.editor.document.text
+    }
+
+    private fun doFormattingTest(
+        input: String,
+        expected: String,
+        fileExtension: String = "scenario",
+    ) {
+        val actual = applyFormatting(input, fileExtension)
+        assertEquals("Formatting result mismatch", expected, actual)
+    }
+
+    private fun doIdempotencyTest(
+        input: String,
+        expected: String,
+        fileExtension: String = "scenario",
+    ) {
+        val firstPass = applyFormatting(input, fileExtension)
+        assertEquals("First pass result mismatch", expected, firstPass)
+
+        val secondPass = applyFormatting(firstPass, fileExtension)
+        assertEquals("Formatting must be idempotent", firstPass, secondPass)
+    }
+
+    @Test
+    fun testParametersBlockWithRepresentativeFixedKeys() {
+        val input =
+            listOf(
+                "scenario: fixed keys",
+                "parameters:",
+                "logRequests:   true",
+                "header.Authorization: Bearer token",
+                "binding.default.baseUrl: \"https://api.example.com\"",
+            ).joinToString("\n")
+
+        val expected =
+            listOf(
+                "scenario: fixed keys",
+                "  parameters:",
+                "    logRequests: true",
+                "    header.Authorization: Bearer token",
+                "    binding.default.baseUrl: \"https://api.example.com\"",
+            ).joinToString("\n")
+
+        doFormattingTest(input, expected)
+    }
+
+    @Test
+    fun testParametersBlockWithDottedFixedFamilies() {
+        val input =
+            listOf(
+                "scenario: dotted families",
+                "parameters:",
+                "autoAssertions.enabled:true",
+                "errorContext.maxBodySize:4096",
+                "retry.maxAttempts:3",
+                "binding.default.alias.listPets: listPets",
+                "multiTest.timeoutMs: 500",
+            ).joinToString("\n")
+
+        val expected =
+            listOf(
+                "scenario: dotted families",
+                "  parameters:",
+                "    autoAssertions.enabled: true",
+                "    errorContext.maxBodySize: 4096",
+                "    retry.maxAttempts: 3",
+                "    binding.default.alias.listPets: listPets",
+                "    multiTest.timeoutMs: 500",
+            ).joinToString("\n")
+
+        doFormattingTest(input, expected)
+    }
+
+    @Test
+    fun testParametersBlockWithFixedAndCustomKeys() {
+        val input =
+            listOf(
+                "scenario: mixed keys",
+                "parameters:",
+                "logRequests: true",
+                "custom-param: 123",
+                "tenant.profile.name: acme",
+            ).joinToString("\n")
+
+        val expected =
+            listOf(
+                "scenario: mixed keys",
+                "  parameters:",
+                "    logRequests: true",
+                "    custom-param: 123",
+                "    tenant.profile.name: acme",
+            ).joinToString("\n")
+
+        doFormattingTest(input, expected)
+    }
+
+    @Test
+    fun testNestedColonSeparatedParametersInParametersBlock() {
+        val input =
+            listOf(
+                "scenario: nested colon params",
+                "parameters:",
+                "header:",
+                "Request-ID: 12345",
+                "custom:",
+                "child: value",
+            ).joinToString("\n")
+
+        val expected =
+            listOf(
+                "scenario: nested colon params",
+                "  parameters:",
+                "    header:",
+                "      Request-ID: 12345",
+                "    custom:",
+                "      child: value",
+            ).joinToString("\n")
+
+        doFormattingTest(input, expected)
+    }
+
+    @Test
+    fun testParametersBlockFormattingIsIdempotent() {
+        val input =
+            listOf(
+                "scenario: idempotent parameters",
+                "parameters:",
+                "header:",
+                "Request-ID: 12345",
+                "binding.default.baseUrl: \"https://api.example.com\"",
+                "custom:",
+                "child: value",
+            ).joinToString("\n")
+
+        val expected =
+            listOf(
+                "scenario: idempotent parameters",
+                "  parameters:",
+                "    header:",
+                "      Request-ID: 12345",
+                "    binding.default.baseUrl: \"https://api.example.com\"",
+                "    custom:",
+                "      child: value",
+            ).joinToString("\n")
+
+        doIdempotencyTest(input, expected)
+    }
+}

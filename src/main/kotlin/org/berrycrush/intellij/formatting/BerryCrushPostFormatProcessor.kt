@@ -236,25 +236,79 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
         resetForRoot: FormattingContext,
         trimmed: String,
     ): Pair<Int, FormattingContext> {
+        val hasValue = hasInlineValue(trimmed)
+        val key = trimmed.substringBefore(':').trim()
+
+        var adjustedStack = resetForRoot.mapIndentStack
+        var adjustedKeyStack = resetForRoot.mapKeyStack
+
+        if (resetForRoot.inParametersBlock && adjustedStack.isNotEmpty()) {
+            val parentKey = adjustedKeyStack.lastOrNull().orEmpty()
+            val withinBindingScope = adjustedKeyStack.any { isBindingScopeKey(it) }
+
+            if (withinBindingScope) {
+                val underAliasBlock = parentKey == "alias"
+                val isBindingFieldValue = hasValue && (key == "baseUrl" || key == "location")
+                val isAliasNode = !hasValue && key == "alias"
+                val isAliasValueKey = hasValue && (key == "operation" || key.startsWith("alias."))
+                val isBindingBranchNode = !hasValue && parentKey != "alias"
+                val keepInsideAliasBlock = underAliasBlock && (isAliasValueKey || !hasValue)
+
+                // Within binding blocks, a new non-alias map node after inline values
+                // should become a sibling (e.g., `api:` after `default` entries).
+                if (!hasValue && key != "alias" && !isBindingScopeKey(parentKey) && parentKey != "alias" && adjustedStack.isNotEmpty()) {
+                    adjustedStack = adjustedStack.dropLast(1)
+                    adjustedKeyStack = adjustedKeyStack.dropLast(1)
+                }
+
+                val keepInsideBindingScope =
+                    keepInsideAliasBlock ||
+                        isBindingBranchNode ||
+                        isBindingFieldValue ||
+                        isAliasNode ||
+                        isAliasValueKey
+
+                if (!keepInsideBindingScope) {
+                    adjustedStack = emptyList()
+                    adjustedKeyStack = emptyList()
+                }
+            }
+
+            if (parentKey == "header" && !isLikelyHeaderChildKey(key)) {
+                adjustedStack = adjustedStack.dropLast(1)
+                adjustedKeyStack = adjustedKeyStack.dropLast(1)
+            } else if (!withinBindingScope && !hasValue && resetForRoot.previousMapEntryHadInlineValue) {
+                adjustedStack = adjustedStack.dropLast(1)
+                adjustedKeyStack = adjustedKeyStack.dropLast(1)
+            }
+        }
+
         val parentIndent =
             when {
-                resetForRoot.mapIndentStack.isNotEmpty() -> resetForRoot.mapIndentStack.last()
+                adjustedStack.isNotEmpty() -> adjustedStack.last()
                 resetForRoot.inDirective -> resetForRoot.directiveIndent
-                resetForRoot.inParametersBlock -> resetForRoot.currentIndent
+                resetForRoot.inParametersBlock -> resetForRoot.parametersBlockIndent
                 else -> resetForRoot.currentIndent
             }
         val indent = parentIndent + INDENT_SIZE
-        val hasValue = hasInlineValue(trimmed)
         val nextStack =
             if (hasValue) {
-                resetForRoot.mapIndentStack
+                adjustedStack
             } else {
-                resetForRoot.mapIndentStack + indent
+                adjustedStack + indent
+            }
+        val nextKeyStack =
+            if (hasValue) {
+                adjustedKeyStack
+            } else {
+                adjustedKeyStack + key
             }
         return indent to
             resetForRoot.copy(
-                currentIndent = indent,
+                currentIndent = if (hasValue) parentIndent else indent,
                 mapIndentStack = nextStack,
+                mapKeyStack = nextKeyStack,
+                previousMapEntryHadInlineValue = hasValue,
                 previousLineBlank = false,
             )
     }
@@ -310,10 +364,12 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
                 inDirective = true,
                 inParametersBlock = false,
                 mapIndentStack = emptyList(),
+                mapKeyStack = emptyList(),
                 currentIndent = indent,
                 directiveIndent = nextDirectiveIndent,
                 inConditionalBranch = inConditionalBranch,
                 conditionalBaseIndent = if (inConditionalBranch) conditionalBaseIndent else 0,
+                previousMapEntryHadInlineValue = false,
                 previousLineBlank = false,
             )
         return indent to newContext
@@ -333,10 +389,12 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
                 inExamples = false,
                 inParametersBlock = false,
                 mapIndentStack = emptyList(),
+                mapKeyStack = emptyList(),
                 currentIndent = baseIndent,
                 directiveIndent = 0,
                 inConditionalBranch = false,
                 conditionalBaseIndent = 0,
+                previousMapEntryHadInlineValue = false,
                 previousLineBlank = false,
             )
         return baseIndent to newContext
@@ -355,9 +413,12 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
                 inDirective = false,
                 inExamples = false,
                 mapIndentStack = emptyList(),
+                mapKeyStack = emptyList(),
                 currentIndent = indent,
+                parametersBlockIndent = indent,
                 inConditionalBranch = false,
                 conditionalBaseIndent = 0,
+                previousMapEntryHadInlineValue = false,
                 previousLineBlank = false,
             )
         return indent to newContext
@@ -377,9 +438,11 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
                 inDirective = false,
                 inParametersBlock = false,
                 mapIndentStack = emptyList(),
+                mapKeyStack = emptyList(),
                 currentIndent = indent,
                 inConditionalBranch = false,
                 conditionalBaseIndent = 0,
+                previousMapEntryHadInlineValue = false,
                 previousLineBlank = false,
             )
         return indent to newContext
@@ -397,11 +460,13 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
                 inExamples = false,
                 inParametersBlock = false,
                 mapIndentStack = emptyList(),
+                mapKeyStack = emptyList(),
                 currentIndent = indent,
                 containerIndent = indent,
                 directiveIndent = 0,
                 inConditionalBranch = false,
                 conditionalBaseIndent = 0,
+                previousMapEntryHadInlineValue = false,
                 previousLineBlank = false,
             )
         return indent to newContext
@@ -427,11 +492,13 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
                 inExamples = false,
                 inParametersBlock = false,
                 mapIndentStack = emptyList(),
+                mapKeyStack = emptyList(),
                 currentIndent = indent,
                 containerIndent = indent,
                 directiveIndent = 0,
                 inConditionalBranch = false,
                 conditionalBaseIndent = 0,
+                previousMapEntryHadInlineValue = false,
                 previousLineBlank = false,
             )
         return indent to newContext
@@ -452,11 +519,13 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
             inExamples = false,
             inParametersBlock = false,
             mapIndentStack = emptyList(),
+            mapKeyStack = emptyList(),
             currentIndent = 0,
             containerIndent = 0,
             directiveIndent = 0,
             inConditionalBranch = false,
             conditionalBaseIndent = 0,
+            previousMapEntryHadInlineValue = false,
         )
 
     private fun getRootContext(
@@ -475,11 +544,13 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
             inExamples = false,
             inParametersBlock = false,
             mapIndentStack = emptyList(),
+            mapKeyStack = emptyList(),
             currentIndent = 0,
             containerIndent = 0,
             directiveIndent = 0,
             inConditionalBranch = false,
             conditionalBaseIndent = 0,
+            previousMapEntryHadInlineValue = false,
         )
     } else {
         context
@@ -505,7 +576,7 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
     /**
      * Check if the line is a map entry (`key:` or `key: value`).
      */
-    private fun isMapEntry(trimmed: String): Boolean = trimmed.matches(Regex("^[a-zA-Z_][a-zA-Z0-9_]*:\\s*.*$"))
+    private fun isMapEntry(trimmed: String): Boolean = trimmed.matches(Regex("^[a-zA-Z_][a-zA-Z0-9_.-]*:\\s*.*$"))
 
     /**
      * Check whether a map entry contains a value on the same line.
@@ -515,6 +586,10 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
         if (colonIndex < 0 || colonIndex == trimmed.lastIndex) return false
         return trimmed.substring(colonIndex + 1).trim().isNotEmpty()
     }
+
+    private fun isLikelyHeaderChildKey(key: String): Boolean = key.contains("-")
+
+    private fun isBindingScopeKey(key: String): Boolean = key == "binding" || key.startsWith("binding.")
 
     /**
      * Format a line with proper spacing.
@@ -676,11 +751,14 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
         val inExamples: Boolean = false,
         val inParametersBlock: Boolean = false,
         val currentIndent: Int = 0,
+        val parametersBlockIndent: Int = 0,
         val containerIndent: Int = 0,
         val directiveIndent: Int = 0,
         val inConditionalBranch: Boolean = false,
         val conditionalBaseIndent: Int = 0,
         val mapIndentStack: List<Int> = emptyList(),
+        val mapKeyStack: List<String> = emptyList(),
+        val previousMapEntryHadInlineValue: Boolean = false,
         val previousLineBlank: Boolean = false,
     )
 }
