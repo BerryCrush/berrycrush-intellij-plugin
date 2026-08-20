@@ -63,7 +63,7 @@ internal fun PsiBuilder.tryParseParametersBlock(parentIndent: Int) {
         marker.rollbackTo()
         return
     }
-    parseParameters(parentIndent)
+    parseParameters(indent)
     marker.drop()
 }
 
