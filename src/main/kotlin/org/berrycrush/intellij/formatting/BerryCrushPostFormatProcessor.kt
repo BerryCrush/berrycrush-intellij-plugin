@@ -34,6 +34,7 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
                 "include",
                 "if",
                 "else",
+                "fail",
                 "webhook",
                 "bodyfile",
             )
@@ -318,8 +319,8 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
         lower: String,
     ): Pair<Int, FormattingContext> {
         val isConditional = isConditionalDirective(lower)
-        val isAssert = isAssertDirective(lower)
         val isElse = lower == "else" || lower.startsWith("else ") || lower == "else:"
+        val isBranchBodyDirective = resetForRoot.inConditionalBranch && !isConditional
 
         // If already at directive level, stay there
         val baseIndent =
@@ -349,13 +350,12 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
             when {
                 isConditional && isElse && resetForRoot.inConditionalBranch -> conditionalBaseIndent
                 isConditional -> baseIndent
-                resetForRoot.inConditionalBranch && isAssert -> resetForRoot.directiveIndent
+                isBranchBodyDirective -> resetForRoot.directiveIndent
                 else -> baseIndent
             }
 
         val inConditionalBranch =
-            (isConditional || (resetForRoot.inConditionalBranch && isAssert)) &&
-                !(resetForRoot.inConditionalBranch && !isConditional && !isAssert)
+            isConditional || isBranchBodyDirective
 
         val nextDirectiveIndent = if (inConditionalBranch) indent + INDENT_SIZE else indent
 
@@ -569,9 +569,6 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
         lower == "else" ||
         lower.startsWith("else ") ||
         lower == "else:"
-
-    private fun isAssertDirective(lower: String): Boolean = lower == "assert" ||
-        lower.startsWith("assert ")
 
     /**
      * Check if the line is a map entry (`key:` or `key: value`).
