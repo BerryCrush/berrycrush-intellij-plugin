@@ -32,6 +32,7 @@
     <ul>
       <li>Fixing parameters block formatting</li>
       <li>Fixing if-else directive formatting</li>
+      <li>Fixing PSI parsing for parameters</li>
     </ul>
     <h3>2.0.1</h3>
     <ul>
