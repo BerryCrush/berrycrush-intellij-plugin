@@ -4,7 +4,7 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.psi.codeStyle.CodeStyleManager
 import org.berrycrush.intellij.BerryCrushTestCase
 
-abstract class BerryCrushFormattingTestCase: BerryCrushTestCase() {
+abstract class BerryCrushFormattingTestCase : BerryCrushTestCase() {
     protected fun applyFormatting(
         input: String,
         fileExtension: String = "scenario",
