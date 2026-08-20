@@ -1,8 +1,5 @@
 package org.berrycrush.intellij.formatting
 
-import com.intellij.openapi.command.WriteCommandAction
-import com.intellij.psi.codeStyle.CodeStyleManager
-import org.berrycrush.intellij.BerryCrushTestCase
 import org.junit.jupiter.api.Test
 
 /**
@@ -11,63 +8,7 @@ import org.junit.jupiter.api.Test
  * Each test verifies that the formatter produces deterministic output
  * by comparing actual results against expected results.
  */
-class BerryCrushFormattingTest : BerryCrushTestCase() {
-    private fun applyFormatting(
-        input: String,
-        fileExtension: String = "scenario",
-    ): String {
-        myFixture.configureByText("test.$fileExtension", input)
-
-        WriteCommandAction.runWriteCommandAction(project) {
-            CodeStyleManager
-                .getInstance(project)
-                .reformatText(myFixture.file, 0, myFixture.editor.document.textLength)
-        }
-
-        return myFixture.editor.document.text
-    }
-
-    /**
-     * Helper function to test formatting.
-     * Configures file with input, runs reformat, and checks result.
-     */
-    private fun doFormattingTest(
-        input: String,
-        expected: String,
-        fileExtension: String = "scenario",
-    ) {
-        val actual = applyFormatting(input, fileExtension)
-
-        // Debug output for test failures
-        if (actual != expected) {
-            println("=== INPUT ===")
-            println(input.replace(" ", "·"))
-            println("=== EXPECTED ===")
-            println(expected.replace(" ", "·"))
-            println("=== ACTUAL ===")
-            println(actual.replace(" ", "·"))
-            println("=== END ===")
-        }
-
-        assertEquals(
-            "Formatting result mismatch",
-            expected,
-            actual,
-        )
-    }
-
-    private fun doIdempotencyTest(
-        input: String,
-        expected: String,
-        fileExtension: String = "scenario",
-    ) {
-        val firstPass = applyFormatting(input, fileExtension)
-        assertEquals("First pass result mismatch", expected, firstPass)
-
-        val secondPass = applyFormatting(firstPass, fileExtension)
-        assertEquals("Formatting must be idempotent", firstPass, secondPass)
-    }
-
+class BerryCrushFormattingTest : BerryCrushFormattingTestCase() {
     // === Root Level Elements ===
 
     @Test
