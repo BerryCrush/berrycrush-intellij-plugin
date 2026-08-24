@@ -681,4 +681,28 @@ class BerryCrushParserTest : BerryCrushTestCase() {
         assertEquals(2, conditionals.size)
         assertEquals(2, conditionals[1].children.filterIsInstance<BerryCrushConditionalElement>().size)
     }
+
+    @Test
+    fun `if without else must parse properly`() {
+        val file =
+            createScenarioFile(
+                "if-without-else",
+                """
+                outline: foo
+                  when I call
+                    call ^call
+                      id: {{id}}
+                    if status 200
+                      assert $.id equals 1
+                  examples:
+                    | id |
+                """.trimIndent(),
+            )
+        val psiFile = findFile(file)
+        assertNotNull("PSI file should be created", psiFile)
+        val outlineElement = findChildOfType(psiFile, BerryCrushOutlineElement::class.java)
+        requireNotNull(outlineElement)
+        val examples = outlineElement.children.filterIsInstance<BerryCrushExamplesElement>()
+        assertEquals(1, examples.size)
+    }
 }

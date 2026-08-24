@@ -99,8 +99,16 @@ internal fun PsiBuilder.parseIfDirective(parentIndent: Int) {
 }
 
 private fun PsiBuilder.parseElseDirective(parentIndent: Int) {
-    consumeLineIndent()
-    if (tokenType == BerryCrushTokenTypes.ELSE) {
+    tailrec fun searchElse(index: Int = 0): Boolean = when (lookAhead(index)) {
+        BerryCrushTokenTypes.ELSE -> true
+        BerryCrushTokenTypes.NEWLINE,
+        BerryCrushTokenTypes.WHITE_SPACE,
+        BerryCrushTokenTypes.INDENT,
+        -> searchElse(index + 1)
+        else -> false
+    }
+    if (searchElse()) {
+        consumeLineIndent()
         val marker = mark()
         advanceLexer() // skip else
         skipWhiteSpaces()
