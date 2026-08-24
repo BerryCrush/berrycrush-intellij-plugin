@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `parameters` block formatting
 - `if-else` directive formatting
 - PSI parsing for `parameters` entries.
+- `if-else` PSI parsing
 
 ## [2.0.1]
 
