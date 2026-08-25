@@ -63,7 +63,7 @@ internal fun PsiBuilder.tryParseParametersBlock(parentIndent: Int) {
         marker.rollbackTo()
         return
     }
-    parseParameters(parentIndent)
+    parseParameters(indent)
     marker.drop()
 }
 
@@ -101,12 +101,11 @@ private fun PsiBuilder.tryParseParameterLike(
         BerryCrushTokenTypes.TEXT,
         -> if (parseParameterKey(marker)) return false
         else -> {
-            if (!allowBody) {
+            if (tokenType == BerryCrushTokenTypes.BODY && !allowBody) {
                 marker.rollbackTo()
                 return false
             }
 
-            val tokenType = tokenType
             if (tokenType == null || tokenType == BerryCrushTokenTypes.NEWLINE) {
                 marker.rollbackTo()
                 return false

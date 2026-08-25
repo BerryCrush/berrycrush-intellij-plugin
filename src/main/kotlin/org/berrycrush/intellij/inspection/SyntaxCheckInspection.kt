@@ -67,7 +67,7 @@ class SyntaxCheckInspection : BerryCrushInspection() {
                 }
                 is BerryCrushNamedScenarioLikeElement -> {
                     if (!isScenarioFile) {
-                        holder.registerProblem(element, "Scenario/outline/background blocks are only valid in .scenario files")
+                        holder.registerProblem(element, "Scenario/outline blocks are only valid in .scenario files")
                     }
                     checkScenarioLike(element, holder)
                 }

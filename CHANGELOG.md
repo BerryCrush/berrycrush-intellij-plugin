@@ -5,6 +5,14 @@ All notable changes to the BerryCrush IntelliJ Plugin will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.2]
+
+### Fixed
+- `parameters` block formatting
+- `if-else` directive formatting
+- PSI parsing for `parameters` entries.
+- `if-else` PSI parsing
+
 ## [2.0.1]
 
 ### Fixed

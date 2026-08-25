@@ -1,8 +1,5 @@
 package org.berrycrush.intellij.formatting
 
-import com.intellij.openapi.command.WriteCommandAction
-import com.intellij.psi.codeStyle.CodeStyleManager
-import org.berrycrush.intellij.BerryCrushTestCase
 import org.junit.jupiter.api.Test
 
 /**
@@ -11,63 +8,7 @@ import org.junit.jupiter.api.Test
  * Each test verifies that the formatter produces deterministic output
  * by comparing actual results against expected results.
  */
-class BerryCrushFormattingTest : BerryCrushTestCase() {
-    private fun applyFormatting(
-        input: String,
-        fileExtension: String = "scenario",
-    ): String {
-        myFixture.configureByText("test.$fileExtension", input)
-
-        WriteCommandAction.runWriteCommandAction(project) {
-            CodeStyleManager
-                .getInstance(project)
-                .reformatText(myFixture.file, 0, myFixture.editor.document.textLength)
-        }
-
-        return myFixture.editor.document.text
-    }
-
-    /**
-     * Helper function to test formatting.
-     * Configures file with input, runs reformat, and checks result.
-     */
-    private fun doFormattingTest(
-        input: String,
-        expected: String,
-        fileExtension: String = "scenario",
-    ) {
-        val actual = applyFormatting(input, fileExtension)
-
-        // Debug output for test failures
-        if (actual != expected) {
-            println("=== INPUT ===")
-            println(input.replace(" ", "·"))
-            println("=== EXPECTED ===")
-            println(expected.replace(" ", "·"))
-            println("=== ACTUAL ===")
-            println(actual.replace(" ", "·"))
-            println("=== END ===")
-        }
-
-        assertEquals(
-            "Formatting result mismatch",
-            expected,
-            actual,
-        )
-    }
-
-    private fun doIdempotencyTest(
-        input: String,
-        expected: String,
-        fileExtension: String = "scenario",
-    ) {
-        val firstPass = applyFormatting(input, fileExtension)
-        assertEquals("First pass result mismatch", expected, firstPass)
-
-        val secondPass = applyFormatting(firstPass, fileExtension)
-        assertEquals("Formatting must be idempotent", firstPass, secondPass)
-    }
-
+class BerryCrushFormattingTest : BerryCrushFormattingTestCase() {
     // === Root Level Elements ===
 
     @Test
@@ -561,5 +502,57 @@ class BerryCrushFormattingTest : BerryCrushTestCase() {
             ).joinToString("\n")
 
         doIdempotencyTest(input, expected)
+    }
+
+    @Test
+    fun `parameters should be aligned meaningfully`() {
+        val input =
+            listOf(
+                "scenario: parameters formatting",
+                "parameters:",
+                "header:",
+                "Request-ID: 12345",
+                "binding:",
+                "default:",
+                "baseUrl: \"https://api.example.com\"",
+                "location: \"classpath:/config/defaults.yaml\"",
+                "api:",
+                "baseUrl: \"https://api.example.com\"",
+                "location: \"classpath:/config/api.yaml\"",
+                "custom: \"value\"",
+            ).joinToString("\n")
+
+        val expected = """
+            scenario: parameters formatting
+              parameters:
+                header:
+                  Request-ID: 12345
+                binding:
+                  default:
+                    baseUrl: "https://api.example.com"
+                    location: "classpath:/config/defaults.yaml"
+                  api:
+                    baseUrl: "https://api.example.com"
+                    location: "classpath:/config/api.yaml"
+                custom: "value"
+        """.trimIndent()
+        doIdempotencyTest(input, expected)
+    }
+
+    @Test
+    fun `parameters with binding and extra entry must be formatted correctly`() {
+        val binding = """
+            outline: format uuid and datetime are generated each time
+              parameters:
+                header:
+                  Request-ID: "cca43b93-a4ff-46cf-8564-d8e4f3899657"
+                binding.api:
+                  baseUrl: "{{param.binding.default.baseUrl}}/oas/api{{prefix}}"
+                  location: "classpath:{{api}}"
+                  alias:
+                    operation: "{{endpoint}}"
+                adminPrefix: "/__admin0"
+        """.trimIndent()
+        doIdempotencyTest(binding, binding)
     }
 }

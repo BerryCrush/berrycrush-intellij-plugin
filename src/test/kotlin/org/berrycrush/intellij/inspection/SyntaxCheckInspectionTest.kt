@@ -310,4 +310,24 @@ class SyntaxCheckInspectionTest : BerryCrushInspectionTestCase(SyntaxCheckInspec
             problems.isEmpty(),
         )
     }
+
+    @Test
+    fun `parameters block under outline should not cause error`() {
+        val psiFile =
+            myFixture.addFileToProject(
+                "test.scenario",
+                """
+                outline: outline with parameter
+                  parameters:
+                    header:
+                      Request-ID: "cca43b93-a4ff-46cf-8564-d8e4f3899657"
+                """.trimIndent(),
+            )
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "parameters block under outline should not be flagged",
+            problems.isEmpty(),
+        )
+    }
 }

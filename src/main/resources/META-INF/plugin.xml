@@ -28,6 +28,13 @@
     ]]></description>
 
     <change-notes><![CDATA[
+    <h3>2.0.2</h3>
+    <ul>
+      <li>Fixing parameters block formatting</li>
+      <li>Fixing if-else directive formatting</li>
+      <li>Fixing PSI parsing for parameters</li>
+      <li>Fixing PSI parsing for if-else directives</li>
+    </ul>
     <h3>2.0.1</h3>
     <ul>
       <li>Fixing missing syntax highlighting of examples and tags</li>
