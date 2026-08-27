@@ -72,11 +72,19 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
     }
 
     private data class LineContext(val context: FormattingContext,
-                                   val tableIndent: Int,
-                                   val inTable: Boolean,
-                                   val inDetachedRootCommentBlock: Boolean,
+                                   val inDetachedRootCommentBlock: Boolean = false,
                                    val inComment: Boolean = false,
-                                   val commentLines: List<String> = emptyList())
+                                   val lines: List<Triple<LineType, String, Int>> = emptyList()) {
+        enum class LineType {
+            EMPTY,
+            TABLE_ROW,
+            COMMENT,
+        }
+
+        val tableLines: List<String>
+            get() = lines.filter { it.first == LineType.TABLE_ROW }.map { it.second }
+    }
+
     /**
      * Reformat the entire document with proper indentation and alignment.
      * Uses continue statements to efficiently handle different line types
@@ -86,21 +94,18 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
         val lines = text.lines()
         val result = mutableListOf<String>()
 
-        val context = LineContext(FormattingContext(), 0, false, false)
-        val tableLines = mutableListOf<String>()
+        val context = LineContext(FormattingContext())
         val lastContext = lines.withIndex().fold(context) { context, (index, line) ->
-            context.reformatLine(lines, result, index, line, tableLines)
+            context.reformatLine(result, line)
         }
 
-        // Handle any remaining table
-        if (lastContext.inTable) {
-            result.addAll(alignTableColumns(tableLines, lastContext.tableIndent))
-        }
+        // Handle any remaining lines
+        lastContext.handleLines("", result)
 
         return result.joinToString("\n")
     }
 
-    private fun LineContext.reformatLine(lines: List<String>, result: MutableList<String>, index: Int, line: String, tableLines: MutableList<String>): LineContext {
+    private fun LineContext.reformatLine(result: MutableList<String>, line: String): LineContext {
         val trimmed = line.trim()
         val leadingSpaces =
             line.indexOfFirst { !it.isWhitespace() }.let {
@@ -109,65 +114,61 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
         return when {
             // Handle empty lines
             trimmed.isEmpty() -> {
-                if (inTable) {
-                    // End table and align it
-                    result.addAll(alignTableColumns(tableLines, tableIndent))
-                    tableLines.clear()
-                }
-                result.add("")
+                val newLines = this.lines + Triple(LineContext.LineType.EMPTY, trimmed, 0)
                 copy(context = context.copy(previousLineBlank = true),
-                     inTable = false,
-                     inDetachedRootCommentBlock = false)
+                     inDetachedRootCommentBlock = inComment,
+                    lines = newLines)
             }
             // Handle table rows
             trimmed.startsWith("|") -> {
-                tableLines.add(trimmed)
-                if (!inTable) {
-                    copy(inTable = true, tableIndent = context.currentIndent + INDENT_SIZE)
-                } else {
-                    this
-                }
+                val indent = context.currentIndent + INDENT_SIZE
+                val newLines = this.lines + Triple(LineContext.LineType.TABLE_ROW, trimmed, indent)
+                copy(lines = newLines)
+            }
+            trimmed.startsWith("#") -> {
+                val newLines = this.lines + Triple(LineContext.LineType.COMMENT, trimmed, -1)
+                copy(context = context.copy(previousLineBlank = false),
+                    inComment = true,
+                    lines = newLines)
             }
             else -> {
                 // End table if we were in one
-                if (inTable) {
-                    result.addAll(alignTableColumns(tableLines, tableIndent))
-                    tableLines.clear()
-                }
-                // Detached comments before root blocks should stay at root indentation.
-                val nextInDetachedRootCommentBlock = if (trimmed.startsWith("#")) {
-                    val nextStructural =
-                        lines
-                            .drop(index + 1)
-                            .firstOrNull {
-                                val nextTrimmed = it.trim()
-                                nextTrimmed.isNotEmpty() && !nextTrimmed.startsWith("#")
-                            }
-                    val nextTrimmed = nextStructural?.trim().orEmpty()
-                    val nextIsRootBlock = ROOT_BLOCK_PREFIXES.any { nextTrimmed.lowercase().startsWith(it) }
-                    val shouldRootIndent =
-                        nextIsRootBlock &&
-                                (inDetachedRootCommentBlock || context.previousLineBlank || !context.inDirective)
-
-                    if (shouldRootIndent) {
-                        result.add(formatLine(trimmed, 0))
-                        return copy(context = context.copy(currentIndent = 0, previousLineBlank = false),
-                                    inDetachedRootCommentBlock = true,
-                                    inTable = false)
-                    }
-                    inDetachedRootCommentBlock
-                } else {
-                    false
-                }
-
+                handleLines(trimmed, result)
                 // Calculate indent and update context
                 val (indent, newContext) = calculateIndentAndContext(trimmed, leadingSpaces, context)
                 // Format the line with proper indent and spacing
                 val formattedLine = formatLine(trimmed, indent)
                 result.add(formattedLine)
-                copy(context = newContext, inDetachedRootCommentBlock = nextInDetachedRootCommentBlock)
+                copy(context = newContext,
+                    inDetachedRootCommentBlock = false,
+                    inComment = false,
+                    lines = emptyList())
             }
         }
+    }
+
+    private fun LineContext.handleLines(trimmed: String, result: MutableList<String>) {
+        // Table alignment requires entire table
+        val rows = lines.firstOrNull { it.first == LineContext.LineType.TABLE_ROW }?.third?.let {
+            alignTableColumns(tableLines, it)
+        } ?: emptyList()
+        // but comment line must be the original location, so it's a bit sloppy
+        lines.fold(0) { index, (lineType, lineContent, _) ->
+            when (lineType) {
+                LineContext.LineType.EMPTY -> result.add("")
+                LineContext.LineType.COMMENT -> handleComment(lineContent, result, trimmed)
+                LineContext.LineType.TABLE_ROW -> result.add(rows[index])
+            }
+            if (lineType == LineContext.LineType.TABLE_ROW) index + 1  else index
+        }
+    }
+
+    private fun LineContext.handleComment(comment: String, result: MutableList<String>, trimmed: String) {
+        val isRootBlock = ROOT_BLOCK_PREFIXES.any { trimmed.lowercase().startsWith(it) }
+        val shouldRootIndent =
+            isRootBlock && (inDetachedRootCommentBlock || context.previousLineBlank || !context.inDirective)
+        val indent = if (shouldRootIndent) 0 else context.currentIndent
+        result.add(formatLine(comment, indent))
     }
 
     /**
@@ -666,16 +667,16 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
      * Align columns in table rows.
      */
     private fun alignTableColumns(
-        tableLines: List<String>,
+        tableLine: List<String>,
         indent: Int,
     ): List<String> {
-        if (tableLines.isEmpty()) return emptyList()
+        if (tableLine.isEmpty()) return emptyList()
 
         val indentStr = " ".repeat(indent)
 
         // Parse each row into cells
         val rows =
-            tableLines.map { line ->
+            tableLine.map { line ->
                 parseTableRow(line)
             }
 
