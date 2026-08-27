@@ -71,100 +71,112 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
         return rangeToReformat
     }
 
+    private data class LineContext(
+        val context: FormattingContext,
+        val inDetachedRootCommentBlock: Boolean = false,
+        val inComment: Boolean = false,
+        val lines: List<Triple<LineType, String, Int>> = emptyList(),
+    ) {
+        enum class LineType {
+            EMPTY,
+            TABLE_ROW,
+            COMMENT,
+        }
+
+        val tableLines: List<String>
+            get() = lines.filter { it.first == LineType.TABLE_ROW }.map { it.second }
+    }
+
     /**
      * Reformat the entire document with proper indentation and alignment.
      * Uses continue statements to efficiently handle different line types
      * (empty lines, table rows, normal lines) without deep nesting.
      */
-    @Suppress("LoopWithTooManyJumpStatements")
     private fun reformatDocument(text: String): String {
         val lines = text.lines()
         val result = mutableListOf<String>()
 
-        var context = FormattingContext()
-        val tableLines = mutableListOf<String>()
-        var tableIndent = 0
-        var inTable = false
-        var inDetachedRootCommentBlock = false
-
-        for ((index, line) in lines.withIndex()) {
-            val trimmed = line.trim()
-            val leadingSpaces =
-                line.indexOfFirst { !it.isWhitespace() }.let {
-                    if (it == -1) 0 else it
-                }
-
-            // Handle empty lines
-            if (trimmed.isEmpty()) {
-                if (inTable) {
-                    // End table and align it
-                    result.addAll(alignTableColumns(tableLines, tableIndent))
-                    tableLines.clear()
-                    inTable = false
-                }
-                result.add("")
-                inDetachedRootCommentBlock = false
-                context = context.copy(previousLineBlank = true)
-                continue
-            }
-
-            // Handle table rows
-            if (trimmed.startsWith("|")) {
-                if (!inTable) {
-                    inTable = true
-                    tableIndent = context.currentIndent + INDENT_SIZE
-                }
-                tableLines.add(trimmed)
-                continue
-            }
-
-            // End table if we were in one
-            if (inTable) {
-                result.addAll(alignTableColumns(tableLines, tableIndent))
-                tableLines.clear()
-                inTable = false
-            }
-
-            // Detached comments before root blocks should stay at root indentation.
-            if (trimmed.startsWith("#")) {
-                val nextStructural =
-                    lines
-                        .drop(index + 1)
-                        .firstOrNull {
-                            val nextTrimmed = it.trim()
-                            nextTrimmed.isNotEmpty() && !nextTrimmed.startsWith("#")
-                        }
-                val nextTrimmed = nextStructural?.trim().orEmpty()
-                val nextIsRootBlock = ROOT_BLOCK_PREFIXES.any { nextTrimmed.lowercase().startsWith(it) }
-                val shouldRootIndent =
-                    nextIsRootBlock &&
-                        (inDetachedRootCommentBlock || context.previousLineBlank || !context.inDirective)
-
-                if (shouldRootIndent) {
-                    result.add(formatLine(trimmed, 0))
-                    inDetachedRootCommentBlock = true
-                    context = context.copy(currentIndent = 0, previousLineBlank = false)
-                    continue
-                }
-            } else {
-                inDetachedRootCommentBlock = false
-            }
-
-            // Calculate indent and update context
-            val (indent, newContext) = calculateIndentAndContext(trimmed, leadingSpaces, context)
-            context = newContext
-
-            // Format the line with proper indent and spacing
-            val formattedLine = formatLine(trimmed, indent)
-            result.add(formattedLine)
+        val context = LineContext(FormattingContext())
+        val lastContext = lines.fold(context) { context, line ->
+            context.reformatLine(result, line)
         }
 
-        // Handle any remaining table
-        if (inTable) {
-            result.addAll(alignTableColumns(tableLines, tableIndent))
-        }
+        // Handle any remaining lines
+        lastContext.handleLines("", result)
 
         return result.joinToString("\n")
+    }
+
+    private fun LineContext.reformatLine(result: MutableList<String>, line: String): LineContext {
+        val trimmed = line.trim()
+        val leadingSpaces =
+            line.indexOfFirst { !it.isWhitespace() }.let {
+                if (it == -1) 0 else it
+            }
+        return when {
+            // Handle empty lines
+            trimmed.isEmpty() -> {
+                val newLines = this.lines + Triple(LineContext.LineType.EMPTY, trimmed, 0)
+                copy(
+                    context = context.copy(previousLineBlank = true),
+                    inDetachedRootCommentBlock = inComment,
+                    lines = newLines,
+                )
+            }
+            // Handle table rows
+            trimmed.startsWith("|") -> {
+                val indent = context.currentIndent + INDENT_SIZE
+                val newLines = this.lines + Triple(LineContext.LineType.TABLE_ROW, trimmed, indent)
+                copy(lines = newLines)
+            }
+            trimmed.startsWith("#") -> {
+                val newLines = this.lines + Triple(LineContext.LineType.COMMENT, trimmed, -1)
+                copy(
+                    context = context.copy(previousLineBlank = false),
+                    inComment = true,
+                    lines = newLines,
+                )
+            }
+            else -> {
+                // End table if we were in one
+                handleLines(trimmed, result)
+                // Calculate indent and update context
+                val (indent, newContext) = calculateIndentAndContext(trimmed, leadingSpaces, context)
+                // Format the line with proper indent and spacing
+                val formattedLine = formatLine(trimmed, indent)
+                result.add(formattedLine)
+                copy(
+                    context = newContext,
+                    inDetachedRootCommentBlock = false,
+                    inComment = false,
+                    lines = emptyList(),
+                )
+            }
+        }
+    }
+
+    private fun LineContext.handleLines(trimmed: String, result: MutableList<String>) {
+        // Table alignment requires entire table
+        val rows = lines.firstOrNull { it.first == LineContext.LineType.TABLE_ROW }?.third?.let {
+            alignTableColumns(tableLines, it)
+        } ?: emptyList()
+        // but comment line must be the original location, so it's a bit sloppy
+        lines.fold(0) { index, (lineType, lineContent, _) ->
+            when (lineType) {
+                LineContext.LineType.EMPTY -> result.add("")
+                LineContext.LineType.COMMENT -> handleComment(lineContent, result, trimmed)
+                LineContext.LineType.TABLE_ROW -> result.add(rows[index])
+            }
+            if (lineType == LineContext.LineType.TABLE_ROW) index + 1 else index
+        }
+    }
+
+    private fun LineContext.handleComment(comment: String, result: MutableList<String>, trimmed: String) {
+        val isRootBlock = ROOT_BLOCK_PREFIXES.any { trimmed.lowercase().startsWith(it) }
+        val shouldRootIndent =
+            isRootBlock && (inDetachedRootCommentBlock || context.previousLineBlank || !context.inDirective)
+        val indent = if (shouldRootIndent) 0 else context.currentIndent
+        result.add(formatLine(comment, indent))
     }
 
     /**
@@ -172,7 +184,6 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
      * This method is inherently complex due to the number of BerryCrush language constructs
      * that need different indentation rules.
      */
-    @Suppress("CyclomaticComplexMethod")
     private fun calculateIndentAndContext(
         trimmed: String,
         leadingSpaces: Int,
@@ -183,54 +194,35 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
         val isTopLevelByInput = leadingSpaces == 0
 
         val resetForRoot = getRootContext(isTopLevelByInput, lower, context)
-
         return when {
             // Feature/fragment at root level
-            lower.startsWith("feature:") || lower.startsWith("fragment:") -> featureContext(resetForRoot, lower)
+            firstWord in listOf("feature", "fragment") -> featureContext(resetForRoot, lower)
             // Scenario/outline
-            lower.startsWith("scenario:") || lower.startsWith("outline:") -> scenarioContext(lower, resetForRoot, isTopLevelByInput)
+            firstWord in listOf("scenario", "outline") -> scenarioContext(lower, resetForRoot, isTopLevelByInput)
             // Background
-            lower.startsWith("background:") -> backgroundContext(resetForRoot)
+            firstWord == "background" -> backgroundContext(resetForRoot)
             // Examples - valid under outline. If found outside, keep deterministic indentation.
-            lower.startsWith("examples:") -> examplesContext(resetForRoot)
+            firstWord == "examples" -> examplesContext(resetForRoot)
             // Parameters block opener
-            lower.startsWith("parameters:") -> parametersContext(resetForRoot)
-            // Tags (@ at start)
-            lower.startsWith("@") -> {
-                val indent =
-                    if (resetForRoot.inFeature && !resetForRoot.inScenario && !resetForRoot.inBackground) {
-                        INDENT_SIZE
-                    } else {
-                        resetForRoot.currentIndent
-                    }
-                indent to resetForRoot
-            }
-
-            // Comments
-            lower.startsWith("#") -> resetForRoot.currentIndent to resetForRoot
-
-            // Step keywords
+            firstWord == "parameters" -> parametersContext(resetForRoot)
+            firstWord in Tag -> tagContext(resetForRoot)
             firstWord in STEP_KEYWORDS -> stepContext(resetForRoot)
-            // Directives (call, assert, include, etc.)
-            // Multiple directives at the same level should have the same indentation
-            isDirective(lower) -> directiveContext(resetForRoot, lower)
-
-            // Map entries (key: value and key:)
-            isMapEntry(trimmed) -> mapEntryContext(resetForRoot, trimmed)
-
-            // Body content (triple quotes or JSON)
-            lower.startsWith("'''") ||
-                lower.startsWith("\"\"\"") ||
-                lower.startsWith("{") ||
-                lower.startsWith("}") -> {
-                (resetForRoot.currentIndent + INDENT_SIZE) to resetForRoot.copy(previousLineBlank = false)
-            }
-
-            // Default - maintain context indent
-            else -> {
-                resetForRoot.currentIndent to resetForRoot.copy(previousLineBlank = false)
-            }
+            firstWord in DIRECTIVES -> directiveContext(resetForRoot, lower) // for `webhook:`, this has to be before MapEntry
+            lower in MapEntry -> mapEntryContext(resetForRoot, trimmed)
+            lower in Comment -> resetForRoot.currentIndent to resetForRoot
+            lower in TripleQuote || firstWord in LeftBrace || firstWord in RightBrace -> (resetForRoot.currentIndent + INDENT_SIZE) to resetForRoot.copy(previousLineBlank = false)
+            else -> resetForRoot.currentIndent to resetForRoot.copy(previousLineBlank = false)
         }
+    }
+
+    private fun tagContext(resetForRoot: FormattingContext): Pair<Int, FormattingContext> {
+        val indent =
+            if (resetForRoot.inFeature && !resetForRoot.inScenario && !resetForRoot.inBackground) {
+                INDENT_SIZE
+            } else {
+                resetForRoot.currentIndent
+            }
+        return indent to resetForRoot
     }
 
     private fun mapEntryContext(
@@ -239,49 +231,12 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
     ): Pair<Int, FormattingContext> {
         val hasValue = hasInlineValue(trimmed)
         val key = trimmed.substringBefore(':').trim()
+        val value = if (hasValue) trimmed.substringAfter(':').trim() else null
 
-        var adjustedStack = resetForRoot.mapIndentStack
-        var adjustedKeyStack = resetForRoot.mapKeyStack
-
-        if (resetForRoot.inParametersBlock && adjustedStack.isNotEmpty()) {
-            val parentKey = adjustedKeyStack.lastOrNull().orEmpty()
-            val withinBindingScope = adjustedKeyStack.any { isBindingScopeKey(it) }
-
-            if (withinBindingScope) {
-                val underAliasBlock = parentKey == "alias"
-                val isBindingFieldValue = hasValue && (key == "baseUrl" || key == "location")
-                val isAliasNode = !hasValue && key == "alias"
-                val isAliasValueKey = hasValue && (key == "operation" || key.startsWith("alias."))
-                val isBindingBranchNode = !hasValue && parentKey != "alias"
-                val keepInsideAliasBlock = underAliasBlock && (isAliasValueKey || !hasValue)
-
-                // Within binding blocks, a new non-alias map node after inline values
-                // should become a sibling (e.g., `api:` after `default` entries).
-                if (!hasValue && key != "alias" && !isBindingScopeKey(parentKey) && parentKey != "alias" && adjustedStack.isNotEmpty()) {
-                    adjustedStack = adjustedStack.dropLast(1)
-                    adjustedKeyStack = adjustedKeyStack.dropLast(1)
-                }
-
-                val keepInsideBindingScope =
-                    keepInsideAliasBlock ||
-                        isBindingBranchNode ||
-                        isBindingFieldValue ||
-                        isAliasNode ||
-                        isAliasValueKey
-
-                if (!keepInsideBindingScope) {
-                    adjustedStack = emptyList()
-                    adjustedKeyStack = emptyList()
-                }
-            }
-
-            if (parentKey == "header" && !isLikelyHeaderChildKey(key)) {
-                adjustedStack = adjustedStack.dropLast(1)
-                adjustedKeyStack = adjustedKeyStack.dropLast(1)
-            } else if (!withinBindingScope && !hasValue && resetForRoot.previousMapEntryHadInlineValue) {
-                adjustedStack = adjustedStack.dropLast(1)
-                adjustedKeyStack = adjustedKeyStack.dropLast(1)
-            }
+        val (adjustedStack, adjustedKeyStack) = if (resetForRoot.inParametersBlock && resetForRoot.mapIndentStack.isNotEmpty()) {
+            parameterBlockContext(value, key, resetForRoot)
+        } else {
+            resetForRoot.mapIndentStack to resetForRoot.mapKeyStack
         }
 
         val parentIndent =
@@ -314,12 +269,73 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
             )
     }
 
+    private fun parameterBlockContext(
+        value: String?,
+        key: String,
+        resetForRoot: FormattingContext,
+    ): Pair<List<Int>, List<String>> {
+        val hasValue = value != null
+        val mapKeyStack = resetForRoot.mapKeyStack
+        val mapIndentStack = resetForRoot.mapIndentStack
+        val parentKey = mapKeyStack.lastOrNull().orEmpty()
+        val withinBindingScope = mapKeyStack.any { isBindingScopeKey(it) }
+
+        val (adjustedStack, adjustedKeyStack) = if (withinBindingScope) {
+            val underAliasBlock = parentKey == "alias"
+            val isBindingFieldValue = hasValue && (key == "baseUrl" || key == "location")
+            val isAliasNode = !hasValue && key == "alias"
+            val isAliasValueKey = hasValue && key.startsWith("alias.")
+            val isBindingBranchNode = !hasValue && parentKey != "alias"
+            val isProperAliasValue = hasValue && (underAliasBlock || isAliasValueKey) && checkAliasValue(value)
+
+            val keepInsideBindingScope =
+                ((underAliasBlock || isAliasValueKey) && isProperAliasValue) ||
+                    isAliasNode ||
+                    isBindingBranchNode ||
+                    isBindingFieldValue
+
+            // Within binding blocks, a new non-alias map node after inline values
+            // should become a sibling (e.g., `api:` after `default` entries).
+            if (!hasValue && key != "alias" && !isBindingScopeKey(parentKey) && parentKey != "alias" && mapIndentStack.isNotEmpty()) {
+                mapIndentStack.dropLast(1) to mapKeyStack.dropLast(1)
+            } else if (!keepInsideBindingScope) {
+                emptyList<Int>() to emptyList()
+            } else {
+                mapIndentStack to mapKeyStack
+            }
+        } else {
+            mapIndentStack to mapKeyStack
+        }
+
+        return if ((
+            parentKey == "header" &&
+                !isLikelyHeaderChildKey(key) ||
+                (!withinBindingScope && !hasValue && resetForRoot.previousMapEntryHadInlineValue)
+            )
+        ) {
+            adjustedStack.dropLast(1) to adjustedKeyStack.dropLast(1)
+        } else {
+            Pair(adjustedStack, adjustedKeyStack)
+        }
+    }
+
+    // GET /path or {{variable}}
+    // We can't really check {{variable}} results the alias format or not.
+    private fun checkAliasValue(value: String): Boolean = Regex(
+        """
+        ("[A-Z]+\s+/\S*"
+        |"?\{\{[a-zA-Z0-9_.]+}}
+        |"[A-Z]+\s+\{\{[a-zA-Z0-9_.]+}})
+        """.trimIndent(),
+        RegexOption.COMMENTS,
+    ).find(value) != null
+
     private fun directiveContext(
         resetForRoot: FormattingContext,
         lower: String,
     ): Pair<Int, FormattingContext> {
         val isConditional = isConditionalDirective(lower)
-        val isElse = lower == "else" || lower.startsWith("else ") || lower == "else:"
+        val isElse = lower == "else" || lower.startsWith("else ")
         val isBranchBodyDirective = resetForRoot.inConditionalBranch && !isConditional
 
         // If already at directive level, stay there
@@ -556,13 +572,6 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
         context
     }
 
-    /**
-     * Check if the line starts with a directive keyword.
-     */
-    private fun isDirective(lower: String): Boolean = DIRECTIVES.any { directive ->
-        lower == directive || lower == "$directive:" || lower.startsWith("$directive ") || lower.startsWith("$directive:")
-    }
-
     private fun isConditionalDirective(lower: String): Boolean = lower == "if" ||
         lower.startsWith("if ") ||
         lower == "if:" ||
@@ -571,17 +580,11 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
         lower == "else:"
 
     /**
-     * Check if the line is a map entry (`key:` or `key: value`).
-     */
-    private fun isMapEntry(trimmed: String): Boolean = trimmed.matches(Regex("^[a-zA-Z_][a-zA-Z0-9_.-]*:\\s*.*$"))
-
-    /**
      * Check whether a map entry contains a value on the same line.
      */
     private fun hasInlineValue(trimmed: String): Boolean {
         val colonIndex = trimmed.indexOf(':')
-        if (colonIndex < 0 || colonIndex == trimmed.lastIndex) return false
-        return trimmed.substring(colonIndex + 1).trim().isNotEmpty()
+        return !(colonIndex < 0 || colonIndex == trimmed.lastIndex) && trimmed.substring(colonIndex + 1).trim().isNotEmpty()
     }
 
     private fun isLikelyHeaderChildKey(key: String): Boolean = key.contains("-")
@@ -663,16 +666,16 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
      * Align columns in table rows.
      */
     private fun alignTableColumns(
-        tableLines: List<String>,
+        tableLine: List<String>,
         indent: Int,
     ): List<String> {
-        if (tableLines.isEmpty()) return emptyList()
+        if (tableLine.isEmpty()) return emptyList()
 
         val indentStr = " ".repeat(indent)
 
         // Parse each row into cells
         val rows =
-            tableLines.map { line ->
+            tableLine.map { line ->
                 parseTableRow(line)
             }
 
@@ -759,3 +762,19 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
         val previousLineBlank: Boolean = false,
     )
 }
+
+private abstract class StartWith(private val prefix: String) {
+    operator fun contains(str: String): Boolean = str.startsWith(prefix)
+}
+
+private object Tag : StartWith(prefix = "@")
+private object Comment : StartWith(prefix = "#")
+private object TripleQuote : StartWith(prefix = "\"\"\"")
+private object LeftBrace : StartWith(prefix = "{")
+private object RightBrace : StartWith(prefix = "}")
+
+private abstract class RegexMatch(private val regex: Regex) {
+    operator fun contains(str: String): Boolean = str.matches(regex)
+}
+
+private object MapEntry : RegexMatch(regex = Regex("^[a-zA-Z_][a-zA-Z0-9_.-]*:\\s*.*$"))
