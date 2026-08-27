@@ -4,6 +4,23 @@ import org.junit.jupiter.api.Test
 
 class BerryCrushParameterFormattingTest : BerryCrushFormattingTestCase() {
     @Test
+    fun `alias entry should be the one level down`() {
+        val input = """
+            parameters:
+            binding:
+            alias:
+            listPets: "GET /pets"
+        """.trimIndent()
+        val expected = """
+            parameters:
+              binding:
+                alias:
+                  listPets: "GET /pets"
+        """.trimIndent()
+        doIdempotencyTest(input, expected)
+    }
+
+    @Test
     fun testParametersBlockWithRepresentativeFixedKeys() {
         val input =
             listOf(

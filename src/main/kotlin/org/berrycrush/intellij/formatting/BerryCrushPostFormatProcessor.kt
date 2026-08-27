@@ -71,100 +71,103 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
         return rangeToReformat
     }
 
+    private data class LineContext(val context: FormattingContext,
+                                   val tableIndent: Int,
+                                   val inTable: Boolean,
+                                   val inDetachedRootCommentBlock: Boolean,
+                                   val inComment: Boolean = false,
+                                   val commentLines: List<String> = emptyList())
     /**
      * Reformat the entire document with proper indentation and alignment.
      * Uses continue statements to efficiently handle different line types
      * (empty lines, table rows, normal lines) without deep nesting.
      */
-    @Suppress("LoopWithTooManyJumpStatements")
     private fun reformatDocument(text: String): String {
         val lines = text.lines()
         val result = mutableListOf<String>()
 
-        var context = FormattingContext()
+        val context = LineContext(FormattingContext(), 0, false, false)
         val tableLines = mutableListOf<String>()
-        var tableIndent = 0
-        var inTable = false
-        var inDetachedRootCommentBlock = false
+        val lastContext = lines.withIndex().fold(context) { context, (index, line) ->
+            context.reformatLine(lines, result, index, line, tableLines)
+        }
 
-        for ((index, line) in lines.withIndex()) {
-            val trimmed = line.trim()
-            val leadingSpaces =
-                line.indexOfFirst { !it.isWhitespace() }.let {
-                    if (it == -1) 0 else it
-                }
+        // Handle any remaining table
+        if (lastContext.inTable) {
+            result.addAll(alignTableColumns(tableLines, lastContext.tableIndent))
+        }
 
+        return result.joinToString("\n")
+    }
+
+    private fun LineContext.reformatLine(lines: List<String>, result: MutableList<String>, index: Int, line: String, tableLines: MutableList<String>): LineContext {
+        val trimmed = line.trim()
+        val leadingSpaces =
+            line.indexOfFirst { !it.isWhitespace() }.let {
+                if (it == -1) 0 else it
+            }
+        return when {
             // Handle empty lines
-            if (trimmed.isEmpty()) {
+            trimmed.isEmpty() -> {
                 if (inTable) {
                     // End table and align it
                     result.addAll(alignTableColumns(tableLines, tableIndent))
                     tableLines.clear()
-                    inTable = false
                 }
                 result.add("")
-                inDetachedRootCommentBlock = false
-                context = context.copy(previousLineBlank = true)
-                continue
+                copy(context = context.copy(previousLineBlank = true),
+                     inTable = false,
+                     inDetachedRootCommentBlock = false)
             }
-
             // Handle table rows
-            if (trimmed.startsWith("|")) {
-                if (!inTable) {
-                    inTable = true
-                    tableIndent = context.currentIndent + INDENT_SIZE
-                }
+            trimmed.startsWith("|") -> {
                 tableLines.add(trimmed)
-                continue
-            }
-
-            // End table if we were in one
-            if (inTable) {
-                result.addAll(alignTableColumns(tableLines, tableIndent))
-                tableLines.clear()
-                inTable = false
-            }
-
-            // Detached comments before root blocks should stay at root indentation.
-            if (trimmed.startsWith("#")) {
-                val nextStructural =
-                    lines
-                        .drop(index + 1)
-                        .firstOrNull {
-                            val nextTrimmed = it.trim()
-                            nextTrimmed.isNotEmpty() && !nextTrimmed.startsWith("#")
-                        }
-                val nextTrimmed = nextStructural?.trim().orEmpty()
-                val nextIsRootBlock = ROOT_BLOCK_PREFIXES.any { nextTrimmed.lowercase().startsWith(it) }
-                val shouldRootIndent =
-                    nextIsRootBlock &&
-                        (inDetachedRootCommentBlock || context.previousLineBlank || !context.inDirective)
-
-                if (shouldRootIndent) {
-                    result.add(formatLine(trimmed, 0))
-                    inDetachedRootCommentBlock = true
-                    context = context.copy(currentIndent = 0, previousLineBlank = false)
-                    continue
+                if (!inTable) {
+                    copy(inTable = true, tableIndent = context.currentIndent + INDENT_SIZE)
+                } else {
+                    this
                 }
-            } else {
-                inDetachedRootCommentBlock = false
             }
+            else -> {
+                // End table if we were in one
+                if (inTable) {
+                    result.addAll(alignTableColumns(tableLines, tableIndent))
+                    tableLines.clear()
+                }
+                // Detached comments before root blocks should stay at root indentation.
+                val nextInDetachedRootCommentBlock = if (trimmed.startsWith("#")) {
+                    val nextStructural =
+                        lines
+                            .drop(index + 1)
+                            .firstOrNull {
+                                val nextTrimmed = it.trim()
+                                nextTrimmed.isNotEmpty() && !nextTrimmed.startsWith("#")
+                            }
+                    val nextTrimmed = nextStructural?.trim().orEmpty()
+                    val nextIsRootBlock = ROOT_BLOCK_PREFIXES.any { nextTrimmed.lowercase().startsWith(it) }
+                    val shouldRootIndent =
+                        nextIsRootBlock &&
+                                (inDetachedRootCommentBlock || context.previousLineBlank || !context.inDirective)
 
-            // Calculate indent and update context
-            val (indent, newContext) = calculateIndentAndContext(trimmed, leadingSpaces, context)
-            context = newContext
+                    if (shouldRootIndent) {
+                        result.add(formatLine(trimmed, 0))
+                        return copy(context = context.copy(currentIndent = 0, previousLineBlank = false),
+                                    inDetachedRootCommentBlock = true,
+                                    inTable = false)
+                    }
+                    inDetachedRootCommentBlock
+                } else {
+                    false
+                }
 
-            // Format the line with proper indent and spacing
-            val formattedLine = formatLine(trimmed, indent)
-            result.add(formattedLine)
+                // Calculate indent and update context
+                val (indent, newContext) = calculateIndentAndContext(trimmed, leadingSpaces, context)
+                // Format the line with proper indent and spacing
+                val formattedLine = formatLine(trimmed, indent)
+                result.add(formattedLine)
+                copy(context = newContext, inDetachedRootCommentBlock = nextInDetachedRootCommentBlock)
+            }
         }
-
-        // Handle any remaining table
-        if (inTable) {
-            result.addAll(alignTableColumns(tableLines, tableIndent))
-        }
-
-        return result.joinToString("\n")
     }
 
     /**
