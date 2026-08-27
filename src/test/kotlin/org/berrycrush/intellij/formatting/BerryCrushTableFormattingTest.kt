@@ -2,7 +2,7 @@ package org.berrycrush.intellij.formatting
 
 import org.junit.jupiter.api.Test
 
-class BerryCrushTableFormattingTest: BerryCrushFormattingTestCase() {
+class BerryCrushTableFormattingTest : BerryCrushFormattingTestCase() {
 
     // === Table Alignment ===
 
