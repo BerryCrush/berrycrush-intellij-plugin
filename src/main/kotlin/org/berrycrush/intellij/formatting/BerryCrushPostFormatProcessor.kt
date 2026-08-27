@@ -36,7 +36,6 @@ class BerryCrushPostFormatProcessor : PostFormatProcessor {
                 "else",
                 "fail",
                 "webhook",
-                "bodyfile",
             )
 
         private val ROOT_BLOCK_PREFIXES = setOf("feature:", "fragment:", "scenario:", "outline:")
