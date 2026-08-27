@@ -298,7 +298,6 @@ class BerryCrushFormattingTest : BerryCrushFormattingTestCase() {
         doFormattingTest(input, expected)
     }
 
-
     @Test
     fun testFormattingIdempotency() {
         val input =

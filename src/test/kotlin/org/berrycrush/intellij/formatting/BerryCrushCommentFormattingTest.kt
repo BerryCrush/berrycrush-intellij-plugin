@@ -3,7 +3,7 @@ package org.berrycrush.intellij.formatting
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
-class BerryCrushCommentFormattingTest: BerryCrushFormattingTestCase() {
+class BerryCrushCommentFormattingTest : BerryCrushFormattingTestCase() {
     @Disabled("comment formatting issue, but I'm currently working on other things")
     @Test
     fun testCommentAlignment() {
@@ -56,5 +56,4 @@ class BerryCrushCommentFormattingTest: BerryCrushFormattingTestCase() {
 
         doFormattingTest(input, expected)
     }
-
 }
