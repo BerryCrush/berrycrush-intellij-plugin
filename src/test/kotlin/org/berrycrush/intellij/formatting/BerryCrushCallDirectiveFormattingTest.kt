@@ -2,7 +2,7 @@ package org.berrycrush.intellij.formatting
 
 import org.junit.jupiter.api.Test
 
-class BerryCrushCallDirectiveFormattingTest: BerryCrushFormattingTestCase() {
+class BerryCrushCallDirectiveFormattingTest : BerryCrushFormattingTestCase() {
     @Test
     fun `call directive should be indented one level down`() {
         val input = """
