@@ -94,4 +94,40 @@ class BerryCrushScenarioExecutionSupportTest {
         val vmOptions = BerryCrushScenarioExecutionSupport.buildVmOptions(scenarioFile = "petstore.scenario")
         assertEquals("-DberryCrush.scenarioFile=petstore.scenario", vmOptions)
     }
+
+    @Test
+    fun `buildChoiceContextLabel includes package only when module is not requested`() {
+        val label =
+            BerryCrushScenarioExecutionSupport.buildChoiceContextLabel(
+                packageName = "com.example.tests",
+                moduleName = "intellij",
+                includeModuleName = false,
+            )
+
+        assertEquals(" (com.example.tests)", label)
+    }
+
+    @Test
+    fun `buildChoiceContextLabel includes package and module when module is requested`() {
+        val label =
+            BerryCrushScenarioExecutionSupport.buildChoiceContextLabel(
+                packageName = "com.example.tests",
+                moduleName = "intellij",
+                includeModuleName = true,
+            )
+
+        assertEquals(" (com.example.tests - intellij)", label)
+    }
+
+    @Test
+    fun `buildChoiceContextLabel handles empty package and module`() {
+        val label =
+            BerryCrushScenarioExecutionSupport.buildChoiceContextLabel(
+                packageName = "",
+                moduleName = null,
+                includeModuleName = true,
+            )
+
+        assertEquals("", label)
+    }
 }
