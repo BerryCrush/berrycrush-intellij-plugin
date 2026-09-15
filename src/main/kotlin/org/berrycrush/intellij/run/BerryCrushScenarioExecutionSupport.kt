@@ -3,6 +3,7 @@ package org.berrycrush.intellij.run
 import com.intellij.execution.RunManager
 import com.intellij.execution.configurations.ConfigurationTypeUtil
 import com.intellij.execution.junit.JUnitConfiguration
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleUtilCore
 import com.intellij.openapi.project.Project
@@ -35,6 +36,13 @@ object BerryCrushScenarioExecutionSupport {
         val inPreferredModule: Boolean,
     )
 
+    internal data class TestClassChoice(
+        val className: String,
+        val qualifiedName: String,
+        val packageName: String,
+        val moduleName: String?,
+    )
+
     internal fun <T> selectPreferredCandidate(candidates: List<ClassCandidate<T>>): T? {
         if (candidates.isEmpty()) {
             return null
@@ -46,8 +54,21 @@ object BerryCrushScenarioExecutionSupport {
             .value
     }
 
+    private fun mapClassCandidates(
+        candidates: List<PsiClass>,
+        preferredModule: Module?,
+    ): List<ClassCandidate<PsiClass>> = candidates.mapNotNull { candidate ->
+        val qualifiedName = candidate.qualifiedName ?: return@mapNotNull null
+        val classModule = ModuleUtilCore.findModuleForPsiElement(candidate)
+        ClassCandidate(
+            value = candidate,
+            qualifiedName = qualifiedName,
+            inPreferredModule = preferredModule != null && preferredModule == classModule,
+        )
+    }
+
     fun findBerryCrushTestClasses(project: Project): List<PsiClass> {
-        val scope = GlobalSearchScope.projectScope(project)
+        val scope = GlobalSearchScope.allScope(project)
         val psiFacade = JavaPsiFacade.getInstance(project)
         val result = mutableSetOf<PsiClass>()
 
@@ -57,7 +78,6 @@ object BerryCrushScenarioExecutionSupport {
                 result.add(psiClass)
             }
         }
-
         return result.sortedBy { it.qualifiedName ?: it.name ?: "" }
     }
 
@@ -65,17 +85,7 @@ object BerryCrushScenarioExecutionSupport {
         candidates: List<PsiClass>,
         preferredModule: Module?,
     ): PsiClass? {
-        val mappedCandidates =
-            candidates
-                .mapNotNull { psiClass ->
-                    val qualifiedName = psiClass.qualifiedName ?: return@mapNotNull null
-                    val classModule = ModuleUtilCore.findModuleForPsiElement(psiClass)
-                    ClassCandidate(
-                        value = psiClass,
-                        qualifiedName = qualifiedName,
-                        inPreferredModule = preferredModule != null && preferredModule == classModule,
-                    )
-                }
+        val mappedCandidates = mapClassCandidates(candidates, preferredModule)
 
         return selectPreferredCandidate(mappedCandidates)
     }
@@ -225,20 +235,58 @@ object BerryCrushScenarioExecutionSupport {
         preferredModule: Module?,
     ): List<PsiClass> {
         val sortedCandidates =
-            candidates
-                .mapNotNull { candidate ->
-                    val qualifiedName = candidate.qualifiedName ?: return@mapNotNull null
-                    val classModule = ModuleUtilCore.findModuleForPsiElement(candidate)
-                    ClassCandidate(
-                        value = candidate,
-                        qualifiedName = qualifiedName,
-                        inPreferredModule = preferredModule != null && preferredModule == classModule,
-                    )
-                }.sortedWith(compareByDescending<ClassCandidate<PsiClass>> { it.inPreferredModule }.thenBy { it.qualifiedName })
+            mapClassCandidates(candidates, preferredModule)
+                .sortedWith(compareByDescending<ClassCandidate<PsiClass>> { it.inPreferredModule }.thenBy { it.qualifiedName })
                 .map { it.value }
 
         return sortedCandidates
     }
+
+    internal fun buildChoiceContextLabel(
+        packageName: String,
+        moduleName: String?,
+        includeModuleName: Boolean,
+    ): String {
+        if (packageName.isEmpty() && (!includeModuleName || moduleName.isNullOrBlank())) {
+            return ""
+        }
+
+        val details =
+            listOfNotNull(
+                packageName.takeIf { it.isNotEmpty() },
+                moduleName?.takeIf { includeModuleName && it.isNotBlank() },
+            ).joinToString(" - ")
+
+        return if (details.isEmpty()) "" else " ($details)"
+    }
+
+    private fun toTestClassChoices(
+        sortedCandidates: List<PsiClass>,
+        preferredModule: Module?,
+    ): List<TestClassChoice> = sortedCandidates.map { candidate ->
+        val qualifiedName = candidate.qualifiedName ?: candidate.name ?: "Unknown"
+        val packageName = qualifiedName.substringBeforeLast('.', "")
+        val className = candidate.name ?: qualifiedName.substringAfterLast('.', "Unknown")
+        val candidateModule = ModuleUtilCore.findModuleForPsiElement(candidate)
+        val moduleName =
+            candidateModule
+                ?.takeIf { preferredModule == null || it != preferredModule }
+                ?.name
+
+        TestClassChoice(
+            className = className,
+            qualifiedName = qualifiedName,
+            packageName = packageName,
+            moduleName = moduleName,
+        )
+    }
+
+    private fun resolveClassByQualifiedName(
+        project: Project,
+        qualifiedName: String,
+    ): PsiClass? = JavaPsiFacade
+        .getInstance(project)
+        .findClass(qualifiedName, GlobalSearchScope.projectScope(project))
 
     fun showTestClassChooser(
         project: Project,
@@ -246,7 +294,7 @@ object BerryCrushScenarioExecutionSupport {
         preferredModule: Module?,
         onSelected: (PsiClass) -> Unit,
     ) {
-        val sortedCandidates = sortCandidates(candidates, preferredModule)
+        val sortedCandidates = ReadAction.compute<List<PsiClass>, RuntimeException> { sortCandidates(candidates, preferredModule) }
         if (sortedCandidates.isEmpty()) {
             showNoTestClassWarning(project)
             return
@@ -257,30 +305,39 @@ object BerryCrushScenarioExecutionSupport {
             return
         }
 
+        val choices = ReadAction.compute<List<TestClassChoice>, RuntimeException> { toTestClassChoices(sortedCandidates, preferredModule) }
+        val duplicateSimpleNames = choices.groupingBy { it.className }.eachCount().filterValues { it > 1 }.keys
+
         val popup =
             JBPopupFactory
                 .getInstance()
-                .createPopupChooserBuilder(sortedCandidates)
+                .createPopupChooserBuilder(choices)
                 .setTitle("Select Test Class")
-                .setItemChosenCallback { selectedClass ->
-                    onSelected(selectedClass)
+                .setItemChosenCallback { selectedChoice ->
+                    val selectedClass =
+                        ReadAction.compute<PsiClass?, RuntimeException> {
+                            resolveClassByQualifiedName(project, selectedChoice.qualifiedName)
+                        }
+
+                    selectedClass?.let(onSelected) ?: showNoTestClassWarning(project)
                 }.setRenderer(
-                    object : ColoredListCellRenderer<PsiClass>() {
+                    object : ColoredListCellRenderer<TestClassChoice>() {
                         override fun customizeCellRenderer(
-                            list: javax.swing.JList<out PsiClass>,
-                            value: PsiClass?,
+                            list: javax.swing.JList<out TestClassChoice>,
+                            value: TestClassChoice?,
                             index: Int,
                             selected: Boolean,
                             hasFocus: Boolean,
                         ) {
                             if (value != null) {
                                 icon = com.intellij.icons.AllIcons.Nodes.Class
-                                append(value.name ?: "Unknown")
-                                value.qualifiedName?.let { qualifiedName ->
-                                    val packageName = qualifiedName.substringBeforeLast('.', "")
-                                    if (packageName.isNotEmpty()) {
-                                        append(" ($packageName)", SimpleTextAttributes.GRAYED_ATTRIBUTES)
-                                    }
+                                append(value.className)
+                                buildChoiceContextLabel(
+                                    packageName = value.packageName,
+                                    moduleName = value.moduleName,
+                                    includeModuleName = value.className in duplicateSimpleNames,
+                                ).takeIf { it.isNotEmpty() }?.let { label ->
+                                    append(label, SimpleTextAttributes.GRAYED_ATTRIBUTES)
                                 }
                             }
                         }
@@ -288,32 +345,5 @@ object BerryCrushScenarioExecutionSupport {
                 ).createPopup()
 
         popup.showInFocusCenter()
-    }
-
-    fun chooseTestClass(
-        project: Project,
-        candidates: List<PsiClass>,
-        preferredModule: Module?,
-    ): PsiClass? {
-        val sortedCandidates = sortCandidates(candidates, preferredModule)
-        if (sortedCandidates.isEmpty()) {
-            return null
-        }
-
-        val selectedIndex =
-            Messages.showDialog(
-                project,
-                "Multiple BerryCrush test classes were found. Select one to run this scenario file.",
-                "Select BerryCrush Test Class",
-                sortedCandidates.map { it.qualifiedName ?: it.name ?: "Unknown" }.toTypedArray(),
-                0,
-                null,
-            )
-
-        if (selectedIndex < 0 || selectedIndex >= sortedCandidates.size) {
-            return null
-        }
-
-        return sortedCandidates[selectedIndex]
     }
 }
