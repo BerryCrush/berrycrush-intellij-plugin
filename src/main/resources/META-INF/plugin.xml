@@ -226,6 +226,9 @@
         <!-- Post-format processor for table alignment -->
         <postFormatProcessor
                 implementation="org.berrycrush.intellij.formatting.BerryCrushPostFormatProcessor"/>
+
+        <lang.namesValidator language="BerryCrush"
+                             implementationClass="org.berrycrush.intellij.refactoring.BerryCrushNamesValidator"/>
     </extensions>
 
 </idea-plugin>

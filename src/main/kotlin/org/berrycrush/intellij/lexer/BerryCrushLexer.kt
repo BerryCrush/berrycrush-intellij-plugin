@@ -18,7 +18,7 @@ class BerryCrushLexer : LexerBase() {
     private var lineStart: Boolean = true
 
     companion object {
-        private val KEYWORDS =
+        val KEYWORDS =
             mapOf(
                 "feature:" to BerryCrushTokenTypes.FEATURE,
                 "scenario:" to BerryCrushTokenTypes.SCENARIO,
