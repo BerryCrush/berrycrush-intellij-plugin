@@ -89,6 +89,22 @@ scenario: conditional assertions
       assert status 5xx
 ```
 
+### Syntax Validation For Named Parameters Headers
+
+Named parameters headers (`parameters: name`) are valid only in `.fragment` files.
+
+**Valid (`.fragment`):**
+```berrycrush
+parameters: shared
+  key: value
+```
+
+**Invalid (`.scenario`):**
+```berrycrush
+parameters: shared   # flagged by syntax inspection
+  key: value
+```
+
 ## Managing Inspections
 
 ### Enable/Disable Inspections

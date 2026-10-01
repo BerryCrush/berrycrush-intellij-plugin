@@ -49,6 +49,7 @@
         <fileBasedIndex implementation="org.berrycrush.intellij.index.OperationUsageIndex"/>
         <fileBasedIndex implementation="org.berrycrush.intellij.index.IncludeUsageIndex"/>
         <fileBasedIndex implementation="org.berrycrush.intellij.index.StepUsageIndex"/>
+        <fileBasedIndex implementation="org.berrycrush.intellij.index.NamedParametersIndex"/>
 
         <!-- File Types -->
         <fileType name="BerryCrush Scenario"

@@ -16,6 +16,7 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiManager
 import com.intellij.util.indexing.FileBasedIndex
 import org.berrycrush.intellij.index.FragmentIndex
+import org.berrycrush.intellij.index.NamedParametersIndex
 import org.berrycrush.intellij.reference.BerryCrushOperationReference
 import java.util.concurrent.Callable
 import java.util.concurrent.atomic.AtomicBoolean
@@ -104,6 +105,7 @@ class BerryCrushFileChangeListener : AsyncFileListener {
                     // Request fragment index rebuild if fragment files changed
                     if (requestIndexRebuild) {
                         FileBasedIndex.getInstance().requestRebuild(FragmentIndex.KEY)
+                        FileBasedIndex.getInstance().requestRebuild(NamedParametersIndex.KEY)
                     }
 
                     // Wait for indexing to complete, then restart analysis

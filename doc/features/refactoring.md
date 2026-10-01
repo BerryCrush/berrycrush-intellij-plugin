@@ -15,6 +15,7 @@ Supported rename categories:
 - Fragment definition and `include` references
 - Extract variables (`extract ... => name`) and `{{name}}` references
 - Parameters (`parameters:` entries) and `{{param.name}}` references
+- Named parameters block headers (`parameters: name`) and `<< name` include references
 - Outline example headers and linked variable references
 
 ## Rename Fragment
@@ -112,6 +113,8 @@ scenario: Test
 
 Variable and parameter rename follow the PSI reference scope for each declaration target.
 In practice this usually means scenario-local or block-local updates for variable-like symbols.
+
+For named parameters blocks, rename resolves include references in the same file.
 
 ## Safe Delete
 

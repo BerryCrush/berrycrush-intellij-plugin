@@ -330,4 +330,41 @@ class SyntaxCheckInspectionTest : BerryCrushInspectionTestCase(SyntaxCheckInspec
             problems.isEmpty(),
         )
     }
+
+    @Test
+    fun `named parameters block should be valid in fragment file`() {
+        val psiFile =
+            myFixture.addFileToProject(
+                "test.fragment",
+                """
+                parameters: shared
+                  << defaults
+                  key0: value0
+                """.trimIndent(),
+            )
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "named parameters block should be allowed in fragment files",
+            problems.isEmpty(),
+        )
+    }
+
+    @Test
+    fun `named parameters block should be invalid in scenario file`() {
+        val psiFile =
+            myFixture.addFileToProject(
+                "test.scenario",
+                """
+                parameters: shared
+                  key0: value0
+                """.trimIndent(),
+            )
+
+        val problems = runInspection(psiFile)
+        assertTrue(
+            "named parameters block should be flagged in scenario files",
+            problems.any { it.descriptionTemplate.contains("Named parameters block is only valid in .fragment files") },
+        )
+    }
 }

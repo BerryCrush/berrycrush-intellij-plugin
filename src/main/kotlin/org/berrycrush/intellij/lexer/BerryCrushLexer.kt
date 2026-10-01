@@ -129,6 +129,10 @@ class BerryCrushLexer : LexerBase() {
                         position += 2
                         BerryCrushTokenTypes.ARROW
                     }
+                    c == '<' && peek() == '<' -> {
+                        position += 2
+                        BerryCrushTokenTypes.PARAMETER_INCLUDE
+                    }
                     c == ':' -> {
                         position++
                         BerryCrushTokenTypes.COLON

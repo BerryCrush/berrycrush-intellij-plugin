@@ -115,6 +115,9 @@ object BerryCrushElementTypes {
     val PARAMETERS = BerryCrushPsiElementType("PARAMETERS")
 
     @JvmField
+    val PARAMETER_INCLUDE = BerryCrushPsiElementType("PARAMETER_INCLUDE")
+
+    @JvmField
     val INCLUDED_PARAMETER = BerryCrushPsiElementType("INCLUDED_PARAMETER")
 
     @JvmField

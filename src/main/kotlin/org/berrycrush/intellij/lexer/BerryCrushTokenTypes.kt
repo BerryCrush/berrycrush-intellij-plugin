@@ -19,6 +19,8 @@ object BerryCrushTokenTypes {
 
     @JvmField val PARAMETERS = BerryCrushElementType("PARAMETERS")
 
+    @JvmField val PARAMETER_INCLUDE = BerryCrushElementType("PARAMETER_INCLUDE")
+
     @JvmField val BACKGROUND = BerryCrushElementType("BACKGROUND")
 
     @JvmField val EXAMPLES = BerryCrushElementType("EXAMPLES")
