@@ -19,6 +19,12 @@ class RefactoringTest : BerryCrushTestCase() {
         return index + shift
     }
 
+    private fun elementInsideLast(fileText: String, needle: String, shift: Int = 0): Int {
+        val index = fileText.lastIndexOf(needle)
+        assertTrue("Expected to find '$needle' in fixture", index >= 0)
+        return index + shift
+    }
+
     @Test
     fun testRenameExtractVariable() {
         val scenario = """
@@ -179,6 +185,55 @@ class RefactoringTest : BerryCrushTestCase() {
             assertNotNull(element)
 
             assertTrue(provider.isInplaceRenameAvailable(element!!, null))
+        }
+    }
+
+    @Test
+    fun testRefactoringSupportProviderDisablesInplaceRenameForNamedParametersDeclaration() {
+        val file =
+            createFragmentFile(
+                "named-parameters",
+                """
+                parameters: shared-defaults
+                  key0: value0
+                """.trimIndent(),
+            )
+
+        val psiFile = findFile(file)
+        consume {
+            assertNotNull(psiFile)
+
+            val provider = BerryCrushRefactoringSupportProvider()
+            val element = psiFile!!.findElementAt(elementInsideLast(psiFile.text, "shared-defaults", 2))
+            assertNotNull(element)
+
+            assertFalse(provider.isInplaceRenameAvailable(element!!, null))
+        }
+    }
+
+    @Test
+    fun testRefactoringSupportProviderDisablesInplaceRenameForParametersIncludeReference() {
+        val file =
+            createFragmentFile(
+                "named-parameters-reference",
+                """
+                parameters: shared-defaults
+                  key0: value0
+
+                parameters:
+                  << shared-defaults
+                """.trimIndent(),
+            )
+
+        val psiFile = findFile(file)
+        consume {
+            assertNotNull(psiFile)
+
+            val provider = BerryCrushRefactoringSupportProvider()
+            val element = psiFile!!.findElementAt(elementInside(psiFile.text, "shared-defaults", 2))
+            assertNotNull(element)
+
+            assertFalse(provider.isInplaceRenameAvailable(element!!, null))
         }
     }
 }

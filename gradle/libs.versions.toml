@@ -1,11 +1,12 @@
 [versions]
 kotlin = "2.4.10"
-intellij-platform = "2.18.1"
+intellij-platform = "2.20.1"
 junit = "6.1.2"
 detekt = "2.0.0-alpha.5"
 spotbugs-gradle = "6.5.1"
 cpd = "3.5"
 ktlint = "14.2.0"
+json-path = "3.0.0"
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
@@ -20,3 +21,4 @@ kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotl
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 junit-vintage = { module = "org.junit.vintage:junit-vintage-engine", version.ref = "junit" }
 junit4 = { module = "junit:junit", version = "4.13.2" }
+json-path = { module = "com.jayway.jsonpath:json-path", version.ref = "json-path" }

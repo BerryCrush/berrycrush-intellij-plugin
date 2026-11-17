@@ -252,6 +252,7 @@ Current renameable declaration/reference pairs:
 - Fragment declaration (`fragment: ...`) <-> `include` fragment references
 - Extract declaration (`extract ... => name`) <-> `{{name}}` references
 - Parameter declaration (`parameters: key: ...`) <-> `{{param.key}}` references
+- Named parameters block declaration (`parameters: name`) <-> parameters include references (`<< name`)
 - Example header declaration (`examples` header cell) <-> linked variable references
 
 Rename entry points work from either side (definition or reference) through PSI resolution.

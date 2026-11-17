@@ -1,14 +1,17 @@
 package org.berrycrush.intellij.psi
 
 import com.intellij.lang.ASTNode
+import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNameIdentifierOwner
+import com.intellij.psi.PsiReference
 import com.intellij.psi.search.LocalSearchScope
 import com.intellij.psi.search.SearchScope
 import com.intellij.psi.util.PsiTreeUtil
+import org.berrycrush.intellij.reference.BerryCrushNamedParametersReference
 
 /**
- * Base lass for parameter
+ * Base class for parameter
  */
 abstract class BerryCrushParameterLikeElement(
     node: ASTNode,
@@ -49,7 +52,37 @@ class BerryCrushIncludeParameterElement(
  */
 class BerryCrushParametersElement(
     node: ASTNode,
-) : BerryCrushParameterLikeElement(node)
+) : BerryCrushParameterLikeElement(node),
+    BerryCrushNameIdentifierOwner {
+    override fun getName(): String? = nameIdentifier?.text
+    override fun getNameIdentifier(): PsiElement? = directChildrenOfType<BerryCrushBlockNameElement>().firstOrNull()
+    override fun createIdentifier(text: String): PsiElement = BerryCrushElementFactory.createBlockNameIdentifier(project, "parameters: $text")
+}
+
+class BerryCrushParameterIncludeRefElement(
+    node: ASTNode,
+) : BerryCrushPsiElement(node),
+    BerryCrushReferenceElement {
+    override fun getName(): String = node.text.substringAfter("<<").trim()
+
+    override fun getReference(): PsiReference? {
+        val rawText = text
+        val markerOffset = rawText.indexOf("<<")
+        val nameStart = if (markerOffset >= 0) markerOffset + 2 else 0
+        val leadingSpaces = rawText.substring(nameStart).takeWhile { it.isWhitespace() }.length
+        val start = nameStart + leadingSpaces
+        val end = rawText.length
+        if (start >= end) return null
+
+        return BerryCrushNamedParametersReference(
+            this,
+            TextRange(start, end),
+            name,
+        )
+    }
+
+    override fun getReferences(): Array<PsiReference> = reference?.let { arrayOf(it) } ?: emptyArray()
+}
 
 /**
  * Single parameter entry element: `key: value`

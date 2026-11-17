@@ -7,6 +7,7 @@ import com.intellij.psi.util.PsiTreeUtil
 import org.berrycrush.intellij.psi.BerryCrushFile
 import org.berrycrush.intellij.psi.BerryCrushFragmentElement
 import org.berrycrush.intellij.psi.BerryCrushFragmentRefElement
+import org.berrycrush.intellij.psi.BerryCrushParameterIncludeRefElement
 import org.berrycrush.intellij.psi.BerryCrushVariableRefElement
 import org.berrycrush.intellij.reference.BerryCrushParameterReference
 import org.berrycrush.intellij.reference.BerryCrushVariableReference
@@ -34,6 +35,7 @@ class BerryCrushTargetElementEvaluator : TargetElementEvaluatorEx2() {
             element,
             BerryCrushVariableRefElement::class.java,
             BerryCrushFragmentRefElement::class.java,
+            BerryCrushParameterIncludeRefElement::class.java,
         )
         val resolvedFromReferenceOwner = referenceOwner?.reference?.resolve()
         if (resolvedFromReferenceOwner is PsiNameIdentifierOwner && resolvedFromReferenceOwner.containingFile is BerryCrushFile) {
