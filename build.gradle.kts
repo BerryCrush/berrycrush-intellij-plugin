@@ -24,9 +24,9 @@ dependencies {
         intellijIdea(providers.gradleProperty("platformVersion"))
         bundledPlugin("com.intellij.java")
         bundledPlugin("JUnit")
-        bundledModule("intellij.libraries.jsonpath")
         testFramework(TestFrameworkType.Platform)
     }
+    implementation(libs.json.path)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.junit4) // Required by IntelliJ Platform test classpath
