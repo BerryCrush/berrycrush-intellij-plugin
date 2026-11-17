@@ -1,6 +1,6 @@
 [versions]
 kotlin = "2.4.10"
-intellij-platform = "2.18.1"
+intellij-platform = "2.20.1"
 junit = "6.1.2"
 detekt = "2.0.0-alpha.5"
 spotbugs-gradle = "6.5.1"
