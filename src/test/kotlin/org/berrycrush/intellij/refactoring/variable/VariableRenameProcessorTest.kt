@@ -188,4 +188,50 @@ class VariableRenameProcessorTest : BerryCrushTestCase() {
             assertTrue(!text.contains("{{param.petId}}"), text)
         }
     }
+
+    @Test
+    fun testRenameNamedParametersBlockFromDefinitionUpdatesIncludeReferences() {
+        myFixture.configureByText(
+            "named-parameters.fragment",
+            """
+            parameters: shared<caret>
+              key0: value0
+
+            parameters:
+              << shared
+              key1: value1
+            """.trimIndent(),
+        )
+
+        renameElementAtCaret("defaults")
+        consume {
+            val text = myFixture.file.text
+            assertTrue(text.contains("parameters: defaults"), text)
+            assertTrue(text.contains("<< defaults"), text)
+            assertTrue(!text.contains("<< shared"), text)
+        }
+    }
+
+    @Test
+    fun testRenameNamedParametersBlockFromIncludeReferenceUpdatesDeclarationAndReferences() {
+        myFixture.configureByText(
+            "named-parameters-ref.fragment",
+            """
+            parameters: shared
+              key0: value0
+
+            parameters:
+              << sh<caret>ared
+              key1: value1
+            """.trimIndent(),
+        )
+
+        renameElementAtCaret("defaults")
+        consume {
+            val text = myFixture.file.text
+            assertTrue(text.contains("parameters: defaults"), text)
+            assertTrue(text.contains("<< defaults"), text)
+            assertTrue(!text.contains("parameters: shared"), text)
+        }
+    }
 }

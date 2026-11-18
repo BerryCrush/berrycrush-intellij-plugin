@@ -9,7 +9,7 @@ fun PsiBuilder.parseParameters(indent: Int) {
     val blockMarker = mark()
 
     advanceLexer() // consume PARAMETERS
-    skipToEndOfLine()
+    skipToEndOfLine(BerryCrushElementTypes.BLOCK_NAME)
 
     // Parse parameter entries
     parseIndentedEntries(indent) { tryParseParameterEntry(it) }
@@ -88,32 +88,50 @@ private fun PsiBuilder.tryParseParameterLike(
     val marker = mark()
     consumeLineIndent()
 
-    when (tokenType) {
+    return when (tokenType) {
+        BerryCrushTokenTypes.PARAMETER_INCLUDE -> {
+            advanceLexer() // consume '<<'
+            skipWhiteSpaces()
+            if (tokenType == BerryCrushTokenTypes.IDENTIFIER || tokenType == BerryCrushTokenTypes.TEXT) {
+                advanceLexer() // consume identifier
+                marker.done(BerryCrushElementTypes.PARAMETER_INCLUDE)
+                true
+            } else {
+                marker.rollbackTo()
+                false
+            }
+        }
         BerryCrushTokenTypes.BODY -> {
             if (!allowBody) {
                 marker.rollbackTo()
-                return false
+                false
+            } else {
+                markAs(BerryCrushElementTypes.PARAMETER_KEY)
+                parseParameterValue(marker, indent)
             }
-            markAs(BerryCrushElementTypes.PARAMETER_KEY)
         }
 
         BerryCrushTokenTypes.IDENTIFIER,
         BerryCrushTokenTypes.TEXT,
-        -> if (parseParameterKey(marker)) return false
+        -> !parseParameterKey(marker) && parseParameterValue(marker, indent, allowBody)
         else -> {
-            if (tokenType == BerryCrushTokenTypes.BODY && !allowBody) {
-                marker.rollbackTo()
-                return false
-            }
-
             if (tokenType == null || tokenType == BerryCrushTokenTypes.NEWLINE) {
                 marker.rollbackTo()
-                return false
+                false
+            } else if (parseParameterKey(marker)) {
+                false
+            } else {
+                parseParameterValue(marker, indent, allowBody)
             }
-
-            if (parseParameterKey(marker)) return false
         }
     }
+}
+
+private fun PsiBuilder.parseParameterValue(
+    marker: PsiBuilder.Marker,
+    indent: Int,
+    allowBody: Boolean = true,
+): Boolean {
     skipWhiteSpaces()
 
     parseParameterValue(indent, allowBody)

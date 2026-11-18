@@ -10,12 +10,12 @@ class BerryCrushScenarioExecutionSupportTest {
         val selected =
             BerryCrushScenarioExecutionSupport.selectPreferredCandidate(
                 listOf(
-                    BerryCrushScenarioExecutionSupport.ClassCandidate(
+                    ClassCandidate(
                         value = "com.example.ZetaTest",
                         qualifiedName = "com.example.ZetaTest",
                         inPreferredModule = false,
                     ),
-                    BerryCrushScenarioExecutionSupport.ClassCandidate(
+                    ClassCandidate(
                         value = "com.example.AlphaTest",
                         qualifiedName = "com.example.AlphaTest",
                         inPreferredModule = true,
@@ -31,12 +31,12 @@ class BerryCrushScenarioExecutionSupportTest {
         val selected =
             BerryCrushScenarioExecutionSupport.selectPreferredCandidate(
                 listOf(
-                    BerryCrushScenarioExecutionSupport.ClassCandidate(
+                    ClassCandidate(
                         value = "com.example.ZetaTest",
                         qualifiedName = "com.example.ZetaTest",
                         inPreferredModule = false,
                     ),
-                    BerryCrushScenarioExecutionSupport.ClassCandidate(
+                    ClassCandidate(
                         value = "com.example.AlphaTest",
                         qualifiedName = "com.example.AlphaTest",
                         inPreferredModule = false,

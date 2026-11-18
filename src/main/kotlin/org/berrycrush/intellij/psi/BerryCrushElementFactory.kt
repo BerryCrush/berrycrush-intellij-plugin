@@ -96,4 +96,17 @@ object BerryCrushElementFactory {
         return PsiTreeUtil.findChildOfType(file, BerryCrushFragmentRefElement::class.java)
             ?: throw InternalError("BerryCrushFragmentRefElement not found")
     }
+
+    fun createParameterIncludeRefElement(project: Project, name: String): PsiElement {
+        val file = PsiFileFactory.getInstance(project)
+            .createFileFromText(
+                BerryCrushLanguage,
+                """
+                    parameters:
+                      << $name
+                """.trimIndent(),
+            )
+        return PsiTreeUtil.findChildOfType(file, BerryCrushParameterIncludeRefElement::class.java)
+            ?: throw InternalError("BerryCrushParameterIncludeRefElement not found")
+    }
 }

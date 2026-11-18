@@ -21,6 +21,7 @@ import org.berrycrush.intellij.psi.BerryCrushIncludeElement
 import org.berrycrush.intellij.psi.BerryCrushNamedScenarioLikeElement
 import org.berrycrush.intellij.psi.BerryCrushOutlineElement
 import org.berrycrush.intellij.psi.BerryCrushParameterEntryElement
+import org.berrycrush.intellij.psi.BerryCrushParameterIncludeRefElement
 import org.berrycrush.intellij.psi.BerryCrushParametersElement
 import org.berrycrush.intellij.psi.BerryCrushPsiElement
 import org.berrycrush.intellij.psi.BerryCrushScenarioElement
@@ -48,10 +49,10 @@ class SyntaxCheckInspection : BerryCrushInspection() {
                     checkFragment(element, holder)
                 }
                 is BerryCrushParametersElement -> {
-                    if (!isScenarioFile) {
-                        holder.registerProblem(element, "Top-level parameters are only valid in .scenario files")
+                    if (!isScenarioFile && !isFragmentFile) {
+                        holder.registerProblem(element, "Top-level parameters are only valid in .scenario or .fragment files")
                     }
-                    checkParameter(element, holder)
+                    checkParameter(element, holder, isFragmentFile)
                 }
                 is BerryCrushFeatureElement -> {
                     if (!isScenarioFile) {
@@ -98,9 +99,17 @@ class SyntaxCheckInspection : BerryCrushInspection() {
     private fun checkParameter(
         parameter: BerryCrushParametersElement,
         holder: ProblemsHolder,
+        isFragmentFile: Boolean,
     ) {
+        if (!isFragmentFile && parameter.nameIdentifier != null) {
+            holder.registerProblem(parameter.nameIdentifier ?: parameter, "Named parameters block is only valid in .fragment files")
+        }
+
         parameter.children.filterIsInstance<BerryCrushPsiElement>().forEach { child ->
-            if (child !is BerryCrushParameterEntryElement) {
+            if (child !is BerryCrushParameterEntryElement &&
+                child !is BerryCrushParameterIncludeRefElement &&
+                child !is BerryCrushBlockNameElement
+            ) {
                 holder.registerProblem(child, "Invalid parameter entry")
             }
         }
@@ -112,7 +121,7 @@ class SyntaxCheckInspection : BerryCrushInspection() {
     ) {
         blockChildren<BerryCrushBlockNameElement>(feature, holder).forEach { element ->
             when (element) {
-                is BerryCrushParametersElement -> checkParameter(element, holder)
+                is BerryCrushParametersElement -> checkParameter(element, holder, false)
                 is BerryCrushBackgroundElement -> checkBackground(element, holder)
                 is BerryCrushScenarioElement -> checkScenarioLike(element, holder)
                 is BerryCrushOutlineElement -> checkScenarioLike(element, holder)
@@ -152,7 +161,7 @@ class SyntaxCheckInspection : BerryCrushInspection() {
 
         blockChildren<BerryCrushBlockNameElement>(scenario, holder).forEach { child ->
             when (child) {
-                is BerryCrushParametersElement -> checkParameter(child, holder)
+                is BerryCrushParametersElement -> checkParameter(child, holder, false)
                 is BerryCrushStepElement -> checkStep(child, holder)
                 is BerryCrushBlockNameElement -> Unit
                 is BerryCrushExamplesElement -> {

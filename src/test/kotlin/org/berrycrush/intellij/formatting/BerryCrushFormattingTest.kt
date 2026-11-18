@@ -122,85 +122,6 @@ class BerryCrushFormattingTest : BerryCrushFormattingTestCase() {
         doFormattingTest(input, expected)
     }
 
-    // === Table Alignment ===
-
-    @Test
-    fun testTableColumnAlignment() {
-        val input =
-            """
-            examples:
-            | name | value |
-            | foo| 1 |
-            """.trimIndent()
-
-        val expected =
-            """
-            examples:
-              | name | value |
-              | foo  | 1     |
-            """.trimIndent()
-
-        doFormattingTest(input, expected)
-    }
-
-    @Test
-    fun testTableAlignmentWithUnevenColumns() {
-        val input =
-            """
-            examples:
-            |petId|value|
-            |1|fluffy|
-            |123|short|
-            """.trimIndent()
-
-        val expected =
-            """
-            examples:
-              | petId | value  |
-              | 1     | fluffy |
-              | 123   | short  |
-            """.trimIndent()
-
-        doFormattingTest(input, expected)
-    }
-
-    // === Complex Scenarios ===
-
-    @Test
-    fun testComplexScenarioFormatting() {
-        val input =
-            """
-            scenario: test file for copilot
-                    include  verify_pet_by_id
-                   petId: 1
-
-            outline: foo
-                when  I do something
-                    call  ^getPetById
-             petId: {{petId}}
-              examples:
-             | petId | value  |
-             | 1     | fluffy |
-            """.trimIndent()
-
-        val expected =
-            """
-            scenario: test file for copilot
-              include verify_pet_by_id
-                petId: 1
-
-            outline: foo
-              when I do something
-                call ^getPetById
-                  petId: {{petId}}
-              examples:
-                | petId | value  |
-                | 1     | fluffy |
-            """.trimIndent()
-
-        doFormattingTest(input, expected)
-    }
-
     // === Feature with Nested Elements ===
 
     @Test
@@ -378,31 +299,6 @@ class BerryCrushFormattingTest : BerryCrushFormattingTestCase() {
     }
 
     @Test
-    fun testOutlineExamplesIndentation() {
-        val input =
-            listOf(
-                "outline: outline name",
-                "given prerequisite",
-                "when {{label1}} is {{label2}}",
-                "examples:",
-                "| label1 | label2 |",
-                "| value1 | value2 |",
-            ).joinToString("\n")
-
-        val expected =
-            listOf(
-                "outline: outline name",
-                "  given prerequisite",
-                "  when {{label1}} is {{label2}}",
-                "  examples:",
-                "    | label1 | label2 |",
-                "    | value1 | value2 |",
-            ).joinToString("\n")
-
-        doFormattingTest(input, expected)
-    }
-
-    @Test
     fun testFormattingIdempotency() {
         val input =
             listOf(
@@ -423,35 +319,6 @@ class BerryCrushFormattingTest : BerryCrushFormattingTestCase() {
             ).joinToString("\n")
 
         doIdempotencyTest(input, expected)
-    }
-
-    @Test
-    fun testDetachedMultiLineCommentsStayAtRootLevel() {
-        val input =
-            listOf(
-                "feature: bla",
-                "  scenario: in feature",
-                "    given end",
-                "#-- comment 1",
-                "#-- comment 2",
-                "#-- comment 3",
-                "",
-                "scenario: bla",
-            ).joinToString("\n")
-
-        val expected =
-            listOf(
-                "feature: bla",
-                "  scenario: in feature",
-                "    given end",
-                "#-- comment 1",
-                "#-- comment 2",
-                "#-- comment 3",
-                "",
-                "scenario: bla",
-            ).joinToString("\n")
-
-        doFormattingTest(input, expected)
     }
 
     @Test

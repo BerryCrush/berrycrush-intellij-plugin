@@ -42,6 +42,7 @@ import org.berrycrush.intellij.psi.BerryCrushOperationRefElement
 import org.berrycrush.intellij.psi.BerryCrushOperatorElement
 import org.berrycrush.intellij.psi.BerryCrushOutlineElement
 import org.berrycrush.intellij.psi.BerryCrushParameterEntryElement
+import org.berrycrush.intellij.psi.BerryCrushParameterIncludeRefElement
 import org.berrycrush.intellij.psi.BerryCrushParameterKeyElement
 import org.berrycrush.intellij.psi.BerryCrushParameterValueElement
 import org.berrycrush.intellij.psi.BerryCrushParametersElement
@@ -109,6 +110,7 @@ private val elementDefinition = mapOf(
     BerryCrushElementTypes.STRING_LITERAL to ::BerryCrushStringLiteralElement,
     BerryCrushElementTypes.INCLUDED_PARAMETER to ::BerryCrushIncludeParameterElement,
     BerryCrushElementTypes.PARAMETERS to ::BerryCrushParametersElement,
+    BerryCrushElementTypes.PARAMETER_INCLUDE to ::BerryCrushParameterIncludeRefElement,
     BerryCrushElementTypes.PARAMETER_ENTRY to ::BerryCrushParameterEntryElement,
     BerryCrushElementTypes.PARAMETER_KEY to ::BerryCrushParameterKeyElement,
     BerryCrushElementTypes.PARAMETER_VALUE to ::BerryCrushParameterValueElement,

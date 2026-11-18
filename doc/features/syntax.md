@@ -142,6 +142,27 @@ include configure_entity
   owner: {{currentUser}}       # Variable reference
 ```
 
+### Named Parameters Blocks
+
+Named parameters block headers are allowed only in `.fragment` files:
+
+```berrycrush
+parameters: shared-defaults
+  timeout: 5000
+  retries: 2
+
+parameters:
+  << shared-defaults
+  retries: 3
+```
+
+In `.scenario` files, `parameters: <name>` is reported as a syntax problem. Use unnamed headers instead:
+
+```berrycrush
+parameters:
+  timeout: 5000
+```
+
 ## Variables
 
 Dynamic values using mustache syntax:
