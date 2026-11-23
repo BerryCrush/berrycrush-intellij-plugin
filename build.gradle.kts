@@ -1,4 +1,5 @@
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
@@ -48,6 +49,22 @@ intellijPlatform {
             name = "BerryCrush"
             url = "https://berrycrush.org"
         }
+    }
+
+    pluginVerification {
+        ides {
+            recommended()
+        }
+        failureLevel = listOf(
+            VerifyPluginTask.FailureLevel.DEPRECATED_API_USAGES,
+            VerifyPluginTask.FailureLevel.COMPATIBILITY_PROBLEMS,
+            VerifyPluginTask.FailureLevel.INTERNAL_API_USAGES,
+            VerifyPluginTask.FailureLevel.OVERRIDE_ONLY_API_USAGES,
+            VerifyPluginTask.FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES,
+            VerifyPluginTask.FailureLevel.INVALID_PLUGIN,
+            VerifyPluginTask.FailureLevel.MISSING_DEPENDENCIES,
+            VerifyPluginTask.FailureLevel.PLUGIN_STRUCTURE_WARNINGS,
+        )
     }
 
     signing {
@@ -132,5 +149,10 @@ tasks.register("sastFull") {
 
 // Make check task depend on sastFull
 tasks.named("check") {
-    dependsOn("sastFull")
+    dependsOn(
+        "sastFull",
+        "verifyPluginProjectConfiguration",
+        "verifyPluginStructure",
+        "verifyPlugin",
+    )
 }
