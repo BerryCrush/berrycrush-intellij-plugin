@@ -7,7 +7,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.fileChooser.FileChooser
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
-import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
@@ -84,7 +84,7 @@ class CreateFragmentQuickFix(
             try {
                 val file = directory.createChildData(this, fileName)
                 file.setBinaryContent(generateFragmentTemplate().toByteArray())
-                FileEditorManager.getInstance(project).openFile(file, true)
+                OpenFileDescriptor(project, file).navigate(true)
             } catch (e: Exception) {
                 Messages.showErrorDialog(project, "Failed to create file: ${e.message}", "Create Fragment")
             }
@@ -105,7 +105,7 @@ class CreateFragmentQuickFix(
                 val appendContent = "\n\n" + generateFragmentDefinition()
                 document.insertString(document.textLength, appendContent)
                 PsiDocumentManager.getInstance(project).commitDocument(document)
-                FileEditorManager.getInstance(project).openFile(file, true)
+                OpenFileDescriptor(project, file).navigate(true)
             } catch (e: Exception) {
                 Messages.showErrorDialog(project, "Failed to append to file: ${e.message}", "Create Fragment")
             }
